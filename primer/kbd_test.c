@@ -2,7 +2,7 @@
 #include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/proc_fs.h> // ioctl entry point interface
-#include <linux/ioctl.h>
+#include <asm/uaccess.h>
 
 
 MODULE_LICENSE("GPL");
