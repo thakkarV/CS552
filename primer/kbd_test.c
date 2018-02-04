@@ -33,7 +33,7 @@ static int kbd_test_ioctl_servicer(struct inode * inode, struct file * file,
 		{
 			copy_from_user(&ioc, (struct ioctl_test_t *)arg, sizeof(struct ioctl_test_t));
 			printk("<1> ioctl: call to IOCTL_TEST (%d,%c)!\n", ioc.field1, ioc.field2);
-			my_printk ("kbd_test Service called.\n");
+			printk ("KBD Module : kbd_test_ioctl_servicer called with IOCTL_TEST.\n");
 			break;
 		}
 		default:
@@ -61,6 +61,7 @@ static int __init init_kbd_test(void)
 	}
 
 	proc_entry->proc_fops = &pseudo_dev_proc_operations;
+	return 0;
 }
 
 
@@ -69,10 +70,10 @@ static int __exit exit_kbd_test(void)
 	printk("<1> Dumping kbd_test Module\n");
 	remove_proc_entry("kbd_test", NULL);
 
-	return;
+	return 0;
 }
 
 
 // kernel endpoints
-module_init(initialization_routine); 
-module_exit(cleanup_routine); 
+module_init(init_kbd_test); 
+module_exit(exit_kbd_test); 
