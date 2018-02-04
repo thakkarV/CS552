@@ -65,7 +65,7 @@ static int __init init_kbd_test(void)
 }
 
 
-static int __exit exit_kbd_test(void)
+static void __exit exit_kbd_test(void)
 {
 	printk("<1> Dumping kbd_test Module\n");
 	remove_proc_entry("kbd_test", NULL);
