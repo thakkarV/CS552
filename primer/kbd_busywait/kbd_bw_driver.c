@@ -20,6 +20,8 @@ kbd_bw_servicer(struct inode * inode,
 				unsigned int cmd,
 				unsigned long arg)
 {
+	disable_irq(1);
+
 	struct kbd_action key_event;
 	switch (cmd)
 	{
@@ -45,6 +47,8 @@ kbd_bw_servicer(struct inode * inode,
 		}
 	}
 
+	enable_irq(1);
+
 	return 0;
 }
 
@@ -59,7 +63,7 @@ kbd_readkey(void)
 		|| ( ( c = inb( 0x60 ) ) & 0x80 ) );
 
 	return scancode[(int)c];
-}	
+}
 
 
 static int
