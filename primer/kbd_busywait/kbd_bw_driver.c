@@ -21,9 +21,9 @@ kbd_bw_servicer(struct inode * inode,
 				unsigned int cmd,
 				unsigned long arg)
 {
-	disable_irq(1);
 
 	struct kbd_action key_event;
+	disable_irq(1);
 	switch (cmd)
 	{
 		case KBD_IOCTL_TEST:
@@ -36,6 +36,7 @@ kbd_bw_servicer(struct inode * inode,
 		case KBD_IOCTL_READKEY:
 		{
 			char c = kbd_readkey();
+			key_event.key = c;
 			copy_to_user((struct kbd_action *)arg, &key_event, sizeof(struct kbd_action));
 			printk("<1> KBD Module : kbd_test_ioctl_servicer called with KBD_IOCTL_READKEY.\n");
 			printk("<1> Copied (%d,%c) to userspace\n", key_event.key, key_event.status);
