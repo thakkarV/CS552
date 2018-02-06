@@ -2,7 +2,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#define KBD_IOCTL_TEST _IOW(0, 0, struct ioctl_test_t)
+#define KBD_IOCTL_TEST _IOW(0, 0, struct kbd_action)
 #define KBD_IOCTL_READKEY _IOR(0, 1, struct kbd_action)
 
 char kbd_busywait_getchar(void)

@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#define KBD_IOCTL_TEST _IOW(0, 0, struct ioctl_test_t)
+#define KBD_IOCTL_TEST _IOW(0, 0, struct kbd_action)
 #define KBD_IOCTL_READKEY _IOR(0, 1, struct kbd_action)
 
-int main(int argc, char const *argv[])
+int main(int argc, char const * argv [])
 {
 	//
 	// Test ioctl
@@ -30,7 +30,7 @@ int main(int argc, char const *argv[])
 	char * str = malloc(sizeof(char) * str_size);
 	while ((c = kbd_busywait_getchar()) != '\n')
 	{
-		str[i++]
+		str[i++] = c;
 		if (i >= str_size)
 		{
 			str_size *= 2;
