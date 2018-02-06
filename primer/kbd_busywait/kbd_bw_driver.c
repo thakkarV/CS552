@@ -2,6 +2,7 @@
 #include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/proc_fs.h> // ioctl entry point interface
+#include <linux/interrupt.h>
 #include <asm/uaccess.h>
 
 #include "kbd_bw_driver.h"
@@ -69,11 +70,11 @@ kbd_readkey(void)
 static int
 __init kbd_bw_init(void)
 {
-	printk("<1> Loading busywait based KBD.\n")
+	printk("<1> Loading busywait based KBD.\n");
 
 	// now point the ioctl vector to the service routine for the kbd_test driver
 	kbd_bw_dev_proc_operations.ioctl = kbd_bw_servicer;
-	kbd_bw_proc_entry = create_kbd_bw_proc_entry("kbd_bw", 0444, NULL);
+	kbd_bw_proc_entry = create_proc_entry("kbd_bw", 0444, NULL);
 	if(!kbd_bw_proc_entry)
 	{
 		printk("<1> Error creating /proc entry.\n");
