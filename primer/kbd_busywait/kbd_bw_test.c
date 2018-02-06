@@ -44,6 +44,6 @@ int main(int argc, char const * argv [])
 		}
 	}
 
-	printf(str);
+	printf("%s", str);
 	return 0;
 }
