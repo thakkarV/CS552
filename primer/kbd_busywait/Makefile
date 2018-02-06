@@ -1,2 +1,2 @@
 
-obj-m += kbd_bw.o
+obj-m += kbd_bw_driver.o
