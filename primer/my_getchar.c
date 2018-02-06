@@ -1,3 +1,8 @@
+#include <sys/ioctl.h>
+#include <fcntl.h>
+
+#define KBD_IOCTL_READ_KEY _IOR(0, 7, char key)
+
 char my_getchar(void)
 {
 	char c;

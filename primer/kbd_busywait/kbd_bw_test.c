@@ -1,22 +1,24 @@
 #include <stdlib.h>
 
+#define KBD_IOCTL_TEST _IOW(0, 0, struct ioctl_test_t)
+#define KBD_IOCTL_READKEY _IOR(0, 1, struct kbd_action)
+
 int main(int argc, char const *argv[])
 {
 	//
 	// Test ioctl
 	//
-	struct ioctl_test_t
+	struct kbd_action
 	{
-		int field1;
-		char field2;
+		char key;
+		int status;
 	} ioctl_test;
+	ioctl_test.status = 10;
+	ioctl_test.key = 'a';
 
 	int fd = open("/proc/kbd_test", O_RDONLY);
-
-	ioctl_test.field1 = 10;
-	ioctl_test.field2 = 'a';
-
-	ioctl(fd, IOCTL_TEST, &ioctl_test);
+	ioctl(fd, KBD_IOCTL_TEST, &ioctl_test);
+	close(fd);
 
 	//
 	// Test reading keys now

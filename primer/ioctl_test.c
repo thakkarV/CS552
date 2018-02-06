@@ -4,6 +4,7 @@
 
 #define IOCTL_TEST _IOW(0, 6, struct ioctl_test_t)
 
+
 int main () {
 
 	/* attribute structures */
