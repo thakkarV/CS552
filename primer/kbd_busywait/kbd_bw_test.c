@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <fcntl.h>
 
 #define KBD_IOCTL_TEST _IOW(0, 0, struct kbd_action)
