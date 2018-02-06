@@ -4,16 +4,15 @@
 #include <linux/proc_fs.h> // ioctl entry point interface
 #include <asm/uaccess.h>
 
-#define KBD_IOCTL_TEST _IOW(0, 0, struct ioctl_test_t)
+#include "kbd_bw_driver.h"
+
+#define KBD_IOCTL_TEST _IOW(0, 0, struct kbd_action)
 #define KBD_IOCTL_READKEY _IOR(0, 1, struct kbd_action)
 
 MODULE_LICENSE("GPL");
 
-struct kbd_action
-{
-	char key;
-	int status;
-};
+static struct file_operations  kbd_bw_dev_proc_operations;
+static struct proc_dir_entry * kbd_bw_proc_entry;
 
 static int
 kbd_bw_servicer(struct inode * inode,
@@ -69,25 +68,24 @@ __init kbd_bw_init(void)
 	printk("<1> Loading busywait based KBD.\n")
 
 	// now point the ioctl vector to the service routine for the kbd_test driver
-	pseudo_dev_proc_operations.ioctl = kbd_bw_getchar_servicer;
-	proc_entry = create_proc_entry("kbd_bw", 0444, NULL);
-	if(!proc_entry)
+	kbd_bw_dev_proc_operations.ioctl = kbd_bw_servicer;
+	kbd_bw_proc_entry = create_kbd_bw_proc_entry("kbd_bw", 0444, NULL);
+	if(!kbd_bw_proc_entry)
 	{
 		printk("<1> Error creating /proc entry.\n");
 		return 1;
 	}
 
-	proc_entry->proc_fops = &kbd_bw_servicer;
+	kbd_bw_proc_entry->proc_fops = &kbd_bw_dev_proc_operations;
 	return 0;
 }
-
 
 
 static void
 __exit kbd_bw_exit(void)
 {
-	printk("<1> Dumping kbd_test Module\n");
-	remove_proc_entry("kbd_test", NULL);
+	printk("<1> Dumping kbd_bw Module\n");
+	remove_proc_entry("kbd_bw", NULL);
 }
 
 
