@@ -4,16 +4,16 @@
 #include <linux/proc_fs.h> // ioctl entry point interface
 #include <asm/uaccess.h>
 
+#define KBD_IOCTL_TEST _IOW(0, 0, struct ioctl_test_t)
+#define KBD_IOCTL_READKEY _IOR(0, 1, struct kbd_action)
+
 MODULE_LICENSE("GPL");
 
 struct kbd_action
 {
 	char key;
 	int status;
-}
-
-#define KBD_IOCTL_TEST _IOW(0, 0, struct ioctl_test_t)
-#define KBD_IOCTL_READKEY _IOR(0, 1, struct kbd_action)
+};
 
 static int
 kbd_bw_servicer(struct inode * inode,
@@ -21,19 +21,18 @@ kbd_bw_servicer(struct inode * inode,
 				unsigned int cmd,
 				unsigned long arg)
 {
+	struct kbd_action key_event;
 	switch (cmd)
 	{
 		case KBD_IOCTL_TEST:
 		{
-			struct kbd_action kbd_test;
-			copy_from_user(&kbd_test, (struct kbd_action *)arg, sizeof(struct kbd_action));
-			printk("<1> ioctl: call to KBD_IOCTL_TEST (%d,%c)!\n", kbd_test.key, kbd_test.status);
+			copy_from_user(&key_event, (struct kbd_action *)arg, sizeof(struct kbd_action));
+			printk("<1> ioctl: call to KBD_IOCTL_TEST (%d,%c)!\n", key_event.key, key_event.status);
 			printk("<1> KBD Module : kbd_test_ioctl_servicer called with IOCTL_TEST.\n");
 			break;
 		}
 		case KBD_IOCTL_READKEY:
 		{
-			struct kbd_action key_event;
 			char c = kbd_readkey();
 			copy_to_user((struct kbd_action *)arg, &key_event, sizeof(struct kbd_action));
 			printk("<1> KBD Module : kbd_test_ioctl_servicer called with KBD_IOCTL_READKEY.\n");
@@ -57,16 +56,11 @@ kbd_readkey(void)
 	char c;
 	static char scancode[128] = "\0\e1234567890-=\177\tqwertyuiop[]\n\0asdfghjkl;'`\0\\zxcvbnm,./\0*\0 \0\0\0\0\0\0\0\0\0\0\0\0\000789-456+1230.\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 
-	/* Poll keyboard status register at port 0x64 checking bit 0 to see if
-	* output buffer is full. We continue to poll if the msb of port 0x60
-	* (data port) is set, as this indicates out-of-band data or a release
-	* keystroke
-	*/
 	while( !(inb( 0x64 ) & 0x1) 
 		|| ( ( c = inb( 0x60 ) ) & 0x80 ) );
 
 	return scancode[(int)c];
-}
+}	
 
 
 static int
@@ -97,27 +91,9 @@ __exit kbd_bw_exit(void)
 }
 
 
-char
-my_getchar(void)
-{
-	char c;
-	static char scancode[128] = "\0\e1234567890-=\177\tqwertyuiop[]\n\0asdfghjkl;'`\0\\zxcvbnm,./\0*\0 \0\0\0\0\0\0\0\0\0\0\0\0\000789-456+1230.\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-
-	/* Poll keyboard status register at port 0x64 checking bit 0 to see if
-	* output buffer is full. We continue to poll if the msb of port 0x60
-	* (data port) is set, as this indicates out-of-band data or a release
-	* keystroke
-	*/
-	while( !(inb( 0x64 ) & 0x1) || ( ( c = inb( 0x60 ) ) & 0x80 ) );
-
-	return scancode[(int)c];
-}
-
-
 static inline unsigned char
 inb(unsigned short usPort)
 {
-
 	unsigned char uch;
 	asm volatile( "inb %1,%0" : "=a" (uch) : "Nd" (usPort) );
 	return uch;
