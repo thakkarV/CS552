@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <fcntl.h>
 
 #define KBD_IOCTL_TEST _IOW(0, 0, struct ioctl_test_t)
 #define KBD_IOCTL_READKEY _IOR(0, 1, struct kbd_action)
@@ -23,6 +24,7 @@ int main(int argc, char const *argv[])
 	//
 	// Test reading keys now
 	//
+	char c;
 	int i = 0;
 	int str_size = 4;
 	char * str = malloc(sizeof(char) * str_size);

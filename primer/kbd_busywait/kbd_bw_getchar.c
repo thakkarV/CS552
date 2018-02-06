@@ -11,7 +11,7 @@ char kbd_busywait_getchar(void)
 	{
 		char key;
 		int status;
-	} ioctl_test;
+	} action;
 
 	int fd = open("/proc/kbd_test", O_RDONLY);
 	ioctl(fd, KBD_IOCTL_READKEY, &action);
@@ -26,13 +26,13 @@ void test_kbd_driver(char out1, int out2)
 	{
 		char key;
 		int status;
-	} ioctl_test;
+	} action;
 
-	ioctl_test.key = out1;
-	ioctl_test.status = out2;
+	action.key = out1;
+	action.status = out2;
 
 	int fd = open("/proc/kbd_bw", O_RDONLY);
-	ioctl(fd, KBD_IOCTL_TEST, &ioctl_test);
+	ioctl(fd, KBD_IOCTL_TEST, &action);
 	close(fd);	
 }
 

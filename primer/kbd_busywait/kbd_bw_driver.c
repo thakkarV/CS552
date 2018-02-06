@@ -21,7 +21,6 @@ kbd_bw_servicer(struct inode * inode,
 				unsigned int cmd,
 				unsigned long arg)
 {
-
 	struct kbd_action key_event;
 	disable_irq(1);
 	switch (cmd)
