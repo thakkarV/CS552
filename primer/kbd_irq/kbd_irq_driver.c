@@ -28,7 +28,7 @@ kbd_irq_servicer(struct inode * inode,
 		case KBD_IOCTL_READKEY:
 		{
 			printk("KBD_IOCTL_READKEY called\n");
-			wait_event_interruptible(wait_q, inb(0x64) & 0x01);
+			wait_event(wait_q);
 			c = kbd_readkey();
 			copy_to_user((char *)arg, &c, sizeof(char));
 			printk("<1> Copied (%x) to userspace\n", c);
@@ -46,7 +46,7 @@ kbd_irq_servicer(struct inode * inode,
 
 irqreturn_t irq_handler(int irq, void * dev_id)
 {
-	wake_up_interruptible(&wait_q);
+	wake_up(&wait_q);
 	return IRQ_HANDLED;
 }
 
