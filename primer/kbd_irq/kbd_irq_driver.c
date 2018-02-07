@@ -7,7 +7,7 @@
 #include <linux/proc_fs.h>
 #include <linux/wait.h>
 
-#include "kbd_wait_driver.h"
+#include "kbd_irq_driver.h"
 
 #define KBD_IOCTL_READKEY _IOR(0, 1, char)
 
