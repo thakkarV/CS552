@@ -47,7 +47,6 @@ kbd_irq_servicer(struct inode * inode,
 
 irqreturn_t irq_handler(int irq, void * dev_id)
 {
-	printk("irq_handler called\n");
 	charbuf = kbd_readkey();
 	wake_up_interruptible(&wait_q);
 	return IRQ_HANDLED;
