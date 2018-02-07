@@ -33,12 +33,12 @@ irqreturn_t irq_handler(int irq, void * dev_id)
 
 	if (initialised == 0)
 	{
-		INIT_WORK(&task, got_char);
+		INIT_WORK(&task, got_char, &scancode);
 		initialised = 1;
 	}
 	else
 	{
-		PREPARE_WORK(&task, got_char);
+		PREPARE_WORK(&task, got_char, &scan_code);
 	}
 
 	queue_work(kbd_irq_workq, &task);

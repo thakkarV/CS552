@@ -4,7 +4,7 @@
 
 static void got_char(void * scan_code);
 
-irqreturn_t irq_handler(int irq, void * dev_id, struct pt_regs * regs);
+irqreturn_t irq_handler(int irq, void * dev_id);
 
 static int __init kbd_irq_init(void);
 
