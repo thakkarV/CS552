@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 
 #define KBD_IOCTL_TEST _IOW(0, 0, struct kbd_action)
 #define KBD_IOCTL_READKEY _IOR(0, 1, struct kbd_action)
@@ -19,7 +20,9 @@ int main(int argc, char const * argv [])
 	ioctl_test.key = 'a';
 
 	int fd = open("/proc/kbd_test", O_RDONLY);
+
 	ioctl(fd, KBD_IOCTL_TEST, &ioctl_test);
+
 	close(fd);
 
 	//
