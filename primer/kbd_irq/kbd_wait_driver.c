@@ -23,12 +23,13 @@ kbd_irq_servicer(struct inode * inode,
 				unsigned int cmd,
 				unsigned long arg)
 {
+	char c;
 	switch (cmd)
 	{
 		case KBD_IOCTL_READKEY:
 		{
 			wait_event_interruptible(wait_q, condition);
-			char c = kbd_readkey();
+			c = kbd_readkey();
 			copy_to_user((char *)arg, &c, sizeof(char));
 			printk("<1> Copied (%x) to userspace\n", c);
 			break;
