@@ -59,8 +59,8 @@ kbd_readkey(void)
 	char c;
 	static char scancode[128] = "\0\e1234567890-=\177\tqwertyuiop[]\n\0asdfghjkl;'`\0\\zxcvbnm,./\0*\0 \0\0\0\0\0\0\0\0\0\0\0\0\000789-456+1230.\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 
-	while (!(inb(0x64) & 0x1));
-    c = inb(0x60);
+	while( !(inb( 0x64 ) & 0x1) 
+		|| ( ( c = inb( 0x60 ) ) & 0x80 ) );
 
 	return scancode[(int)c];
 }
