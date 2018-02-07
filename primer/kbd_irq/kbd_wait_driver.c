@@ -9,7 +9,6 @@
 
 #include "kbd_wait_driver.h"
 
-#define condition inb(0x64) & 0x01
 #define KBD_IOCTL_READKEY _IOR(0, 1, char)
 
 static wait_queue_head_t wait_q;
@@ -29,7 +28,7 @@ kbd_irq_servicer(struct inode * inode,
 		case KBD_IOCTL_READKEY:
 		{
 			printk("KBD_IOCTL_READKEY called\n");
-			wait_event_interruptible(wait_q, condition);
+			wait_event_interruptible(wait_q, inb(0x64) & 0x01);
 			c = kbd_readkey();
 			copy_to_user((char *)arg, &c, sizeof(char));
 			printk("<1> Copied (%x) to userspace\n", c);
@@ -68,7 +67,9 @@ static int __init kbd_irq_init(void)
 	kbd_irq_proc_entry->proc_fops = &kbd_irq_dev_proc_operations;
 
 	init_waitqueue_head(&wait_q);
-	return request_irq(1, irq_handler, IRQF_SHARED, "kbd_irq_handler", (void *)(irq_handler));
+	int ret = request_irq(1, irq_handler, IRQF_SHARED, "kbd_irq_handler", (void *)(irq_handler));
+	printk("<1> Registered handler with %x cookie.\n", irq_handler);
+	return ret;
 }
 
 
