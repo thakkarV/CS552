@@ -28,7 +28,7 @@ kbd_bw_servicer(struct inode * inode,
 		case KBD_IOCTL_TEST:
 		{
 			copy_from_user(&key_event, (struct kbd_action *)arg, sizeof(struct kbd_action));
-			printk("<1> ioctl: call to KBD_IOCTL_TEST (%d,%c)!\n", key_event.key, key_event.status);
+			printk("<1> ioctl: call to KBD_IOCTL_TEST (%c,%d)!\n", key_event.key, key_event.status);
 			printk("<1> KBD Module : kbd_test_ioctl_servicer called with IOCTL_TEST.\n");
 			break;
 		}
@@ -38,7 +38,7 @@ kbd_bw_servicer(struct inode * inode,
 			key_event.key = c;
 			copy_to_user((struct kbd_action *)arg, &key_event, sizeof(struct kbd_action));
 			printk("<1> KBD Module : kbd_test_ioctl_servicer called with KBD_IOCTL_READKEY.\n");
-			printk("<1> Copied (%d,%c) to userspace\n", key_event.key, key_event.status);
+			printk("<1> Copied (%c,%d) to userspace\n", key_event.key, key_event.status);
 			break;
 		}
 		default:
