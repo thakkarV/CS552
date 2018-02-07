@@ -12,6 +12,9 @@
 #define KBD_IOCTL_READKEY _IOR(0, 1, char)
 
 static wait_queue_head_t wait_q;
+static struct file_operations  kbd_irq_dev_proc_operations;
+static struct proc_dir_entry * kbd_irq_proc_entry;
+
 
 static int
 kbd_irq_servicer(struct inode * inode,
@@ -19,12 +22,12 @@ kbd_irq_servicer(struct inode * inode,
 				unsigned int cmd,
 				unsigned long arg)
 {
-	struct kbd_action key_event;
+
 	switch (cmd)
 	{
 		case KBD_IOCTL_READKEY:
 		{
-			wait_event_interruptible(&wait_q, condition);
+			wait_event_interruptible(wait_q, condition);
 			char c = kbd_readkey();
 			copy_to_user((char *)arg, &c, sizeof(char));
 			printk("<1> Copied (%x) to userspace\n", c);
@@ -42,7 +45,7 @@ kbd_irq_servicer(struct inode * inode,
 
 irqreturn_t irq_handler(int irq, void * dev_id)
 {
-	wake_up_interruptible(&wait_q, condition);
+	wake_up_interruptible(&wait_q);
 	return IRQ_HANDLED;
 }
 
@@ -95,7 +98,6 @@ outb(unsigned char uch, unsigned short usPort)
 static char
 kbd_readkey(void)
 {
-	char c;
 	static char scancode[128] = "\0\e1234567890-=\177\tqwertyuiop[]\n\0asdfghjkl;'`\0\\zxcvbnm,./\0*\0 \0\0\0\0\0\0\0\0\0\0\0\0\000789-456+1230.\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 	return scancode[inb(0x60)];
 }

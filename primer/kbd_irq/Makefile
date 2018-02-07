@@ -1,5 +1,5 @@
 ifneq ($(KERNELRELEASE),) 
-	obj-m := kbd_irq_driver.o
+	obj-m := kbd_wait_driver.o
 else
 
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build 
