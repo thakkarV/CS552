@@ -28,7 +28,7 @@ kbd_irq_servicer(struct inode * inode,
 		case KBD_IOCTL_READKEY:
 		{
 			printk("KBD_IOCTL_READKEY called\n");
-			wait_event_interruptible(wait_q, 1);
+			wait_event_interruptible(wait_q, inb( 0x64 ) & 0x1);
 			c = kbd_readkey();
 			copy_to_user((char *)arg, &c, sizeof(char));
 			printk("<1> Copied (%x) to userspace\n", c);
@@ -101,6 +101,7 @@ outb(unsigned char uch, unsigned short usPort)
 static char
 kbd_readkey(void)
 {
+	char c;
 	static char scancode[128] = "\0\e1234567890-=\177\tqwertyuiop[]\n\0asdfghjkl;'`\0\\zxcvbnm,./\0*\0 \0\0\0\0\0\0\0\0\0\0\0\0\000789-456+1230.\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 	while (( c = inb( 0x60 ) ) & 0x80 );
 	return scancode[(int)c];
