@@ -5,71 +5,78 @@
 #include <linux/interrupt.h>	/* We want an interrupt */
 #include <linux/errno.h>
 #include <linux/proc_fs.h>
+#include <linux/wait.h>
 
-#include "kbd_irq_driver.h"
+#include "kbd_wait_driver.h"
 
-#define KBD_WORKQ_NAME "kbd_irq_driver.c"
+#define KBD_IOCTL_READKEY _IOR(0, 1, char)
 
-static struct workqueue_struct * kbd_irq_workq;
+static wait_queue_head_t wait_q;
+static struct file_operations  kbd_irq_dev_proc_operations;
+static struct proc_dir_entry * kbd_irq_proc_entry;
 
 
-static void got_char(void * scan_code)
+static int
+kbd_irq_servicer(struct inode * inode,
+				struct file * file,
+				unsigned int cmd,
+				unsigned long arg)
 {
-	printk(KERN_INFO "Scan Code %x %s.\n",
-		   (int)*((char *)scan_code) & 0x7F,
-		   *((char *)scan_code) & 0x80 ? "Released" : "Pressed");
+	char c;
+	switch (cmd)
+	{
+		case KBD_IOCTL_READKEY:
+		{
+			printk("KBD_IOCTL_READKEY called\n");
+			wait_event_interruptible(wait_q, inb(0x64) & 0x01);
+			c = kbd_readkey();
+			copy_to_user((char *)arg, &c, sizeof(char));
+			printk("<1> Copied (%x) to userspace\n", c);
+			break;
+		}
+		default:
+		{
+			return -EINVAL;
+			break;
+		}
+	}
+	return 0;
 }
 
 
 irqreturn_t irq_handler(int irq, void * dev_id)
 {
-	static int initialised = 0;
-	static unsigned char scan_code;
-	static struct work_struct task;
-	unsigned char status;
-
-	status = inb(0x64);
-	scan_code = inb(0x60);
-
-	if (initialised == 0)
-	{
-		INIT_WORK(&task, got_char, &scancode);
-		initialised = 1;
-	}
-	else
-	{
-		PREPARE_WORK(&task, got_char, &scan_code);
-	}
-
-	queue_work(kbd_irq_workq, &task);
-
+	wake_up_interruptible(&wait_q);
 	return IRQ_HANDLED;
 }
 
 
 static int __init kbd_irq_init(void)
 {
-	// kbd_irq_dev_proc_operations.ioctl = kbd_irq_servicer;
-	// kbd_irq_proc_entry = create_proc_entry("kbd_irq", 0444, NULL);
-	// if(!kbd_irq_proc_entry)
-	// {
-	// 	printk("<1> Error creating /proc entry.\n");
-	// 	return 1;
-	// }
+	printk("<1> Loading interrupt based KBD.\n");
 
-	// kbd_irq_proc_entry->proc_fops = &kbd_irq_dev_proc_operations;
+	// now point the ioctl vector to the service routine for the kbd_test driver
+	kbd_irq_dev_proc_operations.ioctl = kbd_irq_servicer;
+	kbd_irq_proc_entry = create_proc_entry("kbd_irq", 0444, NULL);
+	if(!kbd_irq_proc_entry)
+	{
+		printk("<1> Error creating /proc entry.\n");
+		return 1;
+	}
 
-	// setup work queue
-	kbd_irq_workq = create_workqueue(KBD_WORKQ_NAME);
-	free_irq(1, NULL);
-	return request_irq(1, irq_handler, IRQF_SHARED, "kbd_irq_handler", (void *)(irq_handler));
+	kbd_irq_proc_entry->proc_fops = &kbd_irq_dev_proc_operations;
+
+	init_waitqueue_head(&wait_q);
+	int ret = request_irq(1, irq_handler, IRQF_SHARED, "kbd_irq_handler", (void *)(irq_handler));
+	printk("<1> Registered handler with %x cookie.\n", (unsigned int) irq_handler);
+	return ret;
 }
 
 
 static void __exit kbd_irq_exit(void)
 {
 	printk("<1> Dumping kbd_irq Module\n");
-	// remove_proc_entry("kbd_irq", NULL);
+	remove_proc_entry("kbd_irq", NULL);
 	free_irq(1, (void *)(irq_handler));
 }
 
@@ -87,6 +94,14 @@ static inline void
 outb(unsigned char uch, unsigned short usPort)
 {
 	asm volatile( "outb %0,%1" : : "a" (uch), "Nd" (usPort) );
+}
+
+
+static char
+kbd_readkey(void)
+{
+	static char scancode[128] = "\0\e1234567890-=\177\tqwertyuiop[]\n\0asdfghjkl;'`\0\\zxcvbnm,./\0*\0 \0\0\0\0\0\0\0\0\0\0\0\0\000789-456+1230.\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+	return scancode[inb(0x60)];
 }
 
 
