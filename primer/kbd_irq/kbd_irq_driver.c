@@ -15,6 +15,7 @@ static wait_queue_head_t wait_q;
 static struct file_operations  kbd_irq_dev_proc_operations;
 static struct proc_dir_entry * kbd_irq_proc_entry;
 
+static char charbuf ;
 
 static int
 kbd_irq_servicer(struct inode * inode,
@@ -29,7 +30,7 @@ kbd_irq_servicer(struct inode * inode,
 		{
 			printk("KBD_IOCTL_READKEY called\n");
 			wait_event_interruptible(wait_q, inb(0x64) & 0x1);
-			c = kbd_readkey();
+			c = charbuf;
 			copy_to_user((char *)arg, &c, sizeof(char));
 			printk("<1> Copied (%x) to userspace\n", c);
 			break;
@@ -46,6 +47,8 @@ kbd_irq_servicer(struct inode * inode,
 
 irqreturn_t irq_handler(int irq, void * dev_id)
 {
+	printk("irq_handler called\n");
+	charbuf = kbd_readkey();
 	wake_up_interruptible(&wait_q);
 	return IRQ_HANDLED;
 }
