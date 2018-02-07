@@ -3,7 +3,8 @@
 #include <linux/sched.h>
 #include <linux/workqueue.h>
 #include <linux/interrupt.h>	/* We want an interrupt */
-#include <asm/io.h>
+#include <linux/errno.h>
+#include <linux/proc_fs.h>
 
 #define KBD_WORKQ_NAME "kbd_irq_driver.c"
 
@@ -21,7 +22,7 @@ static void got_char(void * scan_code)
 irqreturn_t irq_handler(int irq, void * dev_id, struct pt_regs * regs)
 {
 	static int initialised = 0;
-	static unsigned char scancode;
+	static unsigned char scan_code;
 	static struct work_struct task;
 	unsigned char status;
 
@@ -44,7 +45,7 @@ irqreturn_t irq_handler(int irq, void * dev_id, struct pt_regs * regs)
 }
 
 
-static int __init kbd_int_init(void)
+static int __init kbd_irq_init(void)
 {
 	kbd_irq_dev_proc_operations.ioctl = kbd_irq_servicer;
 	kbd_irq_proc_entry = create_proc_entry("kbd_irq", 0444, NULL);
@@ -59,11 +60,11 @@ static int __init kbd_int_init(void)
 	// setup work queue
 	kbd_irq_workq = create_workqueue(KBD_WORKQ_NAME);
 	free_irq(1, NULL);
-	return request_irq(1, irq_handler, SA_SHIRQ, "kbd_irq_handler", (void *)(irq_handler));
+	return request_irq(1, irq_handler, IRQF_SHARED, "kbd_irq_handler", (void *)(irq_handler));
 }
 
 
-static void __exit kbd_int_exit(void)
+static void __exit kbd_irq_exit(void)
 {
 	printk("<1> Dumping kbd_irq Module\n");
 	remove_proc_entry("kbd_irq", NULL);
@@ -71,9 +72,24 @@ static void __exit kbd_int_exit(void)
 }
 
 
-// kernel endpoints
-module_init(kbd_int_init); 
-module_exit(kbd_int_exit); 
+static inline unsigned char
+inb(unsigned short usPort)
+{
+	unsigned char uch;
+	asm volatile( "inb %1,%0" : "=a" (uch) : "Nd" (usPort) );
+	return uch;
+}
 
+
+static inline void
+outb(unsigned char uch, unsigned short usPort)
+{
+	asm volatile( "outb %0,%1" : : "a" (uch), "Nd" (usPort) );
+}
+
+
+// kernel endpoints
+module_init(kbd_irq_init); 
+module_exit(kbd_irq_exit);
 
 MODULE_LICENSE("GPL");
