@@ -28,6 +28,7 @@ kbd_irq_servicer(struct inode * inode,
 	{
 		case KBD_IOCTL_READKEY:
 		{
+			printk("KBD_IOCTL_READKEY called\n");
 			wait_event_interruptible(wait_q, condition);
 			c = kbd_readkey();
 			copy_to_user((char *)arg, &c, sizeof(char));

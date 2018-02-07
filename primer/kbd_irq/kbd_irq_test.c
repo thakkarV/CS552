@@ -12,7 +12,7 @@ int main(int argc, char const * argv [])
 	int i = 0;
 	int str_size = 4;
 	char * str = malloc(sizeof(char) * str_size);
-	while ((c = kbd_busywait_getchar()) != '\n')
+	while ((c = kbd_irq_getchar()) != '\n')
 	{
 		str[i++] = c;
 		if (i >= str_size)
