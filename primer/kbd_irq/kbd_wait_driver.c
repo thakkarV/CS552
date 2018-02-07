@@ -68,7 +68,7 @@ static int __init kbd_irq_init(void)
 
 	init_waitqueue_head(&wait_q);
 	int ret = request_irq(1, irq_handler, IRQF_SHARED, "kbd_irq_handler", (void *)(irq_handler));
-	printk("<1> Registered handler with %x cookie.\n", irq_handler);
+	printk("<1> Registered handler with %x cookie.\n", (unsigned int) irq_handler);
 	return ret;
 }
 

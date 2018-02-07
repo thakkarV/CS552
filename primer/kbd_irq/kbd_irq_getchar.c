@@ -8,7 +8,7 @@
 char kbd_irq_getchar(void)
 {
 	char c;
-	int fd = open("/proc/kbd_bw", O_RDONLY);
+	int fd = open("/proc/kbd_irq", O_RDONLY);
 	ioctl(fd, KBD_IOCTL_READKEY, &c);
 	close(fd);
 	return c;
