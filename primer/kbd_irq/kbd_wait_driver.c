@@ -7,7 +7,8 @@
 #include <linux/proc_fs.h>
 #include <linux/wait.h>
 
-#include "kbd_irq_driver.h"
+#include "kbd_wait_driver.h"
+
 #define condition inb(0x64) & 0x01
 #define KBD_IOCTL_READKEY _IOR(0, 1, char)
 
@@ -22,7 +23,6 @@ kbd_irq_servicer(struct inode * inode,
 				unsigned int cmd,
 				unsigned long arg)
 {
-
 	switch (cmd)
 	{
 		case KBD_IOCTL_READKEY:
