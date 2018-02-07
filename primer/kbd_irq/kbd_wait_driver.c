@@ -66,7 +66,6 @@ static int __init kbd_irq_init(void)
 	kbd_irq_proc_entry->proc_fops = &kbd_irq_dev_proc_operations;
 
 	init_waitqueue_head(&wait_q);
-	free_irq(1, NULL);
 	return request_irq(1, irq_handler, IRQF_SHARED, "kbd_irq_handler", (void *)(irq_handler));
 }
 
