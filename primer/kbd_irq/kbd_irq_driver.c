@@ -53,6 +53,7 @@ irqreturn_t irq_handler(int irq, void * dev_id)
 
 static int __init kbd_irq_init(void)
 {
+	int ret;
 	printk("<1> Loading interrupt based KBD.\n");
 
 	// now point the ioctl vector to the service routine for the kbd_test driver
@@ -67,8 +68,8 @@ static int __init kbd_irq_init(void)
 	kbd_irq_proc_entry->proc_fops = &kbd_irq_dev_proc_operations;
 
 	init_waitqueue_head(&wait_q);
-	int ret = request_irq(1, irq_handler, IRQF_SHARED, "kbd_irq_handler", (void *)(irq_handler));
-	printk("<1> Registered handler with %x cookie.\n", (unsigned int) irq_handler);
+	ret = request_irq(1, irq_handler, IRQF_SHARED, "kbd_irq_handler", (void *)(irq_handler));
+	printk("<1> Registered handler with %x cookie. %d.\n", (unsigned int) irq_handler, ret);
 	return ret;
 }
 
