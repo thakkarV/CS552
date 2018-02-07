@@ -6,6 +6,8 @@
 #include <linux/errno.h>
 #include <linux/proc_fs.h>
 
+#include "kbd_irq_driver.h"
+
 #define KBD_WORKQ_NAME "kbd_irq_driver.c"
 
 static struct workqueue_struct * kbd_irq_workq;
@@ -19,7 +21,7 @@ static void got_char(void * scan_code)
 }
 
 
-irqreturn_t irq_handler(int irq, void * dev_id, struct pt_regs * regs)
+irqreturn_t irq_handler(int irq, void * dev_id)
 {
 	static int initialised = 0;
 	static unsigned char scan_code;
