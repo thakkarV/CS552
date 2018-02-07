@@ -19,7 +19,7 @@ int main(int argc, char const * argv [])
 	ioctl_test.status = 10;
 	ioctl_test.key = 'a';
 
-	int fd = open("/proc/kbd_test", O_RDONLY);
+	int fd = open("/proc/kbd_bw", O_RDONLY);
 
 	ioctl(fd, KBD_IOCTL_TEST, &ioctl_test);
 

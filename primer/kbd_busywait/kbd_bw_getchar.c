@@ -14,7 +14,7 @@ char kbd_busywait_getchar(void)
 		int status;
 	} action;
 
-	int fd = open("/proc/kbd_test", O_RDONLY);
+	int fd = open("/proc/kbd_bw", O_RDONLY);
 	ioctl(fd, KBD_IOCTL_READKEY, &action);
 	close(fd);
 
