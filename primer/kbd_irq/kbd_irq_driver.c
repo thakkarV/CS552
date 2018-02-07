@@ -31,12 +31,12 @@ irqreturn_t irq_handler(int irq, void * dev_id, struct pt_regs * regs)
 
 	if (initialised == 0)
 	{
-		INIT_WORK(&task, got_char, &scan_code);
+		INIT_WORK(&task, got_char);
 		initialised = 1;
 	}
 	else
 	{
-		PREPARE_WORK(&task, got_char, &scan_code);
+		PREPARE_WORK(&task, got_char);
 	}
 
 	queue_work(kbd_irq_workq, &task);
@@ -47,15 +47,15 @@ irqreturn_t irq_handler(int irq, void * dev_id, struct pt_regs * regs)
 
 static int __init kbd_irq_init(void)
 {
-	kbd_irq_dev_proc_operations.ioctl = kbd_irq_servicer;
-	kbd_irq_proc_entry = create_proc_entry("kbd_irq", 0444, NULL);
-	if(!kbd_irq_proc_entry)
-	{
-		printk("<1> Error creating /proc entry.\n");
-		return 1;
-	}
+	// kbd_irq_dev_proc_operations.ioctl = kbd_irq_servicer;
+	// kbd_irq_proc_entry = create_proc_entry("kbd_irq", 0444, NULL);
+	// if(!kbd_irq_proc_entry)
+	// {
+	// 	printk("<1> Error creating /proc entry.\n");
+	// 	return 1;
+	// }
 
-	kbd_irq_proc_entry->proc_fops = &kbd_irq_dev_proc_operations;
+	// kbd_irq_proc_entry->proc_fops = &kbd_irq_dev_proc_operations;
 
 	// setup work queue
 	kbd_irq_workq = create_workqueue(KBD_WORKQ_NAME);
@@ -67,7 +67,7 @@ static int __init kbd_irq_init(void)
 static void __exit kbd_irq_exit(void)
 {
 	printk("<1> Dumping kbd_irq Module\n");
-	remove_proc_entry("kbd_irq", NULL);
+	// remove_proc_entry("kbd_irq", NULL);
 	free_irq(1, (void *)(irq_handler));
 }
 
