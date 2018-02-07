@@ -8,7 +8,7 @@
 #include "kbd_bw_driver.h"
 
 #define KBD_IOCTL_TEST _IOW(0, 0, struct kbd_action)
-#define KBD_IOCTL_READKEY _IOR(0, 1, struct kbd_action)
+#define KBD_IOCTL_READKEY _IOR(0, 1, char)
 
 MODULE_LICENSE("GPL");
 
@@ -35,10 +35,9 @@ kbd_bw_servicer(struct inode * inode,
 		case KBD_IOCTL_READKEY:
 		{
 			char c = kbd_readkey();
-			key_event.key = c;
-			copy_to_user((struct kbd_action *)arg, &key_event, sizeof(struct kbd_action));
+			copy_to_user((char *)arg, &c, sizeof(char));
 			printk("<1> KBD Module : kbd_test_ioctl_servicer called with KBD_IOCTL_READKEY.\n");
-			printk("<1> Copied (%c,%d) to userspace\n", key_event.key, key_event.status);
+			printk("<1> Copied (%c) to userspace\n", c);
 			break;
 		}
 		default:
