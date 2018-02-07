@@ -65,6 +65,8 @@ static int __init kbd_int_init(void)
 
 static void __exit kbd_int_exit(void)
 {
+	printk("<1> Dumping kbd_irq Module\n");
+	remove_proc_entry("kbd_irq", NULL);
 	free_irq(1, (void *)(irq_handler));
 }
 
