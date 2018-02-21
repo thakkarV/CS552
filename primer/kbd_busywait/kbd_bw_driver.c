@@ -36,8 +36,8 @@ kbd_bw_servicer(struct inode * inode,
 		{
 			char c = kbd_readkey();
 			copy_to_user((char *)arg, &c, sizeof(char));
-			printk("<1> kbd_test_ioctl_servicer called with KBD_IOCTL_READKEY.\n");
-			printk("<1> Copied (%c) to userspace\n", c);
+			printk("<1> KBD Module : kbd_test_ioctl_servicer called with KBD_IOCTL_READKEY.\n");
+			printk("<1> Copied (%x) to userspace\n", c);
 			break;
 		}
 		default:

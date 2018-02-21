@@ -1,5 +1,5 @@
 ifneq ($(KERNELRELEASE),) 
-	obj-m := kbd_bw_driver.o
+	obj-m := kbd_irq_driver.o
 else
 
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build 
@@ -8,7 +8,7 @@ PWD := $(shell pwd)
 
 default: 
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules 
-	gcc -o test_busywait kbd_bw_test.c kbd_bw_getchar.c
+	gcc -o test_irq kbd_irq_test.c kbd_irq_getchar.c
 endif 
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
