@@ -38,6 +38,8 @@ print_section:
 	jcxz sub_e820
 
 	# TODO: first byte = lowest addr or highest addr on stack?
+	
+	# TODO: increment es:di by 20 bytes
 
 sub_e820:
 	
