@@ -16,26 +16,38 @@ _start:
 1:
 	lodsb
 	movb $0x0E, %ah
-	int 0x10
+	int $0x10
 	loop 1b
 
 # write hex to screen
 	movb $'0, %al
 	movb $0x0E, %ah
-	int 0x10
+	int $0x10
 	movb $'x, %al
-	movb %0x0E, %ah
-	int 0x10
+	movb $0x0E, %ah
+	int $0x10
 
 # probe memory
-	movw $0xE820, %ax
-	xorw %bx, %bx
-	movw %ss, %es:(%di) # fugure out if this is correct
-	# figure out how to set magic number for ebx
-	movw $24, %cx #verify correctness
+	movw $0xE801, %ax
+	int $0x15
 
-	int 0x15
+	# ax holds kB between 1-16 MB
+	# bx holds number of 64k pages above 16 MB 
 
+	# account for the lower 1 meg of bios memory
+	addw $0x400, %ax
+
+	# copy everything over
+	movw %ax, %cx
+	movw %bx, %dx
+
+	# DO FANCY TRICKS HERE
+
+	shr $8, %ax
+	call print
+	movw %cx, %ax
+	andb $0xFF, %ax
+	call print
 
 # print out units
 	leaw memunit, %si
@@ -43,7 +55,7 @@ _start:
 1:
 	lodsb
 	movb $0x0E, %ah
-	int 0x10
+	int $0x10
 	loop 1b
 
 	jmp end
@@ -57,11 +69,11 @@ print:
 	shrb $4, %al
 	cmpb $10, %al
 	jge 1f
-	addb %48, %al
+	addb $48, %al
 	jmp 2f
 1:	addb $55, %al
 2:	movb $0x0E, %ah
-	int 0x10
+	int $0x10
 
 # print LSB
 	movb %dl, %al
@@ -70,7 +82,7 @@ print:
 	jge 1f
 1:	addb $55, %al
 2:	movb $0x0E, %ah
-	int 0x10
+	int $0x10
 
 	popw %dx
 	ret
