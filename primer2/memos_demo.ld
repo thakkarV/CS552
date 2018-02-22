@@ -3,6 +3,6 @@ OUTPUT_ARCH(i386)
 ENTRY(_start)
 SECTIONS
 {
-	. = 0x4096;
+	. = 0x7C00;
 	.text : { *(.*) }
 }

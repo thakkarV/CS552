@@ -7,7 +7,7 @@ _start:
 	movw %ax, %ss
 	xorw %sp, %sp
 	
-	movw $0x7C0, %dx
+	movw $0x0, %dx
 	movw %dx, %ds
 
 # print out welcome message
