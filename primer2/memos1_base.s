@@ -51,8 +51,8 @@ sub_e820:
 	test %ebx, %ebx
 	je end_of_list
 
-	# call e820 again for next section
-	jmp sub_e820
+	# print current result then call e820 again for next section
+	jmp print_section
 
 end_of_list:
 	# print successful read message for user
