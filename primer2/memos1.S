@@ -3,16 +3,16 @@
 
 _start:
 	# setup stack
-	movw $0x9000, %ax
-	movw %ax, %ss
+	mov $0x9000, %ax
+	mov %ax, %ss
 	xorw %sp, %sp
 	
-	movw $0x7C0, %dx
-	movw %dx, %ds
+	mov $0x7C0, %dx
+	mov %dx, %ds
 
 # print out welcome message
 	leaw msg, %si
-	movw len_msg, %cx
+	mov len_msg, %cx
 1:
 	lodsb
 	movb $0x0E, %ah
@@ -28,18 +28,18 @@ _start:
 	int 0x10
 
 # probe memory
-	movw $0xE820, %ax
+	mov $0xE820, %ax
 	xorw %bx, %bx
-	movw %ss, %es:(%di) # fugure out if this is correct
+	mov %ss, %es:(%di) # fugure out if this is correct
 	# figure out how to set magic number for ebx
-	movw $24, %cx #verify correctness
+	mov $24, %cx #verify correctness
 
 	int 0x15
 
 
 # print out units
 	leaw memunit, %si
-	movw len_memunit, %cx
+	mov len_memunit, %cx
 1:
 	lodsb
 	movb $0x0E, %ah

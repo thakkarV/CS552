@@ -3,16 +3,16 @@
 
 _start:
 	# setup stack
-	movw $0x9000, %ax
-	movw %ax, %ss
+	mov $0x9000, %ax
+	mov %ax, %ss
 	xorw %sp, %sp
 	
-	movw $0x0, %dx
-	movw %dx, %ds
+	mov $0x0, %dx
+	mov %dx, %ds
 
 # print out welcome message
 	leaw msg, %si
-	movw len_msg, %cx
+	mov len_msg, %cx
 1:
 	lodsb
 	movb $0x0E, %ah
@@ -28,7 +28,7 @@ _start:
 	int $0x10
 
 # probe memory
-	movw $0xE801, %ax
+	mov $0xE801, %ax
 	int $0x15
 
 	# ax holds kB between 1-16 MB
@@ -38,20 +38,20 @@ _start:
 	addw $0x400, %ax
 
 	# copy everything over
-	movw %ax, %cx
-	movw %bx, %dx
+	mov %ax, %cx
+	mov %bx, %dx
 
 	# DO FANCY TRICKS HERE
 
 	shr $8, %ax
 	call print
-	movw %cx, %ax
+	mov %cx, %ax
 	andb $0xFF, %ax
 	call print
 
 # print out units
 	leaw memunit, %si
-	movw len_memunit, %cx
+	mov len_memunit, %cx
 1:
 	lodsb
 	movb $0x0E, %ah

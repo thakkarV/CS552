@@ -3,63 +3,93 @@
 
 _start:
 	# do setup stuff here
-	movw $0x9000, %ax
-	movw %ax, %ss
-	xorw %sp, %sp 		# FIXME: why set sp to 0?
+	mov $0x9000, %ax
+	mov %ax, %ss
+	xor %sp, %sp
 
-first_e820:
+	# print welcome message
+	lea msg_welcome, %si
+	mov len_msg_welcome, %cx
+1:
+	lodsb
+	movb $0x0E, %ah
+	int $0x10
+	loop 1b
 
 	# FIXME: is this correct?
 	# set ES:DI to destination buffer
-	movw %ss, %ax
-	movw %ax, %es
-	xorw %di, %di
+	# we set this up at 0x7E00, guaranteed free section until 0x0007FFFF
+	mov $0x7E0, %ax
+	mov %ax, %es
+	mov $0x0, %di
 
 	# clear EBX
 	xor %ebx, %ebx
 
-	# set EDX to the magic number 0x534D4150
-	mov $0x534D4150, %edx
+	# start E820
+	jmp do_e820	
 
+
+do_e820:
 	# set EAX to 0xE820, ECX to 24 bytes
 	mov $0xE820, %eax
 	mov $24, %ecx
+	# set EDX to the magic number 0x534D4150
+	mov $0x534D4150, %edx
+
+	# raise interrupt for getting next section
 	int $0x15
 
-	# first call failed if carry==1 or eax!=0x534D4150
-	jc failed
+	# first call err if eax!=0x534D4150 or carry==1
 	mov $0x534D4150, %edx
 	cmp %eax, %edx
-	jne failed
+	jne err
+	jc err
+
+	# if error checks dpass, print section type
+	jmp print_section
+
 
 print_section:
-
 	# skip if 0 length entry
-	jcxz sub_e820
+	jcxz do_e820
 
 	# TODO: first byte = lowest addr or highest addr on stack?
 	
-	# TODO: increment es:di by 20 bytes
 
-sub_e820:
-	
-	# eax and ecx must be set again for subsequent e820 calls
-	mov $0xE820, %eax
-	mov $24, %ecx
-	int $0x15
+	# TODO: increment es:di by %cl bytes
 
-	# end of list if carry==1 or ebx==0
-	jc end_of_list
-	test %ebx, %ebx
-	je end_of_list
+	# finally, go to the next memory section
+	jmp do_e820
 
-	# print current result then call e820 again for next section
-	jmp print_section
 
-end_of_list:
+end:
 	# print successful read message for user
 	hlt
 
-failed:
+
+err:
+	call print_err
 	# print error message for user
 	hlt
+
+
+print_err:
+	lea msg_err, %si
+	mov len_msg_err, %cx
+1:
+	lodsb
+	movb $0x0E, %ah
+	int $0x10
+	loop 1b
+
+
+msg_err: .ascii "Error"
+len_msg_err: .word . - msg_err
+
+msg_welcome: .ascii "Welcome to Memos-1\nMemory sections are:\n"
+len_msg_welcome: .word . - msg_welcome
+
+	.org 0x1FE
+	.byte 0x55
+	.byte 0xAA
