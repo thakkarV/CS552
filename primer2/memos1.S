@@ -188,8 +188,8 @@ print_str:
 msg_welcome: .asciz "MemOS: Welcome *** System Memory is: "
 len_msg_welcome: .word . - msg_welcome
 
-msg_units: .asciz "MB\010"
-len_msg_unit: .word . - msg_units
+msg_units: .asciz "MB\015\012"
+len_msg_units: .word . - msg_units
 
 msg_addr_range: .asciz "Address range ["
 len_msg_addr_range: .word . - msg_addr_range
@@ -198,25 +198,25 @@ msg_status: .asciz "] status: "
 len_msg_status: .word . - msg_status
 
 # Memory Type Strings
-type_usable: .asciz "USABLE RAM\010"
+type_usable: .asciz "USABLE RAM\015\012"
 len_type_usable: .word . - type_usable
 
-type_reserved: .asciz "RESERVED"
+type_reserved: .asciz "RESERVED\015\012"
 len_type_reserved: .word . - type_reserved
 
-type_acpi_reclaimable: .asciz "ACPI RECLAIMABLE MEMORY\010"
+type_acpi_reclaimable: .asciz "ACPI RECLAIMABLE MEMORY\015\012"
 len_type_acpi_reclaimable: .word . - type_acpi_reclaimable
 
-type_acpi_nvs: .asciz "ACPI NVS MEMORY\012"
+type_acpi_nvs: .asciz "ACPI NVS MEMORY\015\012"
 len_type_acpi_nvs: .word . - type_acpi_nvs
 
-type_badmem: .asciz "BAD MEMORY\010"
+type_badmem: .asciz "BAD MEMORY\015\012"
 len_type_badmem: .word . - type_badmem
 
-msg_done: .asciz "Done\010"
+msg_done: .asciz "Done\015\012"
 len_msg_done: .word . - msg_done
 
-msg_err: .asciz "Error\010"
+msg_err: .asciz "Error\015\012"
 len_msg_err: .word . - msg_err
 
 # ######## #
