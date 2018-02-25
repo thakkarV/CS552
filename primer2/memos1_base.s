@@ -28,7 +28,7 @@ _start:
 	xor %bp, %bp
 
 	# start E820
-	jmp do_e820	
+	jmp do_e820
 
 
 do_e820:
@@ -52,8 +52,8 @@ do_e820:
 	# ecx gets the length
 	# or the length with base of see if length is 0
 	# if true, skip this entry, else go to print statements
-	mov %es:(%di + 2), %eax
-	mov %es:(%di + 6), %ecx
+	mov %es:2(%di), %eax
+	mov %es:6(%di), %ecx
 	or %eax, %ecx
 	jz do_e820
 
@@ -65,7 +65,7 @@ print_section:
 	# print addr string first
 	lea msg_addr_range, %si
 	mov len_msg_addr_range, %cx
-	call print
+	call print_str
 
 	# print memory range
 	# TODO: start
@@ -83,35 +83,35 @@ print_section:
 	call print_str
 
 	# assume this entry is always 20 bytes long - ACPI 3.x unsupported
-	mov %es:(%di + 16), %eax
+	mov %es:16(%di), %eax
 
 	# jump table for printing the types
-.type1
-	cmp %eax, $1
+.type1:
+	cmp $1, %eax
 	jne .type2
 	lea type_usable, %si
 	mov len_type_usable, %cx
 	call print_str
-.type2
-	cmp %eax, $2
+.type2:
+	cmp $2, %eax
 	jne .type3
 	lea type_reserved, %si
 	mov len_type_reserved, %cx
 	call print_str
-.type3
-	cmp %eax, $3
+.type3:
+	cmp $3, %eax
 	jne .type4
 	lea type_acpi_reclaimable, %si
 	mov len_type_acpi_reclaimable, %cx
 	call print_str
-.type4
-	cmp %eax, $4
+.type4:
+	cmp $4, %eax
 	jne .type5
 	lea type_acpi_nvs, %si
 	mov len_type_acpi_nvs, %cx
 	call print_str
-.type5
-	cmp %eax, $5
+.type5:
+	cmp $5, %eax
 	jne err
 	lea type_badmem, %si
 	mov len_type_badmem, %cx
@@ -122,7 +122,7 @@ print_section:
 	add $20, %di
 	# increment total number of entries seen
 	inc %bp
-	
+
 	# End of list if EBX is 0
 	test %ebx, %ebx
 	jz end
@@ -144,7 +144,7 @@ err:
 	hlt
 
 
-print_str:	
+print_str:
 	# the string to be printed is passed through si
 	# length of the string is passed through cx
 	push %ax
@@ -180,8 +180,8 @@ len_type_usable: .word . - type_usable
 type_reserved: .asciz "RESERVED"
 len_type_reserved: .word . - type_reserved
 
-type_acpi_recliamable: .asciz "ACPI RECLAIMABLE MEMORY"
-len_type_acpi_recliamable: .word . - type_acpi_recliamable
+type_acpi_reclaimable: .asciz "ACPI RECLAIMABLE MEMORY"
+len_type_acpi_reclaimable: .word . - type_acpi_reclaimable
 
 type_acpi_nvs: .asciz "ACPI NVS MEMORY"
 len_type_acpi_nvs: .word . - type_acpi_nvs

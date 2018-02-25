@@ -1,0 +1,2 @@
+all:
+    as --32 memos1_base.s -o memos1_base.o
