@@ -123,46 +123,42 @@ print_region:
 	jne .type2
 	lea type_usable, %si
 	mov len_type_usable, %cx
-	call print_str
 	jmp .return
 .type2:
 	cmp $2, %eax
 	jne .type3
 	lea type_reserved, %si
 	mov len_type_reserved, %cx
-	call print_str
 	jmp .return
 .type3:
 	cmp $3, %eax
 	jne .type4
 	lea type_acpi_reclaimable, %si
 	mov len_type_acpi_reclaimable, %cx
-	call print_str
 	jmp .return
 .type4:
 	cmp $4, %eax
 	jne .type5
 	lea type_acpi_nvs, %si
 	mov len_type_acpi_nvs, %cx
-	call print_str
 	jmp .return
 .type5:
 	cmp $5, %eax
 	jne err
 	lea type_badmem, %si
 	mov len_type_badmem, %cx
-	call print_str
 .return:
 	# else, go to the next memory section
+	call print_str
 	pop %eax
 	pop %ecx
 	ret
 
 
 end:
-	lea msg_done, %si
-	mov len_msg_done, %cx
-	call print_str
+	# lea msg_done, %si
+	# mov len_msg_done, %cx
+	# call print_str
 	sysexit
 
 
@@ -218,8 +214,8 @@ len_type_acpi_nvs: .word . - type_acpi_nvs
 type_badmem: .asciz "BAD MEMORY\015\012"
 len_type_badmem: .word . - type_badmem
 
-msg_done: .asciz "Done\015\012"
-len_msg_done: .word . - msg_done
+# msg_done: .asciz "Done\015\012"
+# len_msg_done: .word . - msg_done
 
 msg_err: .asciz "Error\015\012"
 len_msg_err: .word . - msg_err
