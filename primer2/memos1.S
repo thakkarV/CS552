@@ -61,15 +61,10 @@ loop_e820:
 	cmp %eax, %edx
 	jne err
 
-	# skip if 0 length entry
 	# eax gets the base address of the memory
 	# ecx gets the length
-	# or the length with base of see if length is 0
-	# if true, skip this entry, else go to print statements
 	mov %es:2(%di), %eax
 	mov %es:6(%di), %ecx
-	or %eax, %ecx
-	jz loop_e820
 
 	# if error checks pass, print section type
 	call print_region
