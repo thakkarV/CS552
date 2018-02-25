@@ -1,3 +1,6 @@
+# TODO: try if switch saves anything
+# TODO: add back skuip 0 length
+
 	.global _start
 	.code16
 
@@ -27,10 +30,10 @@ _start:
 	mov %ax, %es
 	xor %di, %di
 
-
-first_e820:
 	# clear EBX
 	xor %ebx, %ebx
+
+do_e820:
 
 	# EAX = 0xE820
 	# EBX = 0 (BIOS book-keeping for E820 calls, do not touch afterwards)
@@ -41,36 +44,18 @@ first_e820:
 	mov $0xE820, %eax
 	int $0x15
 
-	# Error if eax!=0x534D4150 or carry==1 (only for the first call)
-	mov $0x534D4150, %eax
-	cmp %eax, %edx
-	jne err
-	jc err
-
-	call print_region
-
-
-loop_e820:
-	mov $0xE820, %eax
-	mov $24, %ecx
-	mov $0x534D4150, %edx
-	int $0x15
-
-	# Error if edx!=0x534D4150
-	mov $0x534D4150, %eax
-	cmp %eax, %edx
-	jne err
-
-	# eax gets the base address of the memory
-	# ecx gets the length
-	mov %es:2(%di), %eax
-	mov %es:6(%di), %ecx
-
-	# if error checks pass, print section type
-	call print_region
-
-	# End of list if EBX is 0, or if carry flag is set
+	# Done or Error if eax!=0x534D4150 or carry==1
 	jc end
+	mov $0x534D4150, %eax
+	cmp %eax, %edx
+	jne end
+
+
+
+	# print info for this region
+	call print_region
+
+	# check if last entry
 	test %ebx, %ebx
 	jz end
 
@@ -79,11 +64,10 @@ loop_e820:
 	addw %cx, %di
 
 	# Otherwise go to the next region
-	jmp loop_e820
-
+	jmp do_e820
 
 print_region:
-	push %ecx
+	push %cx
 	push %eax
 
 	# print addr string first
@@ -91,15 +75,19 @@ print_region:
 	mov len_msg_addr_range, %cx
 	call print_str
 
-	# print memory range
-	# TODO: print region start
+	# print region start addr
+	# eax gets the base address of the memory
+	mov %es:2(%di), %eax
 
 	# colon
 	movb $0x3A, %al
 	movb $0x0E, %ah
 	int $0x10
 
-	# TODO: print region end
+	# print region end addr
+	# ecx gets the length
+	mov %es:6(%di), %ecx
+	add %ecx, %eax
 
 	# print status string
 	lea msg_status, %si
@@ -111,55 +99,40 @@ print_region:
 
 	# jump table for printing the types
 .type1:
-	cmp $1, %eax
+	cmp $1, %ax
 	jne .type2
 	lea type_usable, %si
 	mov len_type_usable, %cx
 	jmp .return
 .type2:
-	cmp $2, %eax
+	cmp $2, %ax
 	jne .type3
 	lea type_reserved, %si
 	mov len_type_reserved, %cx
 	jmp .return
 .type3:
-	cmp $3, %eax
+	cmp $3, %ax
 	jne .type4
 	lea type_acpi_reclaimable, %si
 	mov len_type_acpi_reclaimable, %cx
 	jmp .return
 .type4:
-	cmp $4, %eax
+	cmp $4, %ax
 	jne .type5
 	lea type_acpi_nvs, %si
 	mov len_type_acpi_nvs, %cx
 	jmp .return
 .type5:
-	cmp $5, %eax
-	jne err
+	cmp $5, %ax
+	jne end
 	lea type_badmem, %si
 	mov len_type_badmem, %cx
 .return:
 	# else, go to the next memory section
 	call print_str
 	pop %eax
-	pop %ecx
+	pop %cx
 	ret
-
-
-end:
-	# lea msg_done, %si
-	# mov len_msg_done, %cx
-	# call print_str
-	sysexit
-
-
-err:
-	lea msg_err, %si
-	mov len_msg_err, %cx
-	call print_str
-	sysexit
-
 
 print_str:
 	# the string to be printed is passed through si
@@ -174,6 +147,47 @@ print_str:
 	pop %eax
 	ret
 
+# prints the 32 bit number passed through in EAX in decimal
+print_num:
+	# save regs
+	push %ebx
+	push %ecx
+	push %edx
+
+	# load 10 and 32
+	mov $10, %bx
+	mov $16, %cx
+.loop_div:
+	# devide EAX by BX
+	# stores quotient in EAX
+	# stores remainder in DX
+	div %bx
+	# store modulo of division onto the stack
+	push %dx
+	dec %cx
+	cmp $0, %cx
+	jne .loop_div
+
+	mov $16, %cx
+.loop_print:
+	pop %dx
+	# add 48 as the ASCII offset
+	add $48, %dx
+	movb %dl, %al
+	movb $0x0E, %ah
+	int $0x10
+	dec %cx
+	cmp $0, %cx
+	jne .loop_print
+	# print dx as a ascii char
+
+	pop %edx
+	pop %ecx
+	pop %ebx
+	ret
+
+end:
+	sysexit
 
 # ####### #
 # STRINGS #
@@ -205,12 +219,6 @@ len_type_acpi_nvs: .word . - type_acpi_nvs
 
 type_badmem: .asciz "BAD MEMORY\015\012"
 len_type_badmem: .word . - type_badmem
-
-# msg_done: .asciz "Done\015\012"
-# len_msg_done: .word . - msg_done
-
-msg_err: .asciz "Error\015\012"
-len_msg_err: .word . - msg_err
 
 # ######## #
 # MARK MBR #
