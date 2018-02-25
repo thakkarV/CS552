@@ -8,7 +8,7 @@ _start:
 	mov %ax, %ss
 
 	# SP init at 0x20000, giving 8K of stack space
-	mov $0x2000, %sp
+	mov $0x1000, %sp
 
 	# print welcome message
 	lea msg_welcome, %si
@@ -23,7 +23,7 @@ _start:
 	call print_str
 
 	# set dest buffer ES:DI at 0x30000, free space till 0x7FFFF
-	mov $0x3000, %ax
+	mov $0x2000, %ax
 	mov %ax, %es
 	xor %di, %di
 
