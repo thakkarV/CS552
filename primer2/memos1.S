@@ -2,9 +2,6 @@
 	.code16
 
 _start:
-	# DS starts at 0x7C00
-	mov $0x7C0, %ax
-	mov %ax, %ds
 
 	# SS starts at 0x7E00
 	mov $0x7E0, %ax
