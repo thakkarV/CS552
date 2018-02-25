@@ -75,15 +75,7 @@ print_region:
 
 	# print region start addr
 	# eax gets the base address of the memory
-
-	mov %es:2(%di), %eax
-
-	# xor %eax, %eax
-	# mov %es, %ax
-	# shl $4, %ax
-	# add %di, %ax
-	# add $2, %ax
-	# lea %ax, %ax
+	mov %es:4(%di), %eax
 	call print_num
 
 	# colon
@@ -93,8 +85,9 @@ print_region:
 
 	# print region end addr
 	# ecx gets the length
-	mov %es:6(%di), %ecx
+	mov %es:12(%di), %ecx
 	add %ecx, %eax
+	call print_num
 
 	# print status string
 	lea msg_status, %si
@@ -157,15 +150,16 @@ print_str:
 # prints the 32 bit number passed through in EAX in decimal
 print_num:
 	# save regs
+	push %eax
 	push %ebx
 	push %ecx
 	push %edx
 
-	# load 10 and 32
 	mov $10, %bx
 	mov $10, %cx
 
 .loop_div:
+	# dx needs to be set to 0 before div call
 	xor %dx, %dx
 	# devide EAX by BX
 	# stores quotient in EAX
@@ -173,11 +167,9 @@ print_num:
 	div %bx
 	# store modulo of division onto the stack
 	push %dx
-	dec %cx
-	cmp $0, %cx
-	jne .loop_div
+	loop .loop_div
 
-	mov $16, %cx
+	mov $10, %cx
 .loop_print:
 	pop %dx
 	# add 48 as the ASCII offset
@@ -185,14 +177,13 @@ print_num:
 	movb %dl, %al
 	movb $0x0E, %ah
 	int $0x10
-	dec %cx
-	cmp $0, %cx
-	jne .loop_print
+	loop .loop_print
 	# print dx as a ascii char
 
 	pop %edx
 	pop %ecx
 	pop %ebx
+	pop %eax
 	ret
 
 end:
