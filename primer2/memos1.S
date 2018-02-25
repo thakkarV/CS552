@@ -50,8 +50,6 @@ do_e820:
 	cmp %eax, %edx
 	jne end
 
-
-
 	# print info for this region
 	call print_region
 
@@ -77,7 +75,16 @@ print_region:
 
 	# print region start addr
 	# eax gets the base address of the memory
+
 	mov %es:2(%di), %eax
+
+	# xor %eax, %eax
+	# mov %es, %ax
+	# shl $4, %ax
+	# add %di, %ax
+	# add $2, %ax
+	# lea %ax, %ax
+	call print_num
 
 	# colon
 	movb $0x3A, %al
@@ -156,8 +163,10 @@ print_num:
 
 	# load 10 and 32
 	mov $10, %bx
-	mov $16, %cx
+	mov $10, %cx
+
 .loop_div:
+	xor %dx, %dx
 	# devide EAX by BX
 	# stores quotient in EAX
 	# stores remainder in DX
