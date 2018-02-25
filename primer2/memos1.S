@@ -20,6 +20,11 @@ _start:
 
 	# TODO: Print total system memory here in MBs
 
+	# print units
+	lea msg_units, %si
+	mov len_msg_units, %cx
+	call print_str
+
 	# set dest buffer ES:DI at 0x30000, free space till 0x7FFFF
 	mov $0x3000, %ax
 	mov %ax, %es
