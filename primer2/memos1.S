@@ -78,7 +78,8 @@ loop_e820:
 	jz end
 
 	# increment DI by list entry size stored in CL (i.e. CX low 8 bits)
-	addw %cl, %di
+	andw $0xFF, %cx
+	addw %cx, %di
 
 	# Otherwise go to the next region
 	jmp loop_e820
