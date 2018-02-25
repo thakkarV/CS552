@@ -182,6 +182,40 @@ print_str:
 	pop %eax
 	ret
 
+# prints the 32 bit number passed through in EAX in decimal
+print_num:
+	# save regs
+	push %ebx
+	push %ecx
+	push %edx
+
+	# load 10 and 32
+	mov $10, %bx
+	mov $16, %cx
+.loop_div:
+	# devide EAX by BX
+	# stores quotient in EAX
+	# stores remainder in DX
+	div %bx
+	# store modulo of division onto the stack
+	push %dx
+	loop .loop_div
+
+	mov $16, %cx
+.loop_print:
+	pop %dx
+	# add 48 as the ASCII offset
+	add $48, %dl
+	mov %dl, %al
+	mov $0x0E, %ah
+	int $0x10
+	loop .loop_print
+	# print dx as a ascii char
+
+	pop %edx
+	pop %ecx
+	pop %ebx
+	ret
 
 # ####### #
 # STRINGS #
