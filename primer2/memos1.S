@@ -75,7 +75,7 @@ print_region:
 
 	# print region start addr
 	# eax gets the base address of the memory
-	mov %es:4(%di), %eax
+	movl %es:0(%di), %eax
 	call print_num
 
 	# colon
@@ -85,8 +85,8 @@ print_region:
 
 	# print region end addr
 	# ecx gets the length
-	mov %es:12(%di), %ecx
-	add %ecx, %eax
+	movl %es:8(%di), %ecx
+	add %eax, %ecx
 	call print_num
 
 	# print status string
@@ -95,7 +95,7 @@ print_region:
 	call print_str
 
 	# assume this entry is always 20 bytes long - ACPI 3.x unsupported
-	mov %es:16(%di), %eax
+	movl %es:16(%di), %eax
 
 	# jump table for printing the types
 .type1:
