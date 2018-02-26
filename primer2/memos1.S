@@ -107,7 +107,7 @@ print_region:
 	# print region end addr
 	# ecx gets the length
 	movl %es:8(%di), %ecx
-	add %eax, %ecx
+	add %ecx, %eax
 	call print_num
 
 	# print status string
@@ -171,7 +171,6 @@ print_str:
 # prints the 32 bit number passed through in EAX in decimal
 print_num:
 	# save regs
-	push %eax
 	push %ebx
 	push %ecx
 	push %edx
@@ -204,7 +203,6 @@ print_num:
 	pop %edx
 	pop %ecx
 	pop %ebx
-	pop %eax
 	ret
 
 end:
