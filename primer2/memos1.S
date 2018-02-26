@@ -21,11 +21,14 @@ _start:
 	# E801 to get total sysmem
 	xor %cx, %cx
 	xor %dx, %dx
-	mov %0xE801, %ax
+	mov $0xE801, %ax
 	int $0x15
 
 	# ax holds kB between 1-16 MB
 	shr $10, %ax
+
+	# account for the lower 1 meg of bios memory
+	add $1, %ax
 
 	# bx holds number of 64k pages above 16 MB 
 	# convert to MB by division by 16
@@ -34,10 +37,9 @@ _start:
 	# sum up total sysmem
 	add %bx, %ax
 
-	# account for the lower 1 meg of bios memory
-	add $1, %ax
-
+	# issue print
 	call print_num
+	
 	# print units
 	lea msg_units, %si
 	mov len_msg_units, %cx
