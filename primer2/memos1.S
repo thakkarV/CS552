@@ -5,7 +5,6 @@
 	.code16
 
 _start:
-
 	# SS starts at 0x7E00
 	mov $0x7E0, %ax
 	mov %ax, %ss
@@ -28,18 +27,19 @@ _start:
 	mov %ax, %es
 	xor %di, %di
 
-	# clear EBX
+	# while doing E820, keep count of total regions in BP
+	xor %bp, %bp
+	
+	# clear EBX for E820
 	xorl %ebx, %ebx
 
-
 do_e820:
-
 	# EAX = 0xE820
 	# EBX = 0 (BIOS book-keeping for E820 calls, do not touch afterwards)
 	# ECX = 0d24 (ask for 24 bytes in the entry)
 	# EDX = 0x534D4150
 	movl $0x534D4150, %edx
-	mov $24, %ecx
+	movl $24, %ecx
 	mov $0xE820, %ax
 	int $0x15
 
@@ -49,24 +49,29 @@ do_e820:
 	cmpl %eax, %edx
 	jne end
 
-	# print info for this region
-	call print_region
-
-	# check if last entry
+	# increment numebr of memory regions for print call counter
+	inc %bp
+	
+	# check if last entry, if yes, jmp print
 	testl %ebx, %ebx
-	jz end
+	jz print_region
 
 	# increment DI by list entry size stored in CL (i.e. CX low 8 bits)
-	and $0x00FF, %cx
-	add %cx, %di
+	add $24, %di
 
-	# Otherwise go to the next region
 	jmp do_e820
 
 print_region:
-	push %cx
-	pushl %eax
+	# TODO: pint total memory here first
 
+	# print units
+	lea msg_units, %si
+	mov len_msg_units, %cx
+	call print_str
+
+	# reset di to 0 so we can restart indexing into buffer for printouts
+	xor %di, %di
+.print_start:
 	# print addr string first
 	lea msg_addr_range, %si
 	mov len_msg_addr_range, %cx
@@ -83,7 +88,6 @@ print_region:
 	movb $0x0E, %ah
 	int $0x10
 	pop %ax
-
 
 	# print region end addr
 	# ECX stores the length, end adrr = begin + len - 1
@@ -132,10 +136,12 @@ print_region:
 	mov len_type_badmem, %cx
 .return:
 	# else, go to the next memory section
-	call print_str
-	popl %eax
-	pop %cx
-	ret
+	dec %bp
+	add $24, %di
+	cmp $0, %bp
+	jnz .print_start
+	jmp end
+
 
 print_str:
 	# the string to be printed is passed through si
@@ -205,7 +211,7 @@ len_msg_units: .word . - msg_units
 msg_addr_range: .asciz "Address range ["
 len_msg_addr_range: .word . - msg_addr_range
 
-msg_status: .asciz "] status: "
+msg_status: .asciz " status: "
 len_msg_status: .word . - msg_status
 
 # Memory Type Strings
