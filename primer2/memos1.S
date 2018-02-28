@@ -17,11 +17,6 @@ _start:
 	mov len_msg_welcome, %cx
 	call print_str
 
-	# print units
-	lea msg_units, %si
-	mov len_msg_units, %cx
-	call print_str
-
 	# set dest buffer ES:DI at 0x20000, free space till 0x7FFFF
 	mov $0x2000, %ax
 	mov %ax, %es
@@ -71,6 +66,7 @@ print_region:
 
 	# reset di to 0 so we can restart indexing into buffer for printouts
 	xor %di, %di
+
 .print_start:
 	# print addr string first
 	lea msg_addr_range, %si
@@ -163,7 +159,7 @@ print_num:
 	pushl %ecx
 	pushl %edx
 
-	mov $10, %bx
+	movl $10, %ebx
 	mov $10, %cx
 
 .loop_div:
