@@ -33,7 +33,7 @@ _start:
 	# until now as a value pushed on the stack
 	# whenever we detect a usable region,
 	# pop it from stack, add lenght, push it back
-	movl $0x0, $ecx
+	movl $0x0, %ecx
 	pushl $ecx
 
 do_e820:
