@@ -86,17 +86,18 @@ print_region:
 	call print_num
 
 	# colon
-	pushl %eax
+	push %ax
 	movb $0x3A, %al
 	movb $0x0E, %ah
 	int $0x10
-	popl %eax
+	pop %ax
 
 
 	# print region end addr
-	# ecx gets the length
+	# ECX stores the length, end adrr = begin + len - 1
 	movl %es:8(%di), %ecx
-	addl %ecx, %eax
+ 	addl %ecx, %eax
+	subl $0x1, %eax
 	call print_num
 
 	# print status string
@@ -169,18 +170,18 @@ print_num:
 
 .loop_div:
 	# dx needs to be set to 0 before div call
-	xor %dx, %dx
+	xorl %edx, %edx
 	# devide EAX by BX
 	# stores quotient in EAX
 	# stores remainder in DX
-	div %bx
+	divl %ebx
 	# store modulo of division onto the stack
-	push %dx
+	pushl %edx
 	loop .loop_div
 
 	mov $10, %cx
 .loop_print:
-	pop %dx
+	popl %edx
 	# add 48 as the ASCII offset
 	add $48, %dx
 	movb %dl, %al
@@ -195,7 +196,10 @@ print_num:
 	ret
 
 end:
-	sysexit
+.stop:
+	hlt
+	jmp .stop
+
 
 # ####### #
 # STRINGS #
