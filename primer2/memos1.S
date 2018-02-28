@@ -1,6 +1,12 @@
 # TODO: try if switch saves anything
 # TODO: add back skuip 0 length
 
+# memory clobbering
+# correct suffix
+# Address
+# segment regs
+
+
 	.global _start
 	.code16
 
@@ -10,7 +16,7 @@ _start:
 	mov $0x7E0, %ax
 	mov %ax, %ss
 
-	# SP init at 0x20000, giving 8K of stack space
+	# SP init at 0x10000, giving 8K of stack space
 	mov $0x1000, %sp
 
 	# print welcome message
@@ -30,7 +36,7 @@ _start:
 	# account for the lower 1 meg of bios memory
 	add $1, %ax
 
-	# bx holds number of 64k pages above 16 MB 
+	# bx holds number of 64k pages above 16 MB
 	# convert to MB by division by 16
 	shr $4, %bx
 
@@ -39,20 +45,19 @@ _start:
 
 	# issue print
 	call print_num
-	
+
 	# print units
 	lea msg_units, %si
 	mov len_msg_units, %cx
 	call print_str
 
-	# set dest buffer ES:DI at 0x30000, free space till 0x7FFFF
+	# set dest buffer ES:DI at 0x20000, free space till 0x7FFFF
 	mov $0x2000, %ax
 	mov %ax, %es
 	xor %di, %di
 
 	# clear EBX
-	xor %ebx, %ebx
-
+	xorl %ebx, %ebx
 
 do_e820:
 
@@ -60,14 +65,14 @@ do_e820:
 	# EBX = 0 (BIOS book-keeping for E820 calls, do not touch afterwards)
 	# ECX = 0d24 (ask for 24 bytes in the entry)
 	# EDX = 0x534D4150
-	mov $0x534D4150, %edx
-	mov $24, %ecx
-	mov $0xE820, %eax
+	movl $0x534D4150, %edx
+	movl $24, %ecx
+	movl $0xE820, %eax
 	int $0x15
 
 	# Done or Error if eax!=0x534D4150 or carry==1
 	jc end
-	mov $0x534D4150, %eax
+	movl $0x534D4150, %eax
 	cmp %eax, %edx
 	jne end
 
@@ -75,7 +80,7 @@ do_e820:
 	call print_region
 
 	# check if last entry
-	test %ebx, %ebx
+	testl %ebx, %ebx
 	jz end
 
 	# increment DI by list entry size stored in CL (i.e. CX low 8 bits)
@@ -87,7 +92,7 @@ do_e820:
 
 print_region:
 	push %cx
-	push %eax
+	pushl %eax
 
 	# print addr string first
 	lea msg_addr_range, %si
@@ -107,7 +112,7 @@ print_region:
 	# print region end addr
 	# ecx gets the length
 	movl %es:8(%di), %ecx
-	add %ecx, %eax
+	addl %ecx, %eax
 	call print_num
 
 	# print status string
@@ -151,29 +156,29 @@ print_region:
 .return:
 	# else, go to the next memory section
 	call print_str
-	pop %eax
+	popl %eax
 	pop %cx
 	ret
 
 print_str:
 	# the string to be printed is passed through si
 	# length of the string is passed through cx
-	push %eax
+	pushl %eax
 1:
 	lodsb
 	movb $0x0E, %ah
 	int $0x10
 	loop 1b
 
-	pop %eax
+	popl %eax
 	ret
 
 # prints the 32 bit number passed through in EAX in decimal
 print_num:
 	# save regs
-	push %ebx
-	push %ecx
-	push %edx
+	pushl %ebx
+	pushl %ecx
+	pushl %edx
 
 	mov $10, %bx
 	mov $10, %cx
@@ -200,9 +205,9 @@ print_num:
 	loop .loop_print
 	# print dx as a ascii char
 
-	pop %edx
-	pop %ecx
-	pop %ebx
+	popl %edx
+	popl %ecx
+	popl %ebx
 	ret
 
 end:
