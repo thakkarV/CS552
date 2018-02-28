@@ -26,7 +26,7 @@ stack_top:
 _start:
 
     mov $stack_top, %esp    /* make stack pointer point to top of stack */
-    call kernel             /* our kernel is ready to be executed */
+    call kernel_main        /* our kernel is ready to be executed */
 
 1:	hlt
 	jmp 1b
