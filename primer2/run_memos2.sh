@@ -5,7 +5,7 @@ LDFILE="memos2"
 IMGFILE="memos2img"
 MNTDEST="/mnt/C"
 
-as --32 $ASFILE.s -o $ASFILE.o
+as --32 $ASFILE.S -o $ASFILE.o
 ld -T $LDFILE.ld $ASFILE.o -o $ASFILE
 mount ./$IMGFILE.img $MNTDEST -t ext2 -o loop,offset=32256
 cp memos2 $MNTDEST/boot
