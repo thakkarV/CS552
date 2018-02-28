@@ -56,6 +56,7 @@ do_e820:
 
 	jmp do_e820
 
+
 print_region:
 	# TODO: pint total memory here first
 
@@ -92,15 +93,10 @@ print_region:
 	subl $0x1, %eax
 	call print_num
 
-	# print status string
-	lea msg_status, %si
-	mov len_msg_status, %cx
-	call print_str
-
+	# print region type
 	# assume this entry is always 20 bytes long - ACPI 3.x unsupported
 	movl %es:16(%di), %eax
 
-	# jump table for printing the types
 .type1:
 	cmp $1, %ax
 	jne .type2
@@ -131,7 +127,9 @@ print_region:
 	lea type_badmem, %si
 	mov len_type_badmem, %cx
 .return:
-	# else, go to the next memory section
+	call print_str
+
+	# prep for next section
 	dec %bp
 	add $24, %di
 	cmp $0, %bp
