@@ -18,14 +18,6 @@ _start:
 	mov len_msg_welcome, %cx
 	call print_str
 
-	# E801 to get total sysmem
-	xor %cx, %cx
-	xor %dx, %dx
-	mov $0xE801, %ax
-	int $0x15
-
-	# print total memory here
-
 	# print units
 	lea msg_units, %si
 	mov len_msg_units, %cx
