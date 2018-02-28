@@ -16,8 +16,8 @@ _start:
 	mov $0x7E0, %ax
 	mov %ax, %ss
 
-	# SP init at 0x10000, giving 8K of stack space
-	mov $0x1000, %sp
+	# SP init at 0x1FFF0, giving 96K of stack space
+	mov $0x1FFF, %sp
 
 	# print welcome message
 	lea msg_welcome, %si
@@ -51,7 +51,7 @@ _start:
 	mov len_msg_units, %cx
 	call print_str
 
-	# set dest buffer ES:DI at 0x20000, free space till 0x7FFFF
+	# set dest buffer ES:DI at 0x20001, free space till 0x7FFFF
 	mov $0x2000, %ax
 	mov %ax, %es
 	xor %di, %di
@@ -101,6 +101,7 @@ print_region:
 
 	# print region start addr
 	# eax gets the base address of the memory
+	movl $0b11111111000000011000000000000001, %es:0(%di)
 	movl %es:0(%di), %eax
 	call print_num
 
