@@ -28,6 +28,14 @@ _start:
 	# clear EBX for E820
 	xorl %ebx, %ebx
 
+	# setup ECX hack to store total type 1 memory
+	# the hack is to store the total calcualted lenght 
+	# until now as a value pushed on the stack
+	# whenever we detect a usable region,
+	# pop it from stack, add lenght, push it back
+	movl $0x0, $ecx
+	pushl $ecx
+
 do_e820:
 	# EAX = 0xE820
 	# EBX = 0 (BIOS book-keeping for E820 calls, do not touch afterwards)
@@ -51,14 +59,28 @@ do_e820:
 	testl %ebx, %ebx
 	jz print_region
 
-	# increment DI by list entry size stored in CL (i.e. CX low 8 bits)
-	add $24, %di
+	# do not add to total sum if its not usable ram
+	movl %es:16(%di), %ecx
+	cmp $1, %cx
+	jne .skip_unusable
+	
+	# otherwise do the dirty hack to add to total ram
+	popl %ecx
+	addl %es:8(%di), %ecx
+	pushl %ecx
 
+	# increment DI by list entry size stored in CL (i.e. CX low 8 bits)
+.skip_unusable:
+	add $24, %di
 	jmp do_e820
 
 
 print_region:
-	# TODO: pint total memory here first
+	# get total memory from the hack, convert to MB and print
+	popl %ecx
+	shrl $20, %ecx
+	movl %ecx, %eax
+	call print_num
 
 	# print units
 	lea msg_units, %si
