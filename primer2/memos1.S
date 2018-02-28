@@ -101,7 +101,6 @@ print_region:
 
 	# print region start addr
 	# eax gets the base address of the memory
-	movl $0b11111111000000011000000000000001, %es:0(%di)
 	movl %es:0(%di), %eax
 	call print_num
 
@@ -181,25 +180,25 @@ print_num:
 	pushl %ecx
 	pushl %edx
 
-	mov $10, %bx
-	mov $10, %cx
+	movl $10, %ebx
+	movl $10, %ecx
 
 .loop_div:
 	# dx needs to be set to 0 before div call
-	xor %dx, %dx
-	# devide EAX by BX
+	xorl %edx, %edx
+	# divide EAX by BX
 	# stores quotient in EAX
 	# stores remainder in DX
-	div %bx
+	divl %ebx
 	# store modulo of division onto the stack
-	push %dx
+	pushl %edx
 	loop .loop_div
 
-	mov $10, %cx
+	movl $10, %ecx
 .loop_print:
-	pop %dx
+	popl %edx
 	# add 48 as the ASCII offset
-	add $48, %dx
+	addl $48, %edx
 	movb %dl, %al
 	movb $0x0E, %ah
 	int $0x10
