@@ -24,27 +24,7 @@ _start:
 	mov len_msg_welcome, %cx
 	call print_str
 
-	# E801 to get total sysmem
-	xor %cx, %cx
-	xor %dx, %dx
-	mov $0xE801, %ax
-	int $0x15
-
-	# ax holds kB between 1-16 MB
-	shr $10, %ax
-
-	# account for the lower 1 meg of bios memory
-	add $1, %ax
-
-	# bx holds number of 64k pages above 16 MB
-	# convert to MB by division by 16
-	shr $4, %bx
-
-	# sum up total sysmem
-	add %bx, %ax
-
-	# issue print
-	call print_num
+	# TODO: ADD BACK TOTAL MEM CALL!!!
 
 	# print units
 	lea msg_units, %si
@@ -105,14 +85,17 @@ print_region:
 	call print_num
 
 	# colon
+	push %ax
 	movb $0x3A, %al
 	movb $0x0E, %ah
 	int $0x10
+	pop %ax
 
 	# print region end addr
-	# ecx gets the length
+	# ECX stores the length, end adrr = begin + len - 1
 	movl %es:8(%di), %ecx
 	addl %ecx, %eax
+	subl $0x1, %eax
 	call print_num
 
 	# print status string
@@ -176,13 +159,14 @@ print_str:
 # prints the 32 bit number passed through in EAX in decimal
 print_num:
 	# save regs
+	pushl %eax
 	pushl %ebx
 	pushl %ecx
 	pushl %edx
 
-	movl $10, %ebx
-	movl $10, %ecx
+	movl $16, %ebx
 
+	movl $8, %ecx
 .loop_div:
 	# dx needs to be set to 0 before div call
 	xorl %edx, %edx
@@ -194,11 +178,19 @@ print_num:
 	pushl %edx
 	loop .loop_div
 
-	movl $10, %ecx
+	movl $8, %ecx
 .loop_print:
 	popl %edx
+
+	cmp $10, %edx
+	jge 1f
+
 	# add 48 as the ASCII offset
 	addl $48, %edx
+	jmp 2f
+1:
+	addl $55, %edx
+2:
 	movb %dl, %al
 	movb $0x0E, %ah
 	int $0x10
@@ -208,6 +200,7 @@ print_num:
 	popl %edx
 	popl %ecx
 	popl %ebx
+	popl %eax
 	ret
 
 end:
