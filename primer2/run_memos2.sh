@@ -12,4 +12,4 @@ ld -T $LDFILE.ld $ASFILE.o $KERNFILE.o -o memos2 -nostdlib
 mount ./$IMGFILE.img $MNTDEST -t ext2 -o loop,offset=32256
 cp memos2 $MNTDEST/boot
 unmount $MNTDEST
-qemu-system-i386 -hda $IMGFILE
+qemu-system-i386 -hda $IMGFILE.img
