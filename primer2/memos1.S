@@ -93,10 +93,14 @@ print_region:
 	subl $0x1, %eax
 	call print_num
 
+	# print status message
+	lea msg_status, %si
+	mov len_msg_status, %cx
+	call print_str
+
 	# print region type
 	# assume this entry is always 20 bytes long - ACPI 3.x unsupported
 	movl %es:16(%di), %eax
-
 .type1:
 	cmp $1, %ax
 	jne .type2
@@ -153,6 +157,7 @@ print_str:
 # prints the 32 bit number passed through in EAX in decimal
 print_num:
 	# save regs
+	pushl %eax
 	pushl %ebx
 	pushl %ecx
 	pushl %edx
@@ -185,6 +190,7 @@ print_num:
 	popl %edx
 	popl %ecx
 	popl %ebx
+	popl %eax
 	ret
 
 end:
@@ -205,7 +211,7 @@ len_msg_units: .word . - msg_units
 msg_addr_range: .asciz "Address range ["
 len_msg_addr_range: .word . - msg_addr_range
 
-msg_status: .asciz " status: "
+msg_status: .asciz "] status: "
 len_msg_status: .word . - msg_status
 
 # Memory Type Strings
