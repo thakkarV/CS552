@@ -121,7 +121,7 @@ print_region:
 
 	# print region type
 	# assume this entry is always 20 bytes long - ACPI 3.x unsupported
-	mov %es:18(%di), %ax
+	movl %es:16(%di), %eax
 .type1:
 	cmp $1, %ax
 	jne .type2
