@@ -122,7 +122,7 @@ print_region:
 
 	# print region type
 	# assume this entry is always 20 bytes long - ACPI 3.x unsupported
-	movl %es:16(%di), %eax
+	mov %es:18(%di), %ax
 .type1:
 	cmp $1, %ax
 	jne .type2
@@ -166,14 +166,14 @@ print_region:
 print_str:
 	# the string to be printed is passed through si
 	# length of the string is passed through cx
-	pushl %eax
+	push %eax
 1:
 	lodsb
 	movb $0x0E, %ah
 	int $0x10
 	loop 1b
 
-	popl %eax
+	pop %eax
 	ret
 
 # prints the 32 bit number passed through in EAX in decimal
