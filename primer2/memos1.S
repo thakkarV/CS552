@@ -33,7 +33,7 @@ _start:
 	# until now as a value pushed on the stack
 	# whenever we detect a usable region,
 	# pop it from stack, add lenght, push it back
-	pushl $ebx
+	pushl %ebx
 
 do_e820:
 	# EAX = 0xE820
