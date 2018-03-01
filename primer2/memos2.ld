@@ -1,5 +1,5 @@
-OUTPUT_FORMAT("binary")
-OUTPUT_ARCH(i386)
+/* OUTPUT_FORMAT("i686-elf-bin")
+OUTPUT_ARCH(i386) */
 ENTRY(_start)
 
 SECTIONS
