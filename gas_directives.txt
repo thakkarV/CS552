@@ -1,0 +1,1297 @@
+GNU assembler’s assembly directives
+Below post continued:
+
+http://cs.mtu.edu/~mmkoksal/blog/?x=entry:entry120115-134227
+GNU assembler’s assembly directives are listed here:
+
+http://sourceware.org/binutils/docs-2.22/as/Pseudo-Ops.html#Pseudo-Ops
+Assembler Directives
+
+All assembler directives have names that begin with a period (`.’). The rest of the name is letters, usually in lower case.
+
+This chapter discusses directives that are available regardless of the target machine configuration for the gnu assembler. Some machine configurations provide additional directives. See Machine Dependencies.
+
+* Abort: .abort
+* ABORT (COFF): .ABORT
+* Align: .align abs-expr , abs-expr
+* Altmacro: .altmacro
+* Ascii: .ascii “string”…
+* Asciz: .asciz “string”…
+* Balign: .balign abs-expr , abs-expr
+* Byte: .byte expressions
+* CFI directives: .cfi_startproc [simple], .cfi_endproc, etc.
+* Comm: .comm symbol , length
+* Data: .data subsection
+* Def: .def name
+* Desc: .desc symbol, abs-expression
+* Dim: .dim
+* Double: .double flonums
+* Eject: .eject
+* Else: .else
+* Elseif: .elseif
+* End: .end
+* Endef: .endef
+* Endfunc: .endfunc
+* Endif: .endif
+* Equ: .equ symbol, expression
+* Equiv: .equiv symbol, expression
+* Eqv: .eqv symbol, expression
+* Err: .err
+* Error: .error string
+* Exitm: .exitm
+* Extern: .extern
+* Fail: .fail
+* File: .file
+* Fill: .fill repeat , size , value
+* Float: .float flonums
+* Func: .func
+* Global: .global symbol, .globl symbol
+* Gnu_attribute: .gnu_attribute tag,value
+* Hidden: .hidden names
+* hword: .hword expressions
+* Ident: .ident
+* If: .if absolute expression
+* Incbin: .incbin “file”[,skip[,count]]
+* Include: .include “file”
+* Int: .int expressions
+* Internal: .internal names
+* Irp: .irp symbol,values…
+* Irpc: .irpc symbol,values…
+* Lcomm: .lcomm symbol , length
+* Lflags: .lflags
+* Line: .line line-number
+* Linkonce: .linkonce [type]
+* List: .list
+* Ln: .ln line-number
+* Loc: .loc fileno lineno
+* Loc_mark_labels: .loc_mark_labels enable
+* Local: .local names
+* Long: .long expressions
+* Macro: .macro name args…
+* MRI: .mri val
+* Noaltmacro: .noaltmacro
+* Nolist: .nolist
+* Octa: .octa bignums
+* Offset: .offset loc
+* Org: .org new-lc, fill
+* P2align: .p2align abs-expr, abs-expr, abs-expr
+* PopSection: .popsection
+* Previous: .previous
+* Print: .print string
+* Protected: .protected names
+* Psize: .psize lines, columns
+* Purgem: .purgem name
+* PushSection: .pushsection name
+* Quad: .quad bignums
+* Reloc: .reloc offset, reloc_name[, expression]
+* Rept: .rept count
+* Sbttl: .sbttl “subheading”
+* Scl: .scl class
+* Section: .section name[, flags]
+* Set: .set symbol, expression
+* Short: .short expressions
+* Single: .single flonums
+* Size: .size [name , expression]
+* Skip: .skip size , fill
+* Sleb128: .sleb128 expressions
+* Space: .space size , fill
+* Stab: .stabd, .stabn, .stabs
+* String: .string “str”, .string8 “str”, .string16 “str”, .string32 “str”, .string64 “str”
+* Struct: .struct expression
+* SubSection: .subsection
+* Symver: .symver name,name2@nodename
+* Tag: .tag structname
+* Text: .text subsection
+* Title: .title “heading”
+* Type: .type 
+* Uleb128: .uleb128 expressions
+* Val: .val addr
+* Version: .version “string”
+* VTableEntry: .vtable_entry table, offset
+* VTableInherit: .vtable_inherit child, parent
+* Warning: .warning string
+* Weak: .weak names
+* Weakref: .weakref alias, symbol
+* Word: .word expressions
+* Deprecated: Deprecated Directives
+
+7.1 .abort
+
+This directive stops the assembly immediately. It is for compatibility with other assemblers. The original idea was that the assembly language source would be piped into the assembler. If the sender of the source quit, it could use this directive tells as to quit also. One day .abort will not be supported.
+
+7.2 .ABORT (COFF)
+
+When producing COFF output, as accepts this directive as a synonym for `.abort’.
+
+7.3 .align abs-expr, abs-expr, abs-expr
+
+Pad the location counter (in the current subsection) to a particular storage boundary. The first expression (which must be absolute) is the alignment required, as described below.
+
+The second expression (also absolute) gives the fill value to be stored in the padding bytes. It (and the comma) may be omitted. If it is omitted, the padding bytes are normally zero. However, on some systems, if the section is marked as containing code and the fill value is omitted, the space is filled with no-op instructions.
+
+The third expression is also absolute, and is also optional. If it is present, it is the maximum number of bytes that should be skipped by this alignment directive. If doing the alignment would require skipping more bytes than the specified maximum, then the alignment is not done at all. You can omit the fill value (the second argument) entirely by simply using two commas after the required alignment; this can be useful if you want the alignment to be filled with no-op instructions when appropriate.
+
+The way the required alignment is specified varies from system to system. For the arc, hppa, i386 using ELF, i860, iq2000, m68k, or32, s390, sparc, tic4x, tic80 and xtensa, the first expression is the alignment request in bytes. For example `.align 8′ advances the location counter until it is a multiple of 8. If the location counter is already a multiple of 8, no change is needed. For the tic54x, the first expression is the alignment request in words.
+
+For other systems, including ppc, i386 using a.out format, arm and strongarm, it is the number of low-order zero bits the location counter must have after advancement. For example `.align 3′ advances the location counter until it a multiple of 8. If the location counter is already a multiple of 8, no change is needed.
+
+This inconsistency is due to the different behaviors of the various native assemblers for these systems which GAS must emulate. GAS also provides .balign and .p2align directives, described later, which have a consistent behavior across all architectures (but are specific to GAS).
+
+7.4 .altmacro
+
+Enable alternate macro mode, enabling:
+
+LOCAL name [ , … ]
+One additional directive, LOCAL, is available. It is used to generate a string replacement for each of the name arguments, and replace any instances of name in each macro expansion. The replacement string is unique in the assembly, and different for each separate macro expansion. LOCAL allows you to write macros that define symbols, without fear of conflict between separate macro expansions.
+String delimiters
+You can write strings delimited in these other ways besides “string”:
+
+’string’
+You can delimit strings with single-quote characters.
+
+You can delimit strings with matching angle brackets.
+
+single-character string escape
+To include any single character literally in a string (even if the character would otherwise have some special meaning), you can prefix the character with `!’ (an exclamation mark). For example, you can write `<4.3 !> 5.4!!>’ to get the literal text `4.3 > 5.4!’.
+Expression results as strings
+You can write `%expr’ to evaluate the expression expr and use the result as a string.
+
+7.5 .ascii “string”…
+
+.ascii expects zero or more string literals (see Strings) separated by commas. It assembles each string (with no automatic trailing zero byte) into consecutive addresses.
+
+7.5 .ascii “string”…
+
+.ascii expects zero or more string literals (see Strings) separated by commas. It assembles each string (with no automatic trailing zero byte) into consecutive addresses.
+
+7.6 .asciz “string”…
+
+.asciz is just like .ascii, but each string is followed by a zero byte. The “z” in `.asciz’ stands for “zero”.
+
+7.7 .balign[wl] abs-expr, abs-expr, abs-expr
+
+Pad the location counter (in the current subsection) to a particular storage boundary. The first expression (which must be absolute) is the alignment request in bytes. For example `.balign 8′ advances the location counter until it is a multiple of 8. If the location counter is already a multiple of 8, no change is needed.
+
+The second expression (also absolute) gives the fill value to be stored in the padding bytes. It (and the comma) may be omitted. If it is omitted, the padding bytes are normally zero. However, on some systems, if the section is marked as containing code and the fill value is omitted, the space is filled with no-op instructions.
+
+The third expression is also absolute, and is also optional. If it is present, it is the maximum number of bytes that should be skipped by this alignment directive. If doing the alignment would require skipping more bytes than the specified maximum, then the alignment is not done at all. You can omit the fill value (the second argument) entirely by simply using two commas after the required alignment; this can be useful if you want the alignment to be filled with no-op instructions when appropriate.
+
+The .balignw and .balignl directives are variants of the .balign directive. The .balignw directive treats the fill pattern as a two byte word value. The .balignl directives treats the fill pattern as a four byte longword value. For example, .balignw 4,0×368d will align to a multiple of 4. If it skips two bytes, they will be filled in with the value 0×368d (the exact placement of the bytes depends upon the endianness of the processor). If it skips 1 or 3 bytes, the fill value is undefined.
+
+7.8 .byte expressions
+
+.byte expects zero or more expressions, separated by commas. Each expression is assembled into the next byte.
+
+7.9 .cfi_sections section_list
+
+.cfi_sections may be used to specify whether CFI directives should emit .eh_frame section and/or .debug_frame section. If section_list is .eh_frame, .eh_frame is emitted, if section_list is .debug_frame, .debug_frame is emitted. To emit both use .eh_frame, .debug_frame. The default if this directive is not used is .cfi_sections .eh_frame.
+7.10 .cfi_startproc [simple]
+
+.cfi_startproc is used at the beginning of each function that should have an entry in .eh_frame. It initializes some internal data structures. Don’t forget to close the function by .cfi_endproc.
+
+Unless .cfi_startproc is used along with parameter simple it also emits some architecture dependent initial CFI instructions.
+7.11 .cfi_endproc
+
+.cfi_endproc is used at the end of a function where it closes its unwind entry previously opened by .cfi_startproc, and emits it to .eh_frame.
+7.12 .cfi_personality encoding [, exp]
+
+.cfi_personality defines personality routine and its encoding. encoding must be a constant determining how the personality should be encoded. If it is 255 (DW_EH_PE_omit), second argument is not present, otherwise second argument should be a constant or a symbol name. When using indirect encodings, the symbol provided should be the location where personality can be loaded from, not the personality routine itself. The default after .cfi_startproc is .cfi_personality 0xff, no personality routine.
+7.13 .cfi_lsda encoding [, exp]
+
+.cfi_lsda defines LSDA and its encoding. encoding must be a constant determining how the LSDA should be encoded. If it is 255 (DW_EH_PE_omit), second argument is not present, otherwise second argument should be a constant or a symbol name. The default after .cfi_startproc is .cfi_lsda 0xff, no LSDA.
+7.14 .cfi_def_cfa register, offset
+
+.cfi_def_cfa defines a rule for computing CFA as: take address from register and add offset to it.
+7.15 .cfi_def_cfa_register register
+
+.cfi_def_cfa_register modifies a rule for computing CFA. From now on register will be used instead of the old one. Offset remains the same.
+7.16 .cfi_def_cfa_offset offset
+
+.cfi_def_cfa_offset modifies a rule for computing CFA. Register remains the same, but offset is new. Note that it is the absolute offset that will be added to a defined register to compute CFA address.
+7.17 .cfi_adjust_cfa_offset offset
+
+Same as .cfi_def_cfa_offset but offset is a relative value that is added/substracted from the previous offset.
+7.18 .cfi_offset register, offset
+
+Previous value of register is saved at offset offset from CFA.
+7.19 .cfi_rel_offset register, offset
+
+Previous value of register is saved at offset offset from the current CFA register. This is transformed to .cfi_offset using the known displacement of the CFA register from the CFA. This is often easier to use, because the number will match the code it’s annotating.
+7.20 .cfi_register register1, register2
+
+Previous value of register1 is saved in register register2.
+7.21 .cfi_restore register
+
+.cfi_restore says that the rule for register is now the same as it was at the beginning of the function, after all initial instruction added by .cfi_startproc were executed.
+7.22 .cfi_undefined register
+
+From now on the previous value of register can’t be restored anymore.
+7.23 .cfi_same_value register
+
+Current value of register is the same like in the previous frame, i.e. no restoration needed.
+7.24 .cfi_remember_state,
+
+First save all current rules for all registers by .cfi_remember_state, then totally screw them up by subsequent .cfi_* directives and when everything is hopelessly bad, use .cfi_restore_state to restore the previous saved state.
+7.25 .cfi_return_column register
+
+Change return column register, i.e. the return address is either directly in register or can be accessed by rules for register.
+7.26 .cfi_signal_frame
+
+Mark current function as signal trampoline.
+7.27 .cfi_window_save
+
+SPARC register window has been saved.
+7.28 .cfi_escape expression[, …]
+
+Allows the user to add arbitrary bytes to the unwind info. One might use this to add OS-specific CFI opcodes, or generic CFI opcodes that GAS does not yet support.
+7.29 .cfi_val_encoded_addr register, encoding, label
+
+The current value of register is label. The value of label will be encoded in the output file according to encoding; see the description of .cfi_personality for details on this encoding.
+
+The usefulness of equating a register to a fixed label is probably limited to the return address register. Here, it can be useful to mark a code segment that has only one return address which is reached by a direct branch and no copy of the return address exists in memory or another register.
+
+7.30 .comm symbol , length
+
+.comm declares a common symbol named symbol. When linking, a common symbol in one object file may be merged with a defined or common symbol of the same name in another object file. If ld does not see a definition for the symbol–just one or more common symbols–then it will allocate length bytes of uninitialized memory. length must be an absolute expression. If ld sees multiple common symbols with the same name, and they do not all have the same size, it will allocate space using the largest size.
+
+When using ELF or (as a GNU extension) PE, the .comm directive takes an optional third argument. This is the desired alignment of the symbol, specified for ELF as a byte boundary (for example, an alignment of 16 means that the least significant 4 bits of the address should be zero), and for PE as a power of two (for example, an alignment of 5 means aligned to a 32-byte boundary). The alignment must be an absolute expression, and it must be a power of two. If ld allocates uninitialized memory for the common symbol, it will use the alignment when placing the symbol. If no alignment is specified, as will set the alignment to the largest power of two less than or equal to the size of the symbol, up to a maximum of 16 on ELF, or the default section alignment of 4 on PE1.
+
+The syntax for .comm differs slightly on the HPPA. The syntax is `symbol .comm, length’; symbol is optional.
+Footnotes
+
+[1] This is not the same as the executable image file alignment controlled by ld’s `–section-alignment’ option; image file sections in PE are aligned to multiples of 4096, which is far too large an alignment for ordinary variables. It is rather the default alignment for (non-debug) sections within object (`*.o’) files, which are less strictly aligned.
+
+7.31 .data subsection
+
+.data tells as to assemble the following statements onto the end of the data subsection numbered subsection (which is an absolute expression). If subsection is omitted, it defaults to zero.
+
+7.32 .def name
+
+Begin defining debugging information for a symbol name; the definition extends until the .endef directive is encountered.
+
+7.33 .desc symbol, abs-expression
+
+This directive sets the descriptor of the symbol (see Symbol Attributes) to the low 16 bits of an absolute expression.
+
+The `.desc’ directive is not available when as is configured for COFF output; it is only for a.out or b.out object format. For the sake of compatibility, as accepts it, but produces no output, when configured for COFF.
+
+7.34 .dim
+
+This directive is generated by compilers to include auxiliary debugging information in the symbol table. It is only permitted inside .def/.endef pairs.
+
+7.35 .double flonums
+
+.double expects zero or more flonums, separated by commas. It assembles floating point numbers. The exact kind of floating point numbers emitted depends on how as is configured. See Machine Dependencies.
+
+7.36 .eject
+
+Force a page break at this point, when generating assembly listings.
+
+7.37 .else
+
+.else is part of the as support for conditional assembly; see .if. It marks the beginning of a section of code to be assembled if the condition for the preceding .if was false.
+
+7.38 .elseif
+
+.elseif is part of the as support for conditional assembly; see .if. It is shorthand for beginning a new .if block that would otherwise fill the entire .else section.
+
+7.39 .end
+
+.end marks the end of the assembly file. as does not process anything in the file past the .end directive.
+
+7.40 .endef
+
+This directive flags the end of a symbol definition begun with .def.
+
+7.41 .endfunc
+
+.endfunc marks the end of a function specified with .func.
+
+7.42 .endif
+
+.endif is part of the as support for conditional assembly; it marks the end of a block of code that is only assembled conditionally. See .if.
+
+7.43 .equ symbol, expression
+
+This directive sets the value of symbol to expression. It is synonymous with `.set’; see .set.
+
+The syntax for equ on the HPPA is `symbol .equ expression’.
+
+The syntax for equ on the Z80 is `symbol equ expression’. On the Z80 it is an eror if symbol is already defined, but the symbol is not protected from later redefinition. Compare Equiv.
+
+7.44 .equiv symbol, expression
+
+The .equiv directive is like .equ and .set, except that the assembler will signal an error if symbol is already defined. Note a symbol which has been referenced but not actually defined is considered to be undefined.
+
+Except for the contents of the error message, this is roughly equivalent to
+
+.ifdef SYM
+.err
+.endif
+.equ SYM,VAL
+
+plus it protects the symbol from later redefinition.
+
+7.45 .eqv symbol, expression
+
+The .eqv directive is like .equiv, but no attempt is made to evaluate the expression or any part of it immediately. Instead each time the resulting symbol is used in an expression, a snapshot of its current value is taken.
+
+7.46 .err
+
+If as assembles a .err directive, it will print an error message and, unless the -Z option was used, it will not generate an object file. This can be used to signal an error in conditionally compiled code.
+
+7.47 .error “string”
+
+Similarly to .err, this directive emits an error, but you can specify a string that will be emitted as the error message. If you don’t specify the message, it defaults to “.error directive invoked in source file”. See Error and Warning Messages.
+
+.error “This code has not been assembled and tested.”
+
+7.48 .exitm
+
+Exit early from the current macro definition. See Macro.
+
+7.49 .extern
+
+.extern is accepted in the source program—for compatibility with other assemblers—but it is ignored. as treats all undefined symbols as external.
+
+7.49 .extern
+
+.extern is accepted in the source program—for compatibility with other assemblers—but it is ignored. as treats all undefined symbols as external.
+
+7.51 .file
+
+There are two different versions of the .file directive. Targets that support DWARF2 line number information use the DWARF2 version of .file. Other targets use the default version.
+Default Version
+
+This version of the .file directive tells as that we are about to start a new logical file. The syntax is:
+
+.file string
+
+string is the new file name. In general, the filename is recognized whether or not it is surrounded by quotes `”‘; but if you wish to specify an empty file name, you must give the quotes–”". This statement may go away in future: it is only recognized to be compatible with old as programs.
+DWARF2 Version
+
+When emitting DWARF2 line number information, .file assigns filenames to the .debug_line file name table. The syntax is:
+
+.file fileno filename
+
+The fileno operand should be a unique positive integer to use as the index of the entry in the table. The filename operand is a C string literal.
+
+The detail of filename indices is exposed to the user because the filename table is shared with the .debug_info section of the DWARF2 debugging information, and thus the user must know the exact indices that table entries will have.
+
+7.52 .fill repeat , size , value
+
+repeat, size and value are absolute expressions. This emits repeat copies of size bytes. Repeat may be zero or more. Size may be zero or more, but if it is more than 8, then it is deemed to have the value 8, compatible with other people’s assemblers. The contents of each repeat bytes is taken from an 8-byte number. The highest order 4 bytes are zero. The lowest order 4 bytes are value rendered in the byte-order of an integer on the computer as is assembling for. Each size bytes in a repetition is taken from the lowest order size bytes of this number. Again, this bizarre behavior is compatible with other people’s assemblers.
+
+size and value are optional. If the second comma and value are absent, value is assumed zero. If the first comma and following tokens are absent, size is assumed to be 1.
+
+7.53 .float flonums
+
+This directive assembles zero or more flonums, separated by commas. It has the same effect as .single. The exact kind of floating point numbers emitted depends on how as is configured. See Machine Dependencies.
+
+7.54 .func name[,label]
+
+.func emits debugging information to denote function name, and is ignored unless the file is assembled with debugging enabled. Only `–gstabs[+]’ is currently supported. label is the entry point of the function and if omitted name prepended with the `leading char’ is used. `leading char’ is usually _ or nothing, depending on the target. All functions are currently defined to have void return type. The function must be terminated with .endfunc.
+
+7.55 .global symbol, .globl symbol
+
+.global makes the symbol visible to ld. If you define symbol in your partial program, its value is made available to other partial programs that are linked with it. Otherwise, symbol takes its attributes from a symbol of the same name from another file linked into the same program.
+
+Both spellings (`.globl’ and `.global’) are accepted, for compatibility with other assemblers.
+
+On the HPPA, .global is not always enough to make it accessible to other partial programs. You may need the HPPA-only .EXPORT directive as well. See HPPA Assembler Directives.
+
+7.56 .gnu_attribute tag,value
+
+Record a gnu object attribute for this file. See Object Attributes.
+
+7.57 .hidden names
+
+This is one of the ELF visibility directives. The other two are .internal (see .internal) and .protected (see .protected).
+
+This directive overrides the named symbols default visibility (which is set by their binding: local, global or weak). The directive sets the visibility to hidden which means that the symbols are not visible to other components. Such symbols are always considered to be protected as well.
+
+7.58 .hword expressions
+
+This expects zero or more expressions, and emits a 16 bit number for each.
+
+This directive is a synonym for `.short’; depending on the target architecture, it may also be a synonym for `.word’.
+
+7.59 .ident
+
+This directive is used by some assemblers to place tags in object files. The behavior of this directive varies depending on the target. When using the a.out object file format, as simply accepts the directive for source-file compatibility with existing assemblers, but does not emit anything for it. When using COFF, comments are emitted to the .comment or .rdata section, depending on the target. When using ELF, comments are emitted to the .comment section.
+
+7.60 .if absolute expression
+
+.if marks the beginning of a section of code which is only considered part of the source program being assembled if the argument (which must be an absolute expression) is non-zero. The end of the conditional section of code must be marked by .endif (see .endif); optionally, you may include code for the alternative condition, flagged by .else (see .else). If you have several conditions to check, .elseif may be used to avoid nesting blocks if/else within each subsequent .else block.
+
+The following variants of .if are also supported:
+
+.ifdef symbol
+Assembles the following section of code if the specified symbol has been defined. Note a symbol which has been referenced but not yet defined is considered to be undefined.
+
+.ifb text
+Assembles the following section of code if the operand is blank (empty).
+
+.ifc string1,string2
+Assembles the following section of code if the two strings are the same. The strings may be optionally quoted with single quotes. If they are not quoted, the first string stops at the first comma, and the second string stops at the end of the line. Strings which contain whitespace should be quoted. The string comparison is case sensitive.
+
+.ifeq absolute expression
+Assembles the following section of code if the argument is zero.
+
+.ifeqs string1,string2
+Another form of .ifc. The strings must be quoted using double quotes.
+
+.ifge absolute expression
+Assembles the following section of code if the argument is greater than or equal to zero.
+
+.ifgt absolute expression
+Assembles the following section of code if the argument is greater than zero.
+
+.ifle absolute expression
+Assembles the following section of code if the argument is less than or equal to zero.
+
+.iflt absolute expression
+Assembles the following section of code if the argument is less than zero.
+
+.ifnb text
+Like .ifb, but the sense of the test is reversed: this assembles the following section of code if the operand is non-blank (non-empty).
+
+.ifnc string1,string2.
+Like .ifc, but the sense of the test is reversed: this assembles the following section of code if the two strings are not the same.
+
+.ifndef symbol
+.ifnotdef symbol
+Assembles the following section of code if the specified symbol has not been defined. Both spelling variants are equivalent. Note a symbol which has been referenced but not yet defined is considered to be undefined.
+
+.ifne absolute expression
+Assembles the following section of code if the argument is not equal to zero (in other words, this is equivalent to .if).
+
+.ifnes string1,string2
+Like .ifeqs, but the sense of the test is reversed: this assembles the following section of code if the two strings are not the same.
+
+7.61 .incbin “file”[,skip[,count]]
+
+The incbin directive includes file verbatim at the current location. You can control the search paths used with the `-I’ command-line option (see Command-Line Options). Quotation marks are required around file.
+
+The skip argument skips a number of bytes from the start of the file. The count argument indicates the maximum number of bytes to read. Note that the data is not aligned in any way, so it is the user’s responsibility to make sure that proper alignment is provided both before and after the incbin directive.
+
+7.62 .include “file”
+
+This directive provides a way to include supporting files at specified points in your source program. The code from file is assembled as if it followed the point of the .include; when the end of the included file is reached, assembly of the original file continues. You can control the search paths used with the `-I’ command-line option (see Command-Line Options). Quotation marks are required around file.
+
+7.63 .int expressions
+
+Expect zero or more expressions, of any section, separated by commas. For each expression, emit a number that, at run time, is the value of that expression. The byte order and bit size of the number depends on what kind of target the assembly is for.
+
+7.64 .internal names
+
+This is one of the ELF visibility directives. The other two are .hidden (see .hidden) and .protected (see .protected).
+
+This directive overrides the named symbols default visibility (which is set by their binding: local, global or weak). The directive sets the visibility to internal which means that the symbols are considered to be hidden (i.e., not visible to other components), and that some extra, processor specific processing must also be performed upon the symbols as well.
+
+7.65 .irp symbol,values…
+
+Evaluate a sequence of statements assigning different values to symbol. The sequence of statements starts at the .irp directive, and is terminated by an .endr directive. For each value, symbol is set to value, and the sequence of statements is assembled. If no value is listed, the sequence of statements is assembled once, with symbol set to the null string. To refer to symbol within the sequence of statements, use symbol.
+
+For example, assembling
+
+.irp param,1,2,3
+move dparam,sp@-
+.endr
+
+is equivalent to assembling
+
+move d1,sp@-
+move d2,sp@-
+move d3,sp@-
+
+For some caveats with the spelling of symbol, see also Macro.
+
+7.66 .irpc symbol,values…
+
+Evaluate a sequence of statements assigning different values to symbol. The sequence of statements starts at the .irpc directive, and is terminated by an .endr directive. For each character in value, symbol is set to the character, and the sequence of statements is assembled. If no value is listed, the sequence of statements is assembled once, with symbol set to the null string. To refer to symbol within the sequence of statements, use symbol.
+
+For example, assembling
+
+.irpc param,123
+move dparam,sp@-
+.endr
+
+is equivalent to assembling
+
+move d1,sp@-
+move d2,sp@-
+move d3,sp@-
+
+For some caveats with the spelling of symbol, see also the discussion at See Macro.
+
+7.67 .lcomm symbol , length
+
+Reserve length (an absolute expression) bytes for a local common denoted by symbol. The section and value of symbol are those of the new local common. The addresses are allocated in the bss section, so that at run-time the bytes start off zeroed. Symbol is not declared global (see .global), so is normally not visible to ld.
+
+Some targets permit a third argument to be used with .lcomm. This argument specifies the desired alignment of the symbol in the bss section.
+
+The syntax for .lcomm differs slightly on the HPPA. The syntax is `symbol .lcomm, length’; symbol is optional.
+
+7.68 .lflags
+
+as accepts this directive, for compatibility with other assemblers, but ignores it.
+
+7.69 .line line-number
+
+Change the logical line number. line-number must be an absolute expression. The next line has that logical line number. Therefore any other statements on the current line (after a statement separator character) are reported as on logical line number line-number − 1. One day as will no longer support this directive: it is recognized only for compatibility with existing assembler programs.
+
+Even though this is a directive associated with the a.out or b.out object-code formats, as still recognizes it when producing COFF output, and treats `.line’ as though it were the COFF `.ln’ if it is found outside a .def/.endef pair.
+
+Inside a .def, `.line’ is, instead, one of the directives used by compilers to generate auxiliary symbol information for debugging.
+
+7.70 .linkonce [type]
+
+Mark the current section so that the linker only includes a single copy of it. This may be used to include the same section in several different object files, but ensure that the linker will only include it once in the final output file. The .linkonce pseudo-op must be used for each instance of the section. Duplicate sections are detected based on the section name, so it should be unique.
+
+This directive is only supported by a few object file formats; as of this writing, the only object file format which supports it is the Portable Executable format used on Windows NT.
+
+The type argument is optional. If specified, it must be one of the following strings. For example:
+
+.linkonce same_size
+
+Not all types may be supported on all object file formats.
+
+discard
+Silently discard duplicate sections. This is the default.
+one_only
+Warn if there are duplicate sections, but still keep only one copy.
+same_size
+Warn if any of the duplicates have different sizes.
+same_contents
+Warn if any of the duplicates do not have exactly the same contents.
+
+7.71 .list
+
+Control (in conjunction with the .nolist directive) whether or not assembly listings are generated. These two directives maintain an internal counter (which is zero initially). .list increments the counter, and .nolist decrements it. Assembly listings are generated whenever the counter is greater than zero.
+
+By default, listings are disabled. When you enable them (with the `-a’ command line option; see Command-Line Options), the initial value of the listing counter is one.
+
+7.72 .ln line-number
+
+`.ln’ is a synonym for `.line’.
+
+7.73 .loc fileno lineno [column] [options]
+
+When emitting DWARF2 line number information, the .loc directive will add a row to the .debug_line line number matrix corresponding to the immediately following assembly instruction. The fileno, lineno, and optional column arguments will be applied to the .debug_line state machine before the row is added.
+
+The options are a sequence of the following tokens in any order:
+
+basic_block
+This option will set the basic_block register in the .debug_line state machine to true.
+prologue_end
+This option will set the prologue_end register in the .debug_line state machine to true.
+epilogue_begin
+This option will set the epilogue_begin register in the .debug_line state machine to true.
+is_stmt value
+This option will set the is_stmt register in the .debug_line state machine to value, which must be either 0 or 1.
+isa value
+This directive will set the isa register in the .debug_line state machine to value, which must be an unsigned integer.
+discriminator value
+This directive will set the discriminator register in the .debug_line state machine to value, which must be an unsigned integer.
+
+7.74 .loc_mark_labels enable
+
+When emitting DWARF2 line number information, the .loc_mark_labels directive makes the assembler emit an entry to the .debug_line line number matrix with the basic_block register in the state machine set whenever a code label is seen. The enable argument should be either 1 or 0, to enable or disable this function respectively.
+
+7.75 .local names
+
+This directive, which is available for ELF targets, marks each symbol in the comma-separated list of names as a local symbol so that it will not be externally visible. If the symbols do not already exist, they will be created.
+
+For targets where the .lcomm directive (see Lcomm) does not accept an alignment argument, which is the case for most ELF targets, the .local directive can be used in combination with .comm (see Comm) to define aligned local common data.
+
+7.76 .long expressions
+
+.long is the same as `.int’. See .int.
+
+7.77 .macro
+
+The commands .macro and .endm allow you to define macros that generate assembly output. For example, this definition specifies a macro sum that puts a sequence of numbers into memory:
+
+.macro sum from=0, to=5
+.long from
+.if to-from
+sum “(from+1)”,to
+.endif
+.endm
+
+With that definition, `SUM 0,5′ is equivalent to this assembly input:
+
+.long 0
+.long 1
+.long 2
+.long 3
+.long 4
+.long 5
+
+.macro macname
+.macro macname macargs …
+Begin the definition of a macro called macname. If your macro definition requires arguments, specify their names after the macro name, separated by commas or spaces. You can qualify the macro argument to indicate whether all invocations must specify a non-blank value (through `:req’), or whether it takes all of the remaining arguments (through `:vararg’). You can supply a default value for any macro argument by following the name with `=deflt’. You cannot define two macros with the same macname unless it has been subject to the .purgem directive (see Purgem) between the two definitions. For example, these are all valid .macro statements:
+
+.macro comm
+Begin the definition of a macro called comm, which takes no arguments.
+.macro plus1 p, p1
+.macro plus1 p p1
+Either statement begins the definition of a macro called plus1, which takes two arguments; within the macro definition, write `p’ or `p1′ to evaluate the arguments.
+.macro reserve_str p1=0 p2
+Begin the definition of a macro called reserve_str, with two arguments. The first argument has a default value, but not the second. After the definition is complete, you can call the macro either as `reserve_str a,b’ (with `p1′ evaluating to a and `p2′ evaluating to b), or as `reserve_str ,b’ (with `p1′ evaluating as the default, in this case `0′, and `p2′ evaluating to b).
+.macro m p1:req, p2=0, p3:vararg
+Begin the definition of a macro called m, with at least three arguments. The first argument must always have a value specified, but not the second, which instead has a default value. The third formal will get assigned all remaining arguments specified at invocation time.
+
+When you call a macro, you can specify the argument values either by position, or by keyword. For example, `sum 9,17′ is equivalent to `sum to=17, from=9′.
+
+Note that since each of the macargs can be an identifier exactly as any other one permitted by the target architecture, there may be occasional problems if the target hand-crafts special meanings to certain characters when they occur in a special position. For example, if the colon (:) is generally permitted to be part of a symbol name, but the architecture specific code special-cases it when occurring as the final character of a symbol (to denote a label), then the macro parameter replacement code will have no way of knowing that and consider the whole construct (including the colon) an identifier, and check only this identifier for being the subject to parameter substitution. So for example this macro definition:
+
+.macro label l
+l:
+.endm
+
+might not work as expected. Invoking `label foo’ might not create a label called `foo’ but instead just insert the text `l:’ into the assembler source, probably generating an error about an unrecognised identifier.
+
+Similarly problems might occur with the period character (`.’) which is often allowed inside opcode names (and hence identifier names). So for example constructing a macro to build an opcode from a base name and a length specifier like this:
+
+.macro opcode base length
+base.length
+.endm
+
+and invoking it as `opcode store l’ will not create a `store.l’ instruction but instead generate some kind of error as the assembler tries to interpret the text `base.length’.
+
+There are several possible ways around this problem:
+
+Insert white space
+If it is possible to use white space characters then this is the simplest solution. eg:
+
+.macro label l
+l :
+.endm
+
+Use `()’
+The string `()’ can be used to separate the end of a macro argument from the following text. eg:
+
+.macro opcode base length
+base().length
+.endm
+
+Use the alternate macro syntax mode
+In the alternative macro syntax mode the ampersand character (`&’) can be used as a separator. eg:
+
+.altmacro
+.macro label l
+l&:
+.endm
+
+Note: this problem of correctly identifying string parameters to pseudo ops also applies to the identifiers used in .irp (see Irp) and .irpc (see Irpc) as well.
+.endm
+Mark the end of a macro definition.
+.exitm
+Exit early from the current macro definition.
+
+@
+as maintains a counter of how many macros it has executed in this pseudo-variable; you can copy that number to your output with `@’, but only within a macro definition.
+LOCAL name [ , … ]
+Warning: LOCAL is only available if you select “alternate macro syntax” with `–alternate’ or .altmacro. See .altmacro.
+
+7.78 .mri val
+
+If val is non-zero, this tells as to enter MRI mode. If val is zero, this tells as to exit MRI mode. This change affects code assembled until the next .mri directive, or until the end of the file. See MRI mode.
+
+7.79 .noaltmacro
+
+Disable alternate macro mode. See Altmacro.
+
+7.80 .nolist
+
+Control (in conjunction with the .list directive) whether or not assembly listings are generated. These two directives maintain an internal counter (which is zero initially). .list increments the counter, and .nolist decrements it. Assembly listings are generated whenever the counter is greater than zero.
+
+7.81 .octa bignums
+
+This directive expects zero or more bignums, separated by commas. For each bignum, it emits a 16-byte integer.
+
+The term “octa” comes from contexts in which a “word” is two bytes; hence octa-word for 16 bytes.
+
+7.82 .offset loc
+
+Set the location counter to loc in the absolute section. loc must be an absolute expression. This directive may be useful for defining symbols with absolute values. Do not confuse it with the .org directive.
+
+7.83 .org new-lc , fill
+
+Advance the location counter of the current section to new-lc. new-lc is either an absolute expression or an expression with the same section as the current subsection. That is, you can’t use .org to cross sections: if new-lc has the wrong section, the .org directive is ignored. To be compatible with former assemblers, if the section of new-lc is absolute, as issues a warning, then pretends the section of new-lc is the same as the current subsection.
+
+.org may only increase the location counter, or leave it unchanged; you cannot use .org to move the location counter backwards.
+
+Because as tries to assemble programs in one pass, new-lc may not be undefined. If you really detest this restriction we eagerly await a chance to share your improved assembler.
+
+Beware that the origin is relative to the start of the section, not to the start of the subsection. This is compatible with other people’s assemblers.
+
+When the location counter (of the current subsection) is advanced, the intervening bytes are filled with fill which should be an absolute expression. If the comma and fill are omitted, fill defaults to zero.
+
+7.84 .p2align[wl] abs-expr, abs-expr, abs-expr
+
+Pad the location counter (in the current subsection) to a particular storage boundary. The first expression (which must be absolute) is the number of low-order zero bits the location counter must have after advancement. For example `.p2align 3′ advances the location counter until it a multiple of 8. If the location counter is already a multiple of 8, no change is needed.
+
+The second expression (also absolute) gives the fill value to be stored in the padding bytes. It (and the comma) may be omitted. If it is omitted, the padding bytes are normally zero. However, on some systems, if the section is marked as containing code and the fill value is omitted, the space is filled with no-op instructions.
+
+The third expression is also absolute, and is also optional. If it is present, it is the maximum number of bytes that should be skipped by this alignment directive. If doing the alignment would require skipping more bytes than the specified maximum, then the alignment is not done at all. You can omit the fill value (the second argument) entirely by simply using two commas after the required alignment; this can be useful if you want the alignment to be filled with no-op instructions when appropriate.
+
+The .p2alignw and .p2alignl directives are variants of the .p2align directive. The .p2alignw directive treats the fill pattern as a two byte word value. The .p2alignl directives treats the fill pattern as a four byte longword value. For example, .p2alignw 2,0×368d will align to a multiple of 4. If it skips two bytes, they will be filled in with the value 0×368d (the exact placement of the bytes depends upon the endianness of the processor). If it skips 1 or 3 bytes, the fill value is undefined.
+
+7.85 .popsection
+
+This is one of the ELF section stack manipulation directives. The others are .section (see Section), .subsection (see SubSection), .pushsection (see PushSection), and .previous (see Previous).
+
+This directive replaces the current section (and subsection) with the top section (and subsection) on the section stack. This section is popped off the stack.
+
+7.86 .previous
+
+This is one of the ELF section stack manipulation directives. The others are .section (see Section), .subsection (see SubSection), .pushsection (see PushSection), and .popsection (see PopSection).
+
+This directive swaps the current section (and subsection) with most recently referenced section/subsection pair prior to this one. Multiple .previous directives in a row will flip between two sections (and their subsections). For example:
+
+.section A
+.subsection 1
+.word 0×1234
+.subsection 2
+.word 0×5678
+.previous
+.word 0×9abc
+
+Will place 0×1234 and 0×9abc into subsection 1 and 0×5678 into subsection 2 of section A. Whilst:
+
+.section A
+.subsection 1
+# Now in section A subsection 1
+.word 0×1234
+.section B
+.subsection 0
+# Now in section B subsection 0
+.word 0×5678
+.subsection 1
+# Now in section B subsection 1
+.word 0×9abc
+.previous
+# Now in section B subsection 0
+.word 0xdef0
+
+Will place 0×1234 into section A, 0×5678 and 0xdef0 into subsection 0 of section B and 0×9abc into subsection 1 of section B.
+
+In terms of the section stack, this directive swaps the current section with the top section on the section stack.
+
+7.87 .print string
+
+as will print string on the standard output during assembly. You must put string in double quotes.
+
+7.88 .protected names
+
+This is one of the ELF visibility directives. The other two are .hidden (see Hidden) and .internal (see Internal).
+
+This directive overrides the named symbols default visibility (which is set by their binding: local, global or weak). The directive sets the visibility to protected which means that any references to the symbols from within the components that defines them must be resolved to the definition in that component, even if a definition in another component would normally preempt this.
+
+7.89 .psize lines , columns
+
+Use this directive to declare the number of lines—and, optionally, the number of columns—to use for each page, when generating listings.
+
+If you do not use .psize, listings use a default line-count of 60. You may omit the comma and columns specification; the default width is 200 columns.
+
+as generates formfeeds whenever the specified number of lines is exceeded (or whenever you explicitly request one, using .eject).
+
+If you specify lines as 0, no formfeeds are generated save those explicitly specified with .eject.
+
+7.90 .purgem name
+
+Undefine the macro name, so that later uses of the string will not be expanded. See Macro.
+
+7.91 .pushsection name [, subsection] [, “flags”[, @type[,arguments]]]
+
+This is one of the ELF section stack manipulation directives. The others are .section (see Section), .subsection (see SubSection), .popsection (see PopSection), and .previous (see Previous).
+
+This directive pushes the current section (and subsection) onto the top of the section stack, and then replaces the current section and subsection with name and subsection. The optional flags, type and arguments are treated the same as in the .section (see Section) directive.
+
+7.92 .quad bignums
+
+.quad expects zero or more bignums, separated by commas. For each bignum, it emits an 8-byte integer. If the bignum won’t fit in 8 bytes, it prints a warning message; and just takes the lowest order 8 bytes of the bignum. The term “quad” comes from contexts in which a “word” is two bytes; hence quad-word for 8 bytes.
+
+7.93 .reloc offset, reloc_name[, expression]
+
+Generate a relocation at offset of type reloc_name with value expression. If offset is a number, the relocation is generated in the current section. If offset is an expression that resolves to a symbol plus offset, the relocation is generated in the given symbol’s section. expression, if present, must resolve to a symbol plus addend or to an absolute value, but note that not all targets support an addend. e.g. ELF REL targets such as i386 store an addend in the section contents rather than in the relocation. This low level interface does not support addends stored in the section.
+
+7.94 .rept count
+
+Repeat the sequence of lines between the .rept directive and the next .endr directive count times.
+
+For example, assembling
+
+.rept 3
+.long 0
+.endr
+
+is equivalent to assembling
+
+.long 0
+.long 0
+.long 0
+
+7.95 .sbttl “subheading”
+
+Use subheading as the title (third line, immediately after the title line) when generating assembly listings.
+
+This directive affects subsequent pages, as well as the current page if it appears within ten lines of the top of a page.
+
+7.96 .scl class
+
+Set the storage-class value for a symbol. This directive may only be used inside a .def/.endef pair. Storage class may flag whether a symbol is static or external, or it may record further symbolic debugging information.
+
+7.97 .section name
+
+Use the .section directive to assemble the following code into a section named name.
+
+This directive is only supported for targets that actually support arbitrarily named sections; on a.out targets, for example, it is not accepted, even with a standard a.out section name.
+COFF Version
+
+For COFF targets, the .section directive is used in one of the following ways:
+
+.section name[, “flags”]
+.section name[, subsection]
+
+If the optional argument is quoted, it is taken as flags to use for the section. Each flag is a single character. The following flags are recognized:
+
+b
+bss section (uninitialized data)
+n
+section is not loaded
+w
+writable section
+d
+data section
+r
+read-only section
+x
+executable section
+s
+shared section (meaningful for PE targets)
+a
+ignored. (For compatibility with the ELF version)
+y
+section is not readable (meaningful for PE targets)
+0-9
+single-digit power-of-two section alignment (GNU extension)
+
+If no flags are specified, the default flags depend upon the section name. If the section name is not recognized, the default will be for the section to be loaded and writable. Note the n and w flags remove attributes from the section, rather than adding them, so if they are used on their own it will be as if no flags had been specified at all.
+
+If the optional argument to the .section directive is not quoted, it is taken as a subsection number (see Sub-Sections).
+ELF Version
+
+This is one of the ELF section stack manipulation directives. The others are .subsection (see SubSection), .pushsection (see PushSection), .popsection (see PopSection), and .previous (see Previous).
+
+For ELF targets, the .section directive is used like this:
+
+.section name [, “flags”[, @type[,flag_specific_arguments]]]
+
+The optional flags argument is a quoted string which may contain any combination of the following characters:
+
+a
+section is allocatable
+e
+section is excluded from executable and shared library.
+w
+section is writable
+x
+section is executable
+M
+section is mergeable
+S
+section contains zero terminated strings
+G
+section is a member of a section group
+T
+section is used for thread-local-storage
+?
+section is a member of the previously-current section’s group, if any
+
+The optional type argument may contain one of the following constants:
+
+@progbits
+section contains data
+@nobits
+section does not contain data (i.e., section only occupies space)
+@note
+section contains data which is used by things other than the program
+@init_array
+section contains an array of pointers to init functions
+@fini_array
+section contains an array of pointers to finish functions
+@preinit_array
+section contains an array of pointers to pre-init functions
+
+Many targets only support the first three section types.
+
+Note on targets where the @ character is the start of a comment (eg ARM) then another character is used instead. For example the ARM port uses the % character.
+
+If flags contains the M symbol then the type argument must be specified as well as an extra argument—entsize—like this:
+
+.section name , “flags”M, @type, entsize
+
+Sections with the M flag but not S flag must contain fixed size constants, each entsize octets long. Sections with both M and S must contain zero terminated strings where each character is entsize bytes long. The linker may remove duplicates within sections with the same name, same entity size and same flags. entsize must be an absolute expression. For sections with both M and S, a string which is a suffix of a larger string is considered a duplicate. Thus “def” will be merged with “abcdef”; A reference to the first “def” will be changed to a reference to “abcdef”+3.
+
+If flags contains the G symbol then the type argument must be present along with an additional field like this:
+
+.section name , “flags”G, @type, GroupName[, linkage]
+
+The GroupName field specifies the name of the section group to which this particular section belongs. The optional linkage field can contain:
+
+comdat
+indicates that only one copy of this section should be retained
+.gnu.linkonce
+an alias for comdat
+
+Note: if both the M and G flags are present then the fields for the Merge flag should come first, like this:
+
+.section name , “flags”MG, @type, entsize, GroupName[, linkage]
+
+If flags contains the ? symbol then it may not also contain the G symbol and the GroupName or linkage fields should not be present. Instead, ? says to consider the section that’s current before this directive. If that section used G, then the new section will use G with those same GroupName and linkage fields implicitly. If not, then the ? symbol has no effect.
+
+If no flags are specified, the default flags depend upon the section name. If the section name is not recognized, the default will be for the section to have none of the above flags: it will not be allocated in memory, nor writable, nor executable. The section will contain data.
+
+For ELF targets, the assembler supports another type of .section directive for compatibility with the Solaris assembler:
+
+.section “name”[, flags…]
+
+Note that the section name is quoted. There may be a sequence of comma separated flags:
+
+#alloc
+section is allocatable
+#write
+section is writable
+#execinstr
+section is executable
+#exclude
+section is excluded from executable and shared library.
+#tls
+section is used for thread local storage
+
+This directive replaces the current section and subsection. See the contents of the gas testsuite directory gas/testsuite/gas/elf for some examples of how this directive and the other section stack directives work.
+
+7.98 .set symbol, expression
+
+Set the value of symbol to expression. This changes symbol’s value and type to conform to expression. If symbol was flagged as external, it remains flagged (see Symbol Attributes).
+
+You may .set a symbol many times in the same assembly.
+
+If you .set a global symbol, the value stored in the object file is the last value stored into it.
+
+On Z80 set is a real instruction, use `symbol defl expression’ instead.
+
+7.99 .short expressions
+
+.short is normally the same as `.word’. See .word.
+
+In some configurations, however, .short and .word generate numbers of different lengths. See Machine Dependencies.
+
+7.100 .single flonums
+
+This directive assembles zero or more flonums, separated by commas. It has the same effect as .float. The exact kind of floating point numbers emitted depends on how as is configured. See Machine Dependencies.
+
+7.101 .size
+
+This directive is used to set the size associated with a symbol.
+COFF Version
+
+For COFF targets, the .size directive is only permitted inside .def/.endef pairs. It is used like this:
+
+.size expression
+
+ELF Version
+
+For ELF targets, the .size directive is used like this:
+
+.size name , expression
+
+This directive sets the size associated with a symbol name. The size in bytes is computed from expression which can make use of label arithmetic. This directive is typically used to set the size of function symbols.
+
+7.102 .skip size , fill
+
+This directive emits size bytes, each of value fill. Both size and fill are absolute expressions. If the comma and fill are omitted, fill is assumed to be zero. This is the same as `.space’.
+
+7.103 .sleb128 expressions
+
+sleb128 stands for “signed little endian base 128.” This is a compact, variable length representation of numbers used by the DWARF symbolic debugging format. See .uleb128.
+
+7.104 .space size , fill
+
+This directive emits size bytes, each of value fill. Both size and fill are absolute expressions. If the comma and fill are omitted, fill is assumed to be zero. This is the same as `.skip’.
+
+Warning: .space has a completely different meaning for HPPA targets; use .block as a substitute. See HP9000 Series 800 Assembly Language Reference Manual (HP 92432-90001) for the meaning of the .space directive. See HPPA Assembler Directives, for a summary.
+
+7.105 .stabd, .stabn, .stabs
+
+There are three directives that begin `.stab’. All emit symbols (see Symbols), for use by symbolic debuggers. The symbols are not entered in the as hash table: they cannot be referenced elsewhere in the source file. Up to five fields are required:
+
+string
+This is the symbol’s name. It may contain any character except `�00′, so is more general than ordinary symbol names. Some debuggers used to code arbitrarily complex structures into symbol names using this field.
+type
+An absolute expression. The symbol’s type is set to the low 8 bits of this expression. Any bit pattern is permitted, but ld and debuggers choke on silly bit patterns.
+other
+An absolute expression. The symbol’s “other” attribute is set to the low 8 bits of this expression.
+desc
+An absolute expression. The symbol’s descriptor is set to the low 16 bits of this expression.
+value
+An absolute expression which becomes the symbol’s value.
+
+If a warning is detected while reading a .stabd, .stabn, or .stabs statement, the symbol has probably already been created; you get a half-formed symbol in your object file. This is compatible with earlier assemblers!
+
+.stabd type , other , desc
+The “name” of the symbol generated is not even an empty string. It is a null pointer, for compatibility. Older assemblers used a null pointer so they didn’t waste space in object files with empty strings.
+
+The symbol’s value is set to the location counter, relocatably. When your program is linked, the value of this symbol is the address of the location counter when the .stabd was assembled.
+
+.stabn type , other , desc , value
+The name of the symbol is set to the empty string “”.
+
+.stabs string , type , other , desc , value
+All five fields are specified.
+
+7.106 .string “str”, .string8 “str”, .string16
+
+“str”, .string32 “str”, .string64 “str”
+
+Copy the characters in str to the object file. You may specify more than one string to copy, separated by commas. Unless otherwise specified for a particular machine, the assembler marks the end of each string with a 0 byte. You can use any of the escape sequences described in Strings.
+
+The variants string16, string32 and string64 differ from the string pseudo opcode in that each 8-bit character from str is copied and expanded to 16, 32 or 64 bits respectively. The expanded characters are stored in target endianness byte order.
+
+Example:
+
+.string32 “BYE”
+expands to:
+.string “B���Y���E���” /* On little endian targets. */
+.string “���B���Y���E” /* On big endian targets. */
+
+7.107 .struct expression
+
+Switch to the absolute section, and set the section offset to expression, which must be an absolute expression. You might use this as follows:
+
+.struct 0
+field1:
+.struct field1 + 4
+field2:
+.struct field2 + 4
+field3:
+
+This would define the symbol field1 to have the value 0, the symbol field2 to have the value 4, and the symbol field3 to have the value 8. Assembly would be left in the absolute section, and you would need to use a .section directive of some sort to change to some other section before further assembly.
+
+7.108 .subsection name
+
+This is one of the ELF section stack manipulation directives. The others are .section (see Section), .pushsection (see PushSection), .popsection (see PopSection), and .previous (see Previous).
+
+This directive replaces the current subsection with name. The current section is not changed. The replaced subsection is put onto the section stack in place of the then current top of stack subsection.
+
+7.109 .symver
+
+Use the .symver directive to bind symbols to specific version nodes within a source file. This is only supported on ELF platforms, and is typically used when assembling files to be linked into a shared library. There are cases where it may make sense to use this in objects to be bound into an application itself so as to override a versioned symbol from a shared library.
+
+For ELF targets, the .symver directive can be used like this:
+
+.symver name, name2@nodename
+
+If the symbol name is defined within the file being assembled, the .symver directive effectively creates a symbol alias with the name name2@nodename, and in fact the main reason that we just don’t try and create a regular alias is that the @ character isn’t permitted in symbol names. The name2 part of the name is the actual name of the symbol by which it will be externally referenced. The name name itself is merely a name of convenience that is used so that it is possible to have definitions for multiple versions of a function within a single source file, and so that the compiler can unambiguously know which version of a function is being mentioned. The nodename portion of the alias should be the name of a node specified in the version script supplied to the linker when building a shared library. If you are attempting to override a versioned symbol from a shared library, then nodename should correspond to the nodename of the symbol you are trying to override.
+
+If the symbol name is not defined within the file being assembled, all references to name will be changed to name2@nodename. If no reference to name is made, name2@nodename will be removed from the symbol table.
+
+Another usage of the .symver directive is:
+
+.symver name, name2@@nodename
+
+In this case, the symbol name must exist and be defined within the file being assembled. It is similar to name2@nodename. The difference is name2@@nodename will also be used to resolve references to name2 by the linker.
+
+The third usage of the .symver directive is:
+
+.symver name, name2@@@nodename
+
+When name is not defined within the file being assembled, it is treated as name2@nodename. When name is defined within the file being assembled, the symbol name, name, will be changed to name2@@nodename.
+
+7.110 .tag structname
+
+This directive is generated by compilers to include auxiliary debugging information in the symbol table. It is only permitted inside .def/.endef pairs. Tags are used to link structure definitions in the symbol table with instances of those structures.
+
+7.111 .text subsection
+
+Tells as to assemble the following statements onto the end of the text subsection numbered subsection, which is an absolute expression. If subsection is omitted, subsection number zero is used.
+
+7.112 .title “heading”
+
+Use heading as the title (second line, immediately after the source file name and pagenumber) when generating assembly listings.
+
+This directive affects subsequent pages, as well as the current page if it appears within ten lines of the top of a page.
+
+7.113 .type
+
+This directive is used to set the type of a symbol.
+COFF Version
+
+For COFF targets, this directive is permitted only within .def/.endef pairs. It is used like this:
+
+.type int
+
+This records the integer int as the type attribute of a symbol table entry.
+ELF Version
+
+For ELF targets, the .type directive is used like this:
+
+.type name , type description
+
+This sets the type of symbol name to be either a function symbol or an object symbol. There are five different syntaxes supported for the type description field, in order to provide compatibility with various other assemblers.
+
+Because some of the characters used in these syntaxes (such as `@’ and `#’) are comment characters for some architectures, some of the syntaxes below do not work on all architectures. The first variant will be accepted by the GNU assembler on all architectures so that variant should be used for maximum portability, if you do not need to assemble your code with other assemblers.
+
+The syntaxes supported are:
+
+.type STT_
+.type ,#
+.type ,@
+.type ,%
+.type ,””
+
+The types supported are:
+
+STT_FUNC
+function
+Mark the symbol as being a function name.
+STT_GNU_IFUNC
+gnu_indirect_function
+Mark the symbol as an indirect function when evaluated during reloc processing. (This is only supported on assemblers targeting GNU systems).
+STT_OBJECT
+object
+Mark the symbol as being a data object.
+STT_TLS
+tls_object
+Mark the symbol as being a thead-local data object.
+STT_COMMON
+common
+Mark the symbol as being a common data object.
+STT_NOTYPE
+notype
+Does not mark the symbol in any way. It is supported just for completeness.
+gnu_unique_object
+Marks the symbol as being a globally unique data object. The dynamic linker will make sure that in the entire process there is just one symbol with this name and type in use. (This is only supported on assemblers targeting GNU systems).
+
+Note: Some targets support extra types in addition to those listed above.
+
+7.114 .uleb128 expressions
+
+uleb128 stands for “unsigned little endian base 128.” This is a compact, variable length representation of numbers used by the DWARF symbolic debugging format. See .sleb128.
+
+7.115 .val addr
+
+This directive, permitted only within .def/.endef pairs, records the address addr as the value attribute of a symbol table entry.
+
+7.116 .version “string”
+
+This directive creates a .note section and places into it an ELF formatted note of type NT_VERSION. The note’s name is set to string.
+
+7.117 .vtable_entry table, offset
+
+This directive finds or creates a symbol table and creates a VTABLE_ENTRY relocation for it with an addend of offset.
+
+7.118 .vtable_inherit child, parent
+
+This directive finds the symbol child and finds or creates the symbol parent and then creates a VTABLE_INHERIT relocation for the parent whose addend is the value of the child symbol. As a special case the parent name of 0 is treated as referring to the *ABS* section.
+
+7.119 .warning “string”
+
+Similar to the directive .error (see .error “string”), but just emits a warning.
+
+7.120 .weak names
+
+This directive sets the weak attribute on the comma separated list of symbol names. If the symbols do not already exist, they will be created.
+
+On COFF targets other than PE, weak symbols are a GNU extension. This directive sets the weak attribute on the comma separated list of symbol names. If the symbols do not already exist, they will be created.
+
+On the PE target, weak symbols are supported natively as weak aliases. When a weak symbol is created that is not an alias, GAS creates an alternate symbol to hold the default value.
+
+7.121 .weakref alias, target
+
+This directive creates an alias to the target symbol that enables the symbol to be referenced with weak-symbol semantics, but without actually making it weak. If direct references or definitions of the symbol are present, then the symbol will not be weak, but if all references to it are through weak references, the symbol will be marked as weak in the symbol table.
+
+The effect is equivalent to moving all references to the alias to a separate assembly source file, renaming the alias to the symbol in it, declaring the symbol as weak there, and running a reloadable link to merge the object files resulting from the assembly of the new source file and the old source file that had the references to the alias removed.
+
+The alias itself never makes to the symbol table, and is entirely handled within the assembler.
+
+7.122 .word expressions
+
+This directive expects zero or more expressions, of any section, separated by commas.
+
+The size of the number emitted, and its byte order, depend on what target computer the assembly is for.
+
+Warning: Special Treatment to support Compilers
+
+Machines with a 32-bit address space, but that do less than 32-bit addressing, require the following special treatment. If the machine of interest to you does 32-bit addressing (or doesn’t require it; see Machine Dependencies), you can ignore this issue.
+
+In order to assemble compiler output into something that works, as occasionally does strange things to `.word’ directives. Directives of the form `.word sym1-sym2′ are often emitted by compilers as part of jump tables. Therefore, when as assembles a directive of the form `.word sym1-sym2′, and the difference between sym1 and sym2 does not fit in 16 bits, as creates a secondary jump table, immediately before the next label. This secondary jump table is preceded by a short-jump to the first byte after the secondary table. This short-jump prevents the flow of control from accidentally falling into the new table. Inside the table is a long-jump to sym2. The original `.word’ contains sym1 minus the address of the long-jump to sym2.
+
+If there were several occurrences of `.word sym1-sym2′ before the secondary jump table, all of them are adjusted. If there was a `.word sym3-sym4′, that also did not fit in sixteen bits, a long-jump to sym4 is included in the secondary jump table, and the .word directives are adjusted to contain sym3 minus the address of the long-jump to sym4; and so on, for as many entries in the original jump table as necessary.
+
+7.123 Deprecated Directives
+
+One day these directives won’t work. They are included for compatibility with older assemblers.
+
+.abort
+.line
+
+7.122 .word expressions
+
+This directive expects zero or more expressions, of any section, separated by commas.
+
+The size of the number emitted, and its byte order, depend on what target computer the assembly is for.
+
+Warning: Special Treatment to support Compilers
+
+Machines with a 32-bit address space, but that do less than 32-bit addressing, require the following special treatment. If the machine of interest to you does 32-bit addressing (or doesn’t require it; see Machine Dependencies), you can ignore this issue.
+
+In order to assemble compiler output into something that works, as occasionally does strange things to `.word’ directives. Directives of the form `.word sym1-sym2′ are often emitted by compilers as part of jump tables. Therefore, when as assembles a directive of the form `.word sym1-sym2′, and the difference between sym1 and sym2 does not fit in 16 bits, as creates a secondary jump table, immediately before the next label. This secondary jump table is preceded by a short-jump to the first byte after the secondary table. This short-jump prevents the flow of control from accidentally falling into the new table. Inside the table is a long-jump to sym2. The original `.word’ contains sym1 minus the address of the long-jump to sym2.
+
+If there were several occurrences of `.word sym1-sym2′ before the secondary jump table, all of them are adjusted. If there was a `.word sym3-sym4′, that also did not fit in sixteen bits, a long-jump to sym4 is included in the secondary jump table, and the .word directives are adjusted to contain sym3 minus the address of the long-jump to sym4; and so on, for as many entries in the original jump table as necessary.
+
+Add a comment
+About this entry
+You’re currently reading “GNU assembler’s assembly directives” an entry on Murat.log
+
+Published:
+18.00PM on 01.16.12
+Category:
+gnu assembler
+Menu
+Research
+Grading/Teaching
+Blog
+About
+Admin area
+Login
+Last 10 entries
+Adl tips and tricks
+Livescribe + PDF
+How to write a signal handler in a bash script
+How to get pid of terminal
+How to print duplex with lpr
+How to print a plain text file into a pdf file, 2 columns per page, 20pt font
+How to generate MIPS assembly using x-gcc in FAST
+What happens to memory state when a slice instruction throws exception in Continual Flow Pipeline (CFP)?
+Checkpoint Processing and Recovery
+Fine-grain state guided runahead execution, part III (FSG-RA-dep)
+Categories
+research
+llvm
+fast
+adl
+gnu assembler
+papers
+spec
+to-do
+linux
+commands
+how-to
+Powered by Hemingway flavored Flatpress.
+
+Entries RSS
