@@ -182,7 +182,7 @@ print_num:
 	pushl %ecx
 
 	movl $10, %ebx
-	mov $10, %cx
+	xor %cx, %cx
 
 .loop_div:
 	# dx needs to be set to 0 before div call
@@ -193,9 +193,10 @@ print_num:
 	divl %ebx
 	# store modulo of division onto the stack
 	pushl %edx
-	loop .loop_div
+	inc %cx
+	cmpl $0x0, %eax
+	jne .loop_div
 
-	mov $10, %cx
 .loop_print:
 	popl %edx
 	# add 48 as the ASCII offset
@@ -221,7 +222,7 @@ end:
 msg_welcome: .asciz "MemOS: Welcome *** System Memory is: "
 len_msg_welcome: .word . - msg_welcome
 
-msg_units: .asciz "MB\015\012"
+msg_units: .asciz " MB\015\012"
 len_msg_units: .word . - msg_units
 
 msg_addr_range: .asciz "Address range ["
