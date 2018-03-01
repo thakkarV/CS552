@@ -33,8 +33,7 @@ _start:
 	# until now as a value pushed on the stack
 	# whenever we detect a usable region,
 	# pop it from stack, add lenght, push it back
-	movl $0x0, %ecx
-	pushl $ecx
+	pushl $ebx
 
 do_e820:
 	# EAX = 0xE820
@@ -166,23 +165,21 @@ print_region:
 print_str:
 	# the string to be printed is passed through si
 	# length of the string is passed through cx
-	push %eax
+	push %ax
 1:
 	lodsb
 	movb $0x0E, %ah
 	int $0x10
 	loop 1b
 
-	pop %eax
+	pop %ax
 	ret
 
 # prints the 32 bit number passed through in EAX in decimal
 print_num:
 	# save regs
 	pushl %eax
-	pushl %ebx
 	pushl %ecx
-	pushl %edx
 
 	movl $10, %ebx
 	mov $10, %cx
@@ -207,11 +204,8 @@ print_num:
 	movb $0x0E, %ah
 	int $0x10
 	loop .loop_print
-	# print dx as a ascii char
 
-	popl %edx
 	popl %ecx
-	popl %ebx
 	popl %eax
 	ret
 
