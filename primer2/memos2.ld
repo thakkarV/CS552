@@ -1,5 +1,5 @@
-/* OUTPUT_FORMAT("i686-elf-bin")
-OUTPUT_ARCH(i386) */
+OUTPUT_FORMAT("elf32-i386")
+OUTPUT_ARCH(i386)
 ENTRY(_start)
 
 SECTIONS
@@ -14,8 +14,15 @@ SECTIONS
 	.text BLOCK(4K) : ALIGN(4K)
 	{
 		/* multiboot must go at the very beginning */
-		*(.multiboot)
+		/* *(.multiboot) */
 		*(.text)
+	}
+
+	/* Read-write data (uninitialized) and stack */
+	.bss BLOCK(4K) : ALIGN(4K)
+	{
+		*(COMMON)
+		*(.bss)
 	}
 
 	/* Read-only data */
@@ -29,11 +36,5 @@ SECTIONS
 	{
 		*(.data)
 	}
-
-	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : ALIGN(4K)
-	{
-		*(COMMON)
-		*(.bss)
-	}
+	.ehframe : { *(.ehframe) }
 }

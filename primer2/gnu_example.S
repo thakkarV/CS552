@@ -14,9 +14,9 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-	
+
 #define ASM_FILE        1
-#include <multiboot.h>
+#include "multiboot.h"
 
 /* C symbol format. HAVE_ASM_USCORE is defined by configure. */
 #ifdef HAVE_ASM_USCORE
@@ -24,7 +24,7 @@
 #else
 #define EXT_C(sym)                     sym
 #endif
-	
+
 /* The size of our stack (16KB). */
 #define STACK_SIZE                      0x4000
 
@@ -45,7 +45,7 @@ _start:
 
 	/* Align 32 bits boundary. */
 	.align  4
-	
+
 		/* Multiboot header. */
 multiboot_header:
 	/* magic */
@@ -96,11 +96,11 @@ multiboot_entry:
 	/* Halt. */
 	pushl   $halt_message
 	call    EXT_C(printf)
-	
+
 lp:
 	hlt
 	jmp lp
-	
+
 halt_message:
 	.asciz  "Halted."
 
