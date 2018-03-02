@@ -44,8 +44,8 @@ void cls(void);
 void print_str(char *);
 size_t strlen(char *);
 void putchar(char);
-static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
-static inline uint16_t vga_entry(unsigned char uc, uint8_t color);
+inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
+inline uint16_t vga_entry(unsigned char uc, uint8_t color);
 
 
 void
