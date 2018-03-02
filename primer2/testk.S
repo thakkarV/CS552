@@ -1,4 +1,4 @@
-/* boot.S - bootstrap the kernel */
+x/* boot.S - bootstrap the kernel */
 /* Copyright (C) 1999, 2001, 2010  Free Software Foundation, Inc.
 *
 * This program is free software: you can redistribute it and/or modify
@@ -18,15 +18,8 @@
 #define ASM_FILE        1
 #include "multiboot.h"
 
-/* C symbol format. HAVE_ASM_USCORE is defined by configure. */
-#ifdef HAVE_ASM_USCORE
-# define EXT_C(sym)                     _ ## sym
-#else
-# define EXT_C(sym)                     sym
-#endif
-
 /* The size of our stack (16KB). */
-#define STACK_SIZE                      0x4000
+#define STACK_SIZE 0x4000
 
 /* The flags for the Multiboot header. */
 #ifdef __ELF__
@@ -34,7 +27,7 @@
 #else
 # define AOUT_KLUDGE MULTIBOOT_AOUT_KLUDGE
 #endif
-#define MULTIBOOT_HEADER_FLAGS MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_VIDEO_MODE
+#define MULTIBOOT_HEADER_FLAGS MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
 
 	.text
 
@@ -91,14 +84,16 @@ multiboot_entry:
 	pushl   %eax
 
 	/* Now enter the C main function... */
-	call    EXT_C(cmain)
+	call cmain
 
+	movl $halt_message, %eax
+	pushl %eax
+	call print_str
 	/* Halt. */
-	pushl   $halt_message
-	call    EXT_C(printf)
 
-loop:   hlt
-	jmp     loop
+spin:
+	hlt
+	jmp spin
 
 halt_message:
 	.asciz  "Halted."

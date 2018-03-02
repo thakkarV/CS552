@@ -15,7 +15,7 @@
 /* setup 16KB stack */
 /* x86 stack MUST be 16-byte aligned, acc to System V ABI standard and de-facto extensions */
 .section .bss
-    .align 16
+    .align 4
 stack_bottom:
     .skip 16384
 stack_top:
