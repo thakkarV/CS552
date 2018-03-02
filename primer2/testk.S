@@ -100,6 +100,8 @@ multiboot_entry:
 	# pushl %eax
 	# call print_str
 	/* Halt. */
+	# movl $halt_message, %eax
+	# call print_str
 
 spin:
 	hlt
