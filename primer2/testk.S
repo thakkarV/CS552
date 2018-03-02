@@ -100,14 +100,13 @@ multiboot_entry:
 	pushl   %eax
 
 	/* Now enter the C main function... */
-	# call EXT_C(cmain)
+	call EXT_C(cmain)
 
-	# movl $halt_message, %eax
-	# pushl %eax
-	# call print_str
 	/* Halt. */
-	# movl $halt_message, %eax
-	# call print_str
+	movl $halt_message, %eax
+	pushl %eax
+	call EXT_C(print_str)
+
 
 spin:
 	hlt
