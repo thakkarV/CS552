@@ -75,9 +75,9 @@ multiboot_entry:
 	movl    $(stack + STACK_SIZE), %esp
 
 	movl $0x07690748, 0xb8000
-	movl $0x07690748, 0xb8001
-	movl $0x07690748, 0xb8002
-	movl $0x07690748, 0xb8003
+	movl $0x07690748, 0xb8004
+	movl $0x07690748, 0xb8008
+	movl $0x07690748, 0xb800C
 
 
 	/* Reset EFLAGS. */
