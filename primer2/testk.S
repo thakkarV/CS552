@@ -1,4 +1,4 @@
-x/* boot.S - bootstrap the kernel */
+/* boot.S - bootstrap the kernel */
 /* Copyright (C) 1999, 2001, 2010  Free Software Foundation, Inc.
 *
 * This program is free software: you can redistribute it and/or modify

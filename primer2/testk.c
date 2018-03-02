@@ -23,7 +23,8 @@ void cls(void);
 void print_str(char *);
 size_t strlen(char *);
 void putchar(char);
-
+static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
+static inline uint16_t vga_entry(unsigned char uc, uint8_t color);
 
 /* Hardware text mode color constants. */
 enum vga_color {
@@ -103,19 +104,18 @@ strlen(char * str)
 void
 cls(void)
 {
-	int i;
-	int j;
+	int x;
+	int y;
 	size_t index;
 
-	for (i = 0; i < COLS; i ++)
+	for (x = 0; x < COLS; x ++)
 	{
-		for (j = 0; j < ROWS; j++)
+		for (y = 0; y < ROWS; y++)
 		{
-			index = (ypos * COLS) + xpos;
-			fubf[index] = (' ', color);
+			index = (y * COLS) + x;
+			fbuf[index] = (' ', color);
 		}
 	}
-	cursor = FBUF_START;
 }
 
 
