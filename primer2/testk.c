@@ -8,24 +8,6 @@
 #error "Compile with ix86-elf compiler."
 #endif
 
-#define FBUF_START 0xB8000;
-#define COLS 80
-#define ROWS 25
-
-static size_t xpos;
-static size_t ypos;
-volatile uint16_t *fbuf;
-static uint8_t color;
-
-void cmain(void);
-void init(void);
-void cls(void);
-void print_str(char *);
-size_t strlen(char *);
-void putchar(char);
-static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
-static inline uint16_t vga_entry(unsigned char uc, uint8_t color);
-
 /* Hardware text mode color constants. */
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
@@ -45,6 +27,25 @@ enum vga_color {
 	VGA_COLOR_LIGHT_BROWN = 14,
 	VGA_COLOR_WHITE = 15,
 };
+
+
+#define FBUF_START 0xB8000;
+#define COLS 80
+#define ROWS 25
+
+static size_t xpos;
+static size_t ypos;
+volatile uint16_t *fbuf;
+static uint8_t color;
+
+void cmain(void);
+void init(void);
+void cls(void);
+void print_str(char *);
+size_t strlen(char *);
+void putchar(char);
+static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
+static inline uint16_t vga_entry(unsigned char uc, uint8_t color);
 
 
 void
