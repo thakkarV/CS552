@@ -15,7 +15,7 @@
       * along with this program.  If not, see <http://www.gnu.org/licenses/>.
       */
      
-     #include <multiboot.h>
+     #include "multiboot.h"
      
      /* Macros. */
      
@@ -52,6 +52,7 @@
      void
      cmain (unsigned long magic, unsigned long addr)
      {
+      return;
        multiboot_info_t *mbi;
      
        /* Clear the screen. */
