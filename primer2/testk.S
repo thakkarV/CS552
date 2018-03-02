@@ -88,24 +88,31 @@ multiboot_entry:
 	movl $0x07690748, 0xb8004
 	movl $0x07690748, 0xb8008
 	movl $0x07690748, 0xb800C
-
-
+	
+	movl $0xb8011, %eax
+	movl $3000, %ecx
+1:	
+	movl $0, 0(%eax)
+	addl $4, %eax
+	subl $1, %ecx
+	cmp $0, %ecx
+	jnz 1b
 	/* Reset EFLAGS. */
 	pushl   $0
 	popf
 
 	/* Push the pointer to the Multiboot information structure. */
-	pushl   %ebx
+	# pushl   %ebx
 	/* Push the magic value. */
-	pushl   %eax
+	# pushl   %eax
 
 	/* Now enter the C main function... */
-	call EXT_C(cmain)
+	# jmp  EXT_C(cmain)
 
 	/* Halt. */
-	movl $halt_message, %eax
-	pushl %eax
-	call EXT_C(print_str)
+	# movl $halt_message, %eax
+	# pushl %eax
+	# call EXT_C(print_str)
 
 
 spin:

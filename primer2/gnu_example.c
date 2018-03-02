@@ -53,9 +53,8 @@
      cmain (unsigned long magic, unsigned long addr)
      {
        multiboot_info_t *mbi;
-
+	cls();
        /* Clear the screen. */
-       cls ();
 
        /* Am I booted by a Multiboot-compliant boot loader? */
        if (magic != MULTIBOOT_BOOTLOADER_MAGIC)

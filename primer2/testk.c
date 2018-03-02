@@ -51,7 +51,21 @@ static inline uint16_t vga_entry(unsigned char uc, uint8_t color);
 void
 cmain(void)
 {
-	return;
+	int i;
+	int j;
+	for (i=0; i < COLS; i++)
+	{
+		for (j = 0; j < ROWS; j++)
+		{
+			*(fbuf++) = 0;
+
+		}
+	}
+	fbuf = (uint16_t *) 0xB8000;
+
+	*(fbuf+1) = 0x0748;
+	*(fbuf + 32) = 0x0769;
+	*(fbuf + 33) = 0x0748;
 	init();
 	cls();
 	return;
