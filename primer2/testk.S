@@ -70,9 +70,13 @@ multiboot_header:
 	.long 768
 	.long 32
 
+stack_bottom:
+    .skip 16384
+stack_top:
+
 multiboot_entry:
 	/* Initialize the stack pointer. */
-	movl    $(stack + STACK_SIZE), %esp
+	movl    $(stack_top), %esp
 
 	movl $0x07690748, 0xb8000
 	movl $0x07690748, 0xb8004
@@ -105,4 +109,4 @@ halt_message:
 	.asciz  "Halted."
 
 	/* Our stack area. */
-	.comm   stack, STACK_SIZE
+	# .comm   stack, STACK_SIZE
