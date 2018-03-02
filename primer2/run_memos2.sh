@@ -13,4 +13,4 @@ gcc -T $LDFILE.ld -o $KERNFILE.bin $KERNFILE.o -lgcc -Wall -Wextra -std=gnu99 -n
 mount /root/host/CS552/primer2/$IMGFILE.img $MNTDEST -t ext2 -o loop,offset=32256
 cp /root/host/CS552/primer2/$KERNFILE.bin $MNTDEST/boot
 sync
-qemu-system-i386 -hda $IMGFILE.img
+qemu-system-i386 -kernel $KERNFILE.bin -m 32

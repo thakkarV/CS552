@@ -85,13 +85,13 @@ multiboot_entry:
 
 
 	/* Reset EFLAGS. */
-	# pushl   $0
-	# popf
+	pushl   $0
+	popf
 
 	/* Push the pointer to the Multiboot information structure. */
-	# pushl   %ebx
+	pushl   %ebx
 	/* Push the magic value. */
-	# pushl   %eax
+	pushl   %eax
 
 	/* Now enter the C main function... */
 	# call cmain
@@ -109,6 +109,3 @@ spin:
 
 halt_message:
 	.asciz  "Halted."
-
-	/* Our stack area. */
-	# .comm   stack, STACK_SIZE
