@@ -1,5 +1,3 @@
-# TODO: try if switch saves anything
-# TODO: add back skuip 0 length
 
 	.global _start
 	.code16
@@ -24,12 +22,12 @@ _start:
 
 	# while doing E820, keep count of total regions in BP
 	xor %bp, %bp
-	
+
 	# clear EBX for E820
 	xorl %ebx, %ebx
 
 	# setup ECX hack to store total type 1 memory
-	# the hack is to store the total calcualted lenght 
+	# the hack is to store the total calcualted lenght
 	# until now as a value pushed on the stack
 	# whenever we detect a usable region,
 	# pop it from stack, add lenght, push it back
@@ -53,7 +51,7 @@ do_e820:
 
 	# increment numebr of memory regions for print call counter
 	inc %bp
-	
+
 	# check if last entry, if yes, jmp print
 	testl %ebx, %ebx
 	jz print_region
@@ -62,7 +60,7 @@ do_e820:
 	movl %es:16(%di), %ecx
 	cmp $1, %cx
 	jne .skip_unusable
-	
+
 	# otherwise do the dirty hack to add to total ram
 	popl %ecx
 	addl %es:8(%di), %ecx
