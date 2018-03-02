@@ -22,19 +22,19 @@ static volatile unsigned char *video;
 static void itoa (char *buf, int base, int d);
 static void putchar (int c);
 void printf (const char *format, ...);
-int cmain(void);
+void cmain(void);
 
 
-int
+void
 cmain(void)
 {
-	return 0;
+	return;
 }
 
 
 /* Put the character C on the screen. */
 static void
-putchar (int c)
+putchar(int c)
 {
 	if (c == '\n' || c == '\r')
 	{
