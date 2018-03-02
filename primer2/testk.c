@@ -109,12 +109,12 @@ cls(void)
 	int y;
 	size_t index;
 
-	for (x = 0; x < COLS; x ++)
+	for (x = 0; x < COLS; x++)
 	{
 		for (y = 0; y < ROWS; y++)
 		{
 			index = (y * COLS) + x;
-			fbuf[index] = (' ', color);
+			fbuf[index] = vga_entry(' ', color);
 		}
 	}
 }
@@ -123,7 +123,7 @@ cls(void)
 void
 init(void)
 {
-	fbuf = FBUF_START;
+	fbuf = (uint16_t *) FBUF_START;
 	xpos = 0;
 	ypos = 0;
 	color = vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
