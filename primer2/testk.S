@@ -21,6 +21,12 @@
 /* The size of our stack (16KB). */
 #define STACK_SIZE 0x4000
 
+#ifdef HAVE_ASM_USCORE
+# define EXT_C(sym)                     _ ## sym
+#else
+# define EXT_C(sym)                     sym
+#endif
+
 /* The flags for the Multiboot header. */
 #ifdef __ELF__
 # define AOUT_KLUDGE 0
@@ -94,7 +100,7 @@ multiboot_entry:
 	pushl   %eax
 
 	/* Now enter the C main function... */
-	# call cmain
+	# call EXT_C(cmain)
 
 	# movl $halt_message, %eax
 	# pushl %eax
