@@ -11,7 +11,7 @@ SECTIONS
 
 	/* block and align do essentially the same thing, but lets use both for the
 	   sake of backwards compatibility */
-	.text:
+	.text :
 	{
 		/* multiboot must go at the very beginning */
 		/* *(.multiboot) */
@@ -19,20 +19,20 @@ SECTIONS
 	}
 
 	/* Read-write data (uninitialized) and stack */
-	.bss:
+	.bss :
 	{
-		*(COMMON)
+		*(.comm)
 		*(.bss)
 	}
 
 	/* Read-only data */
-	.rodata:
+	.rodata :
 	{
 		*(.rodata)
 	}
 
 	/* Read-write data (initialized) */
-	.data:
+	.data :
 	{
 		*(.data)
 	}

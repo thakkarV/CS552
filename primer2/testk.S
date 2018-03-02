@@ -36,7 +36,7 @@ start:
 _start:
 	jmp     multiboot_entry
 
-	/* Align 32 bits boundary. *
+	/* Align 32 bits boundary. */
 
 	/* Multiboot header. */
 multiboot_header:
