@@ -72,28 +72,29 @@ multiboot_header:
 
 multiboot_entry:
 	/* Initialize the stack pointer. */
+	movl    $(stack + STACK_SIZE), %esp
+
 	movl $0x07690748, 0xb8000
 	movl $0x07690748, 0xb8001
 	movl $0x07690748, 0xb8002
 	movl $0x07690748, 0xb8003
 
-	movl    $(stack + STACK_SIZE), %esp
 
 	/* Reset EFLAGS. */
-	pushl   $0
-	popf
+	# pushl   $0
+	# popf
 
 	/* Push the pointer to the Multiboot information structure. */
-	pushl   %ebx
+	# pushl   %ebx
 	/* Push the magic value. */
-	pushl   %eax
+	# pushl   %eax
 
 	/* Now enter the C main function... */
-	call cmain
+	# call cmain
 
-	movl $halt_message, %eax
-	pushl %eax
-	call print_str
+	# movl $halt_message, %eax
+	# pushl %eax
+	# call print_str
 	/* Halt. */
 
 spin:

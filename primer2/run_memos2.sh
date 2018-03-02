@@ -1,7 +1,7 @@
 #!/bin/bash
 
-KERNFILE="gnu_example"
-ASMFILE="gnu_example"
+KERNFILE="testk"
+ASMFILE="testk"
 LDFILE="memos2"
 IMGFILE="disk"
 MNTDEST="/mnt/D"
