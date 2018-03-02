@@ -36,11 +36,11 @@ start:
 _start:
 	jmp     multiboot_entry
 
-	/* Align 32 bits boundary. */
-	.align  4
+	/* Align 32 bits boundary. *
 
 	/* Multiboot header. */
 multiboot_header:
+	.align  4
 	/* magic */
 	.long   MULTIBOOT_HEADER_MAGIC
 	/* flags */
@@ -72,6 +72,11 @@ multiboot_header:
 
 multiboot_entry:
 	/* Initialize the stack pointer. */
+	movl $0x07690748, 0xb8000
+	movl $0x07690748, 0xb8001
+	movl $0x07690748, 0xb8002
+	movl $0x07690748, 0xb8003
+
 	movl    $(stack + STACK_SIZE), %esp
 
 	/* Reset EFLAGS. */
