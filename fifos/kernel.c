@@ -136,6 +136,6 @@ init (unsigned long magic, unsigned long addr)
 		}
 	}
 
-/* START THREADS*/
-	sched();
+	/* START THREADS*/
+	// sched();
 }

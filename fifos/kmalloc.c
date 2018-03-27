@@ -1,16 +1,16 @@
 #include "kmalloc.h"
 #include "stdlib.h"
-#include "bool.h"
+#include "types.h"
 
 #define ALIGNTO(size, boundry) (size + boundry - 1) & ~(boundry - 1)
 #define BOUNDRY 16
 #define FRAGEMENT_THRESHOLD 32
 
 /* bytes to be added for each malloc call for the bookeeping overhead */
-#define OVERHEAD sizeof(block_header_t);
+#define OVERHEAD sizeof(block_header_t)
 
 /* LINKED LIST for the free store  */ 
-static const block_header_t * __store_global_head = NULL;
+static block_header_t * __store_global_head = NULL;
 
 /* INIT STATIC VALUES */ 	
 static void * __mem_store_base;      /* start of the store */
@@ -27,8 +27,7 @@ init_kmalloc(void * store_addr, size_t store_size)
 	__mem_store_size = store_size;
 
 	/* make initial single entry for the free store */
-	__store_global_head = (block_header_t *) list_addr;
-
+	__store_global_head = (block_header_t *) store_addr;
 	__store_global_head->prev = NULL;
 	__store_global_head->next = NULL;
 	__store_global_head->size = store_size - OVERHEAD;
@@ -42,7 +41,7 @@ kmalloc(size_t size)
 	size_t alloc_size = ALIGNTO(size + OVERHEAD, BOUNDRY);
 
 	block_header_t *current = __store_global_head;
-	while(current && (currrent->size >= alloc_size) && (current->is_free))
+	while(current && (current->size >= alloc_size) && (current->is_free))
 		current = current->next;
 	
 
@@ -119,7 +118,7 @@ kcalloc(size_t size)
 void *
 krealloc(void * source, size_t size)
 {
-	void * region = malloc(size);
+	void * region = kmalloc(size);
 
 	/* 
 	 * only copy data from the old section and not of the new lenght
@@ -129,7 +128,7 @@ krealloc(void * source, size_t size)
 	if (region)
 	{
 		block_header_t * old_region = get_block_header(source);
-		memset(region, source, old_region->size);
+		memcpy(region, source, old_region->size);
 	}
 
 	kfree(source);
@@ -186,4 +185,6 @@ splice_blocks(block_header_t * h1, block_header_t * h2)
 	// splice pointers
 	h1->next = h2->next;
 	h2->next->prev = h1;
+
+	return h1;
 }

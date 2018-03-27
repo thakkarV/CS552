@@ -1,5 +1,6 @@
-#define FALSE 0
-#define TRUE 1
+#define false 0
+#define true 1
+#define NULL 0
 
 typedef unsigned char uint8;
 typedef unsigned short int uint16;

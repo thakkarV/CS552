@@ -1,8 +1,9 @@
 #ifndef KMALLOC
 #define KMALLOC
 
-/* NOTE : BLOCK SIZE DOES NOT INCLUDE BLOCK HEADER METADATA VOERHEAD */
+#include "types.h"
 
+/* NOTE : BLOCK SIZE DOES NOT INCLUDE BLOCK HEADER METADATA VOERHEAD */
 struct block_header
 {
 	struct block_header *prev;
@@ -28,8 +29,8 @@ void kfree(void *);
 
 
 /* internal methods */
-block_header_t * get_block_header(void *);
-block_header_t * splice_blocks(block_header_t *, block_header_t *);
+static block_header_t * get_block_header(void *);
+static block_header_t * splice_blocks(block_header_t *, block_header_t *);
 
 
 #endif // KMALLOC
