@@ -1,8 +1,6 @@
 #include "kvideo.h"
 
-
 /* Macros */
-
 /* Some screen stuff. */
 /* The number of columns. */
 #define COLUMNS                 80

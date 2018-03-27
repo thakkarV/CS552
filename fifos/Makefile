@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -m32 -march=i386 -fno-builtin -fno-stack-protector -fno-strict-aliasing -fno-delete-null-pointer-checks -nostdinc -I. -g -Wall -std=c99
 CPPFLAGS = -Wa,--32 -MMD
-OBJS = loader.o kernel.o kvideo.o
+OBJS = loader.o kernel.o kvideo.o kmalloc.o stdlib.o
 PROGS = memos-2
 MNT_POINT=/mnt/
 
