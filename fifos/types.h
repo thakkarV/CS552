@@ -13,7 +13,7 @@ typedef signed long int sint32, s32;
 typedef signed long long int sint64, s64;
 
 #ifndef _SIZE_T
-typedef int size_t;
+typedef unsigned size_t;
 #define _SIZE_T 1
 #endif
 

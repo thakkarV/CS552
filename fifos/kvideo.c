@@ -1,4 +1,4 @@
-#include "kvideo.h"
+#include <kvideo.h>
 
 /* Macros */
 /* Some screen stuff. */
@@ -45,6 +45,7 @@ putchar (int c)
 		ypos++;
 		if (ypos >= LINES)
 			ypos = 0;
+		
 		return;
 	}
 
@@ -53,7 +54,7 @@ putchar (int c)
 
 	xpos++;
 	if (xpos >= COLUMNS)
-	goto newline;
+		goto newline;
 }
 
 /* Format a string and print it on the screen, just like the libc

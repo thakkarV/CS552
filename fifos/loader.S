@@ -55,10 +55,10 @@ multiboot_header:
 	.long   0
 	.long   0
 #endif /* __ELF__ */
-	.long 0
-	.long 1024
-	.long 768
-	.long 32
+	.long   0
+	.long   1024
+	.long   768
+	.long   32
 
 multiboot_entry:
 	/* Initialize the stack pointer. */
@@ -80,7 +80,8 @@ multiboot_entry:
 	pushl   $halt_message
 	call    EXT_C(printf)
 
-loop:   hlt
+loop:  
+	hlt
 	jmp     loop
 
 halt_message:

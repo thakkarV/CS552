@@ -2,6 +2,9 @@
 #define KMALLOC
 
 #include "types.h"
+#include "multiboot.h"
+
+
 
 /* NOTE : BLOCK SIZE DOES NOT INCLUDE BLOCK HEADER METADATA VOERHEAD */
 struct block_header
@@ -18,7 +21,8 @@ typedef struct block_header block_header_t;
  * first is the base addr for the book-keeping linked list
  * second is the free store base addr
 **/ 
-void init_kmalloc(void * list_addr, size_t list_max_size);
+// void init_kmalloc(void * list_addr, size_t list_max_size);
+void init_kmalloc(multiboot_info_t *);
 
 
 /* malloc interface */
@@ -26,11 +30,6 @@ void * kmalloc(size_t);
 void * kcalloc(size_t);
 void * krealloc(void *, size_t);
 void kfree(void *);
-
-
-/* internal methods */
-static block_header_t * get_block_header(void *);
-static block_header_t * splice_blocks(block_header_t *, block_header_t *);
 
 
 #endif // KMALLOC

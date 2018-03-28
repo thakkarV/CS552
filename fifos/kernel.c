@@ -1,39 +1,27 @@
-/* kernel.c - the C part of the kernel */
-/* Copyright (C) 1999, 2010  Free Software Foundation, Inc.
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
+#include <kernel.h>
+#include <kvideo.h>
+#include <kmalloc.h>
 #include <multiboot.h>
 
-#include "kvideo.h"
+#define DEBUG 1
 
 /* Check if the bit BIT in FLAGS is set. */
 #define CHECK_FLAG(flags,bit) ((flags) & (1 << (bit)))
 
-/* Forward declarations. */
 void init (unsigned long magic, unsigned long addr);
+
+void print_banner(void);
+
 
 /* Check if MAGIC is valid and print the Multiboot information structure
 pointed by ADDR. */
 void
-init (unsigned long magic, unsigned long addr)
+init(unsigned long magic, unsigned long addr)
 {
 	multiboot_info_t *mbi;
 
 	/* Clear the screen. */
-	cls ();
+	cls();
 	
 	/* Am I booted by a Multiboot-compliant boot loader? */
 	if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
@@ -45,23 +33,76 @@ init (unsigned long magic, unsigned long addr)
 	/* Set MBI to the address of the Multiboot information structure. */
 	mbi = (multiboot_info_t *) addr;
 
+	/* MULTIBOOT CHECKS */
+	multiboot_flagscheck(mbi);
+
+	/* init KERNEL PIT */
+
+	/* init KERNEL PIC */
+
+	/* init KERNEL MALLOC */
+	init_kmalloc(mbi);
+	#ifdef DEBUG
+		multiboot_info_t ** mem = kmalloc(4 * sizeof(multiboot_info_t *));
+		if (!mem)
+			printf("malloc returned null\n");
+		else
+		{
+
+			printf("pointer from malloc = 0x%x\n", mem);
+			*mem = mbi;
+			printf("actual val at ptr = 0x%x | expetced = 0x%x\n", *mem, mbi);
+			kfree(mem);
+
+			// try again
+			mem = kmalloc(4 * sizeof(multiboot_info_t *));
+			printf("mem pointer = 0x%x\n", mem);
+			*mem = 0xdeadbeef;
+			printf("actual val at ptr = 0x%x | expetced = 0x%x\n", *mem, 0xdeadbeef);
+
+			// try again
+			multiboot_info_t **  mem2 = kmalloc(16 * sizeof(multiboot_info_t *));
+			printf("mem2 pointer = 0x%x\n", mem2);
+			*mem2 = 0xbeef;
+			printf("actual val at ptr = 0x%x | expetced = 0x%x\n", *mem2, 0xbeef);
+			
+			mem = kmalloc(4 * sizeof(multiboot_info_t *));
+			printf("mem pointer = 0x%x\n", mem);
+			*mem = 0xdead;
+			printf("actual val at ptr = 0x%x | expetced = 0x%x\n", *mem, 0xdead);
+
+			kfree(mem2);
+			kfree(mem);
+		}
+	#endif
+
+
+	// print_banner();
+	/* START SCHED */
+	// sched();
+}
+
+
+void
+multiboot_flagscheck(multiboot_info_t * mbi)
+{
 	/* Print out the flags. */
 	printf ("flags = 0x%x\n", (unsigned) mbi->flags);
 
 	/* Are mem_* valid? */
 	if (CHECK_FLAG (mbi->flags, 0))
-	printf ("mem_lower = %uKB, mem_upper = %uKB\n",
-	(unsigned) mbi->mem_lower, (unsigned) mbi->mem_upper);
+		printf ("Total System Memory: Lower = %uKB, Upper = %uKB\n",
+			(unsigned) mbi->mem_lower, (unsigned) mbi->mem_upper);
 
 	/* Is boot_device valid? */
 	if (CHECK_FLAG (mbi->flags, 1))
-	printf ("boot_device = 0x%x\n", (unsigned) mbi->boot_device);
+		printf ("boot_device = 0x%x\n", (unsigned) mbi->boot_device);
 
 	/* Is the command line passed? */
 	if (CHECK_FLAG (mbi->flags, 2))
-	printf ("cmdline = %s\n", (char *) mbi->cmdline);
+		printf ("cmdline = %s\n", (char *) mbi->cmdline);
 
-/* SANITY CHECKS*/
+	/* SANITY CHECKS*/
 	/* Are mods_* valid? */
 	if (CHECK_FLAG (mbi->flags, 3))
 	{
@@ -76,9 +117,9 @@ init (unsigned long magic, unsigned long addr)
 			i++, mod++)
 		{
 			printf (" mod_start = 0x%x, mod_end = 0x%x, cmdline = %s\n",
-			(unsigned) mod->mod_start,
-			(unsigned) mod->mod_end,
-			(char *) mod->cmdline);
+				(unsigned) mod->mod_start,
+				(unsigned) mod->mod_end,
+				(char *) mod->cmdline);
 		}
 	}
 
@@ -125,7 +166,7 @@ init (unsigned long magic, unsigned long addr)
 			mmap = (multiboot_memory_map_t *) ((unsigned long) mmap
 				+ mmap->size + sizeof (mmap->size)))
 		{
-			printf (" size = 0x%x, base_addr = 0x%x%08x,"
+			printf (" size = 0x%x, base = 0x%x%08x,"
 				" length = 0x%x%08x, type = 0x%x\n",
 				(unsigned) mmap->size,
 				(unsigned) (mmap->addr >> 32),
@@ -135,7 +176,15 @@ init (unsigned long magic, unsigned long addr)
 				(unsigned) mmap->type);
 		}
 	}
+}
 
-	/* START THREADS*/
-	// sched();
+void
+print_banner(void)
+{
+	printf(" __  __ ______ __  __ ______ ____   _____\n");
+	printf("|  \\/  |  ____|  \\/  |  ____/ __ \\ / ____|\n");
+	printf("| \\  / | |__  | \\  / | |__ | |  | | (___  \n");
+	printf("| |\\/| |  __| | |\\/| |  __|| |  | |\\___ \\ \n");
+	printf("| |  | | |____| |  | | |___| |__| |____) |\n");
+	printf("|_|  |_|______|_|  |_|______\\____/|_____/ \n");
 }
