@@ -11,18 +11,18 @@ static struct IDTDesc IDT[ISR_COUNT];
 void
 init_pic(void)
 {
-	/* initialize master and slave PIC */
+	/* ICW1 - initialize master and slave PIC */
 	outb(PIC1_CTRL, 0x10);
 	outb(PIC2_CTRL, 0x10);
 
-	/* set offsets for PICs */
+	/* ICW2 - set offsets for PICs */
 	outb(PIC1_DATA, PIC1_OFFSET);
 	outb(PIC2_DATA, PIC2_OFFSET);
 
-	/* tell master PIC that slave PIC is at IRQ2 */
+	/* ICW3 - tell master PIC that slave PIC is at IRQ2 */
 	outb(PIC1_DATA, 4);
 
-	/* tell Slave PIC its cascade identity */
+	/* ICW3 - tell Slave PIC its cascade identity */
 	outb(PIC2_DATA, 2);
 }
 

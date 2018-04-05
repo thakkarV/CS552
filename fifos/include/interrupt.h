@@ -12,12 +12,12 @@
 /* Master PIC ports and offset */
 #define PIC1_CTRL    0x20
 #define PIC1_DATA    0x21
-#define PIC1_OFFSET  0X20
+#define PIC1_OFFSET  0x20
 
 /* Slave PIC ports and offset */
 #define PIC2_CTRL    0xA0
 #define PIC2_DATA    0xA1
-#define PIC2_OFFSET  0X28
+#define PIC2_OFFSET  0x28
 
 #define EOI          0x20
 
@@ -46,7 +46,7 @@ struct IDTDesc
 	uint16_t offset_lo;     // offset bits 0..15
 	uint16_t selector;      // a code segment selector in GDT or LDT
 	uint8_t zero;           // unused, set to 0
-	uint8_t flags;          // type and attributes, see below
+	uint8_t flags;          // type and attributes
 	uint16_t offset_hi;     // offset bits 16..31
 } __attribute__((packed));
 

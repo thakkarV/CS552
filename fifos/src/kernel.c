@@ -84,6 +84,8 @@ init(unsigned long magic, unsigned long addr)
 	proto_cr_schedule();
 #endif
 
+	/* set interrupt flag and then loop here */
+	sti();
 	noploop();
 }
 
