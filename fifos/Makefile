@@ -43,11 +43,13 @@ clean:
 	-rm -f $(OBJS) $(TARGET) *~
 
 rbin:
-	qemu-system-i386 -kernel $(TARGET) -d cpu,exec,in_asm
+	qemu-system-i386 -kernel $(BINDIR)/$(TARGET) -d cpu,exec,in_asm
 
 rdisk:
 	qemu-system-i386 ./fifos.img -d cpu,exec,in_asm
 
 remake: clean all
 
-rr: clean all run
+rrb: clean all rbin
+
+rrd: clean all install rdisk
