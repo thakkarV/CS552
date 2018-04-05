@@ -10,8 +10,8 @@ OBJDIR    = obj
 BINDIR    = bin
 LDFILE    = kernel.ld
 
-TARGET    = $(BINDIR)/fifos
-MNT_POINT = /mnt/
+TARGET    = fifos
+MNT_POINT = /mnt/C
 
 
 # gather all files
@@ -19,31 +19,34 @@ HEADERS  := $(wildcard $(HEADERDIR)/*.h)
 CSRC     := $(wildcard $(SRCDIR)/*.c)
 ASMSRC   := $(wildcard $(ASMDIR)/*.S)
 
-SRCOBJS  := $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-ASMOBJS  := $(ASMSRC:$(ASMDIR)/%.S=$(OBJDIR)/%.o)
+SRCOBJS  := $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.c.o)
+ASMOBJS  := $(ASMSRC:$(ASMDIR)/%.S=$(OBJDIR)/%.S.o)
 OBJS     := $(SRCOBJS) $(ASMOBJS)
 
-all: $(TARGET)
+all: $(BINDIR)/$(TARGET)
 
-$(TARGET): $(OBJS)
+$(BINDIR)/$(TARGET): $(OBJS)
 	$(LD) -m elf_i386 -T $(LDFILE) -o $@ $^
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c
+$(OBJDIR)/%.c.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OBJDIR)/%.o: $(ASMDIR)/%.S
+$(OBJDIR)/%.S.o: $(ASMDIR)/%.S
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 
-install: $(TARGET)
+install: $(BINDIR)/$(TARGET)
 	cp $(BINDIR)/$(TARGET) $(MNT_POINT)/boot
 	sync
 
 clean:
 	-rm -f $(OBJS) $(TARGET) *~
 
-run:
+rbin:
 	qemu-system-i386 -kernel $(TARGET) -d cpu,exec,in_asm
+
+rdisk:
+	qemu-system-i386 ./fifos.img -d cpu,exec,in_asm
 
 remake: clean all
 

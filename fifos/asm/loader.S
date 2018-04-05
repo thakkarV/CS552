@@ -1,4 +1,4 @@
-#define ASM_FILE	1
+#define ASM_FILE 1
 #include <multiboot.h>
 
 /* C symbol format. HAVE_ASM_USCORE is defined by configure. */
@@ -19,35 +19,13 @@
 #endif
 #define MULTIBOOT_HEADER_FLAGS MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_VIDEO_MODE | AOUT_KLUDGE
 
-.text
-
 .globl  start, _start, gdt
 
-/* Setup GDT */
-gdt:
-	/* first section discriptor is null */
-	.long   0
-	.long   0
 
-	/* KERNEL CODE */
-	.long   0x0000FFFF
-	.long   0x00CF9A00
-
-	/* KERNEL DATA */
-	.long   0x0000FFFF
-	.long   0x00CF9200
-
-gdt_ptr:
-	.short  0x17
-	.long   gdt
-
-
-start:
-_start:
-	jmp     multiboot_entry
-
-	.align  4
-multiboot_header:
+/*
+ * MULTIBOOT HEADER
+*/
+.section .multiboot
 	/* magic */
 	.long   MULTIBOOT_HEADER_MAGIC
 	/* flags */
@@ -76,6 +54,35 @@ multiboot_header:
 	.long   1024
 	.long   768
 	.long   32
+
+
+/*
+ * TEXT
+*/
+.section .text
+/* Setup GDT */
+gdt:
+	/* first section discriptor is null */
+	.long   0
+	.long   0
+
+	/* KERNEL CODE */
+	.long   0x0000FFFF
+	.long   0x00CF9A00
+
+	/* KERNEL DATA */
+	.long   0x0000FFFF
+	.long   0x00CF9200
+
+gdt_ptr:
+	.short  0x17
+	.long   gdt
+
+start:
+_start:
+	jmp     multiboot_entry
+
+	.align  4
 
 multiboot_entry:
 	/* Initialize the stack pointer. */

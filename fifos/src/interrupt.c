@@ -1,5 +1,6 @@
 #include <interrupt.h>
 #include <kportio.h>
+#include <kstdlib.h>
 #include <kvideo.h>
 #include <types.h>
 
@@ -41,11 +42,13 @@ void
 init_idt(void)
 {
 	idtr.limit = (sizeof(struct IDTDesc) * ISR_COUNT) - 1;
-	idtr.base = &(IDT[0]);
+	idtr.base = &IDT;
+
+	// clear IDT and ensure all zeros
+	memset(&IDT, 0, sizeof(struct IDTDesc) * ISR_COUNT);
 
 	/* TIMER on IRQ-0 */
-	// todo: CHECK THE SEL AND FLAG VALUES
-	idt_register_isr(32, &timer_handler, 0x08, 0x8E);
+	idt_register_isr(32, &isr_32, 0x08, 0x8E);
 
 	load_idt();
 }
@@ -69,50 +72,50 @@ load_idt(void)
 }
 
 
-// void
-// IRQ_mask(uint8_t line)
-// {
-// 	uint16_t port;
-// 	uint8_t value;
+void
+IRQ_mask(uint8_t line)
+{
+	uint16_t port;
+	uint8_t value;
 
-// 	if(line < 8)
-// 	{
-// 		port = PIC1_DATA;
-// 	}
-// 	else
-// 	{
-// 		port = PIC2_DATA;
-// 		line -= 8;
-// 	}
-// 	value = inb(port) | (1 << line);
-// 	outb(port, value);
-// }
-
-
-// void
-// IRQ_unmask(uint8_t line)
-// {
-// 	uint16_t port;
-// 	uint8_t value;
-
-// 	if(line < 8)
-// 	{
-// 		port = PIC1_DATA;
-// 	}
-// 	else
-// 	{
-// 		port = PIC2_DATA;
-// 		line -= 8;
-// 	}
-// 	uint8_t foo;
-// 	foo = 9;
-// 	value = inb(port) & ~(1 << line);
-// 	outb(port, value);
-// }
+	if(line < 8)
+	{
+		port = PIC1_DATA;
+	}
+	else
+	{
+		port = PIC2_DATA;
+		line -= 8;
+	}
+	value = inb(port) | (1 << line);
+	outb(port, value);
+}
 
 
 void
-timer_handler(void)
+IRQ_unmask(uint8_t line)
+{
+	uint16_t port;
+	uint8_t value;
+
+	if(line < 8)
+	{
+		port = PIC1_DATA;
+	}
+	else
+	{
+		port = PIC2_DATA;
+		line -= 8;
+	}
+	uint8_t foo;
+	foo = 9;
+	value = inb(port) & ~(1 << line);
+	outb(port, value);
+}
+
+
+void
+isr_timer(void)
 {
 	printf("time is up\n");
 	eoi(0);

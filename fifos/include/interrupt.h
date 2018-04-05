@@ -34,11 +34,11 @@ void IRQ_unmask(uint8_t line);
 void eoi(uint8_t);
 
 /* ASM HANDLERS */
-// extern void isr_32(void);
+extern void isr_32(void);
 
 
 /* C HANDLERS */
-void timer_handler(void);
+void isr_timer(void);
 
 
 struct IDTDesc

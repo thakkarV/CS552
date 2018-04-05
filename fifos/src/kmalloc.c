@@ -1,6 +1,6 @@
 #include <kmalloc.h>
 #include <multiboot.h>
-#include <stdlib.h>
+#include <kstdlib.h>
 #include <types.h>
 #include <kvideo.h>
 

@@ -23,21 +23,37 @@ OUTPUT_FORMAT("elf32-i386")
 OUTPUT_ARCH(i386)
 ENTRY(_start)
 SECTIONS {
-  /* Bootstrap physical section, at virtual and physical address 0x100000 */
-  . = 0x100000 + SIZEOF_HEADERS;
+	/* Bootstrap physical section, at virtual and physical address 0x100000 */
+	. = 0x100000 + SIZEOF_HEADERS;
+ 
+	. = ALIGN(0x1000);
+	.text : ALIGN(0x1000)
+	{
+		*(.multiboot) 
+		*(.text)
+	}
 
-  . = ALIGN(0x1000);
-  .text : ALIGN(0x1000) { *(.multiboot .text) }
+	. = ALIGN(0x1000);
+	.rodata : ALIGN(0x1000)
+	{
+		*(.rodata)
+	}
 
-  . = ALIGN(0x1000);
-  .rodata : ALIGN(0x1000) { *(.rodata) }
+	. = ALIGN(0x1000);
+	.data : ALIGN(0x1000)
+	{
+		*(.data)
+	}
 
-  . = ALIGN(0x1000);
-  .data : ALIGN(0x1000) { *(.data) }
+	. = ALIGN(0x1000);
+	.bss : ALIGN(0x1000)
+	{
+		*(.bss COMMON)
+	}
 
-  . = ALIGN(0x1000);
-  .bss : ALIGN(0x1000) { *(.bss COMMON) }
-
-  . = ALIGN(0x1000);
-  .eh_frame (NOLOAD) : { *(.eh_frame) } : NONE
+	. = ALIGN(0x1000);
+	.eh_frame (NOLOAD) : 
+	{ 
+		*(.eh_frame) 
+	} : NONE
 }

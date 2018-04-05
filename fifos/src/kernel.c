@@ -71,8 +71,7 @@ init(unsigned long magic, unsigned long addr)
 
 	print_banner();
 
-
-	/*  */
+	/* START PROTO COROUTINES */
 #ifdef ENABLE_CR
 	printf("registering coroutines ... ");
 	proto_cr_register_routine();
@@ -84,6 +83,8 @@ init(unsigned long magic, unsigned long addr)
 	printf("starting scheduler...\n");
 	proto_cr_schedule();
 #endif
+
+	noploop();
 }
 
 
@@ -192,4 +193,11 @@ print_banner(void)
 	printf("| |\\/| |  __| | |\\/| |  __|| |  | |\\___\\\n");
 	printf("| |  | | |____| |  | | |___| |__| |____) |\n");
 	printf("|_|  |_|______|_|  |_|______\\____/|_____/\n");
+}
+
+void
+noploop(void)
+{
+	while(true)
+		__asm__ volatile("nop" : :);
 }
