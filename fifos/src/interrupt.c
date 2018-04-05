@@ -12,8 +12,8 @@ void
 init_pic(void)
 {
 	/* initialize master and slave PIC */
-	outb(PIC1_CTRL, 0x11);
-	outb(PIC2_CTRL, 0x11);
+	outb(PIC1_CTRL, 0x10);
+	outb(PIC2_CTRL, 0x10);
 
 	/* set offsets for PICs */
 	outb(PIC1_DATA, PIC1_OFFSET);
@@ -44,8 +44,9 @@ init_idt(void)
 	idtr.limit = (sizeof(struct IDTDesc) * ISR_COUNT) - 1;
 	idtr.base = &IDT;
 
+	// TODO: is it ok to not have default isrs
 	// clear IDT and ensure all zeros
-	memset(&IDT, 0, sizeof(struct IDTDesc) * ISR_COUNT);
+	memset(&IDT, 0, sizeof(IDT));
 
 	/* TIMER on IRQ-0 */
 	idt_register_isr(32, &isr_32, 0x08, 0x8E);
@@ -57,6 +58,11 @@ init_idt(void)
 void
 idt_register_isr(uint8_t isr_vector_num, void (* isr_vector)(void), uint16_t sel, uint8_t flg)
 {
+	/* Flags layout
+		+---+---+---+---+---+---+---+---+
+		| P |  DPL  | S |    GateType   |
+		+---+---+---+---+---+---+---+---+
+	 */
 	IDT[isr_vector_num].offset_lo = (uint16_t) ((uint32_t) &isr_vector & 0xFFFF);
 	IDT[isr_vector_num].selector = sel;
 	IDT[isr_vector_num].zero = 0x00;
