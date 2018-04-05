@@ -1,27 +1,50 @@
 CC = gcc
-CFLAGS = -m32 -march=i386 -I. -fno-builtin -fno-stack-protector -fno-strict-aliasing -fno-delete-null-pointer-checks -nostdinc -I. -g -Wall -std=c99
+CFLAGS = -I./include -m32 -march=i386 -fno-builtin -fno-stack-protector -fno-strict-aliasing -fno-delete-null-pointer-checks -nostdinc -g -Wall -std=c99
 CPPFLAGS = -Wa,--32 -MMD
-OBJS = loader.o kernel.o kvideo.o kmalloc.o stdlib.o
-PROGS = fifos
-MNT_POINT=/mnt/
 
-all: $(PROGS)
+# define project directory structure
+SRCDIR    = src
+ASMDIR    = asm
+HEADERDIR = include
+OBJDIR    = obj
+BINDIR    = bin
+LDFILE    = kernel.ld
 
-fifos: $(OBJS)
-	$(LD) -m elf_i386 -T kernel.ld -I. -o $@ $^
+TARGET    = $(BINDIR)/fifos
+MNT_POINT = /mnt/
 
-%: %.c
 
-install: $(PROGS)
-	cp $(PROGS) $(MNT_POINT)/boot
+# gather all files
+HEADERS  := $(wildcard $(HEADERDIR)/*.h)
+CSRC     := $(wildcard $(SRCDIR)/*.c)
+ASMSRC   := $(wildcard $(ASMDIR)/*.S)
+
+SRCOBJS  := $(CSRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+ASMOBJS  := $(ASMSRC:$(ASMDIR)/%.S=$(OBJDIR)/%.o)
+OBJS     := $(SRCOBJS) $(ASMOBJS)
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(LD) -m elf_i386 -T $(LDFILE) -o $@ $^
+
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/%.o: $(ASMDIR)/%.S
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+
+install: $(TARGET)
+	cp $(BINDIR)/$(TARGET) $(MNT_POINT)/boot
 	sync
 
 clean:
-	-rm *.o *.d $(PROGS) *~
+	-rm -f $(OBJS) $(TARGET) *~
 
 run:
-	qemu-system-i386 -kernel $(PROGS)
+	qemu-system-i386 -kernel $(TARGET) -d cpu,exec,in_asm
 
 remake: clean all
 
--include *.d
+rr: clean all run

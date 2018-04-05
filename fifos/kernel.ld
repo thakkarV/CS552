@@ -27,16 +27,16 @@ SECTIONS {
   . = 0x100000 + SIZEOF_HEADERS;
 
   . = ALIGN(0x1000);
-  .text : { *(.multiboot .text) }
+  .text : ALIGN(0x1000) { *(.multiboot .text) }
 
   . = ALIGN(0x1000);
-  .rodata : { *(.rodata) }
+  .rodata : ALIGN(0x1000) { *(.rodata) }
 
   . = ALIGN(0x1000);
-  .data : { *(.data) }
+  .data : ALIGN(0x1000) { *(.data) }
 
   . = ALIGN(0x1000);
-  .bss : { *(.bss COMMON) }
+  .bss : ALIGN(0x1000) { *(.bss COMMON) }
 
   . = ALIGN(0x1000);
   .eh_frame (NOLOAD) : { *(.eh_frame) } : NONE
