@@ -54,11 +54,11 @@ init_idt(void)
 void
 idt_register_isr(uint8_t isr_vector_num, void (* isr_vector)(void), uint16_t sel, uint8_t flg)
 {
-	IDT[isr_vector_num].offset_lo = (uint16_t) (&isr_vector & 0xFFFF);
+	IDT[isr_vector_num].offset_lo = (uint16_t) ((uint32_t) &isr_vector & 0xFFFF);
 	IDT[isr_vector_num].selector = sel;
 	IDT[isr_vector_num].zero = 0x00;
 	IDT[isr_vector_num].flags = flg;
-	IDT[isr_vector_num].offset_hi =  (uint16_t) (&isr_vector >> 16);
+	IDT[isr_vector_num].offset_hi = (uint16_t) ((uint32_t) &isr_vector >> 16);
 }
 
 
