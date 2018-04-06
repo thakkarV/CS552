@@ -58,10 +58,11 @@ void IRQ_unmask(uint8_t line);
 void eoi(uint8_t);
 
 /* ASM HANDLERS */
-extern void isr_32(void);
+extern void isr_timer(void);
 extern void isr_reserved(void);
 extern void isr_unimpl(void);
 extern void isr_double_fault(void);
+extern void isr_kbd(void);
 
 /* C HANDLERS */
 void do_timer(void);

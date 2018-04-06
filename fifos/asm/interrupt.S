@@ -1,10 +1,10 @@
 #define ASM_FILE 1
 	
 	.extern do_timer, do_reserved, do_unimpl, do_double_fault
-	.globl isr_32, isr_reserved, isr_unimpl, isr_double_fault
+	.globl isr_timer, isr_reserved, isr_unimpl, isr_double_fault, isr_kbd
 
 
-isr_32:
+isr_timer:
 	pushf
 	push %ds
 	push %es
@@ -59,6 +59,11 @@ isr_reserved:
 
 	iret
 
+
+isr_kbd:
+	movb $0x20, %al
+	outb %al, $0x20
+	iret
 
 isr_unimpl:
 	pushf
