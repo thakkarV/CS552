@@ -73,8 +73,10 @@ init_idt(void)
 		set_trap_gate(i, &isr_reserved);
 
 	/* ISR 32 : TIMER on IRQ-0 */
-	set_intr_gate(32, &isr_32);
+	set_intr_gate(32, &isr_timer);
 
+	/* ISR 33 : KBD on IRQ-1 */
+	set_intr_gate(33, &isr_kbd);
 
 	load_idt();
 }
