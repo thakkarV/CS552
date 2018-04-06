@@ -6,7 +6,7 @@
 
 static struct IDTR idtr;
 static struct IDTDesc IDT[ISR_COUNT];
-
+static long jiffies;
 
 void
 init_pic(void)
@@ -20,10 +20,10 @@ init_pic(void)
 	outb(PIC2_DATA, PIC2_OFFSET);
 
 	/* ICW3 - tell master PIC that slave PIC is at IRQ2 */
-	outb(PIC1_DATA, 4);
+	outb(PIC1_DATA, 0x4);
 
 	/* ICW3 - tell Slave PIC its cascade identity */
-	outb(PIC2_DATA, 2);
+	outb(PIC2_DATA, 0x2);
 }
 
 
@@ -41,33 +41,42 @@ eoi(uint8_t irq)
 void
 init_idt(void)
 {
+	short i = 0;
 	idtr.limit = (sizeof(struct IDTDesc) * ISR_COUNT) - 1;
-	idtr.base = &IDT;
+	idtr.base = &IDT[0];
 
 	// TODO: is it ok to not have default isrs
 	// clear IDT and ensure all zeros
-	memset(&IDT, 0, sizeof(IDT));
+	memset(&IDT, 0x0, sizeof(struct IDTDesc) * ISR_COUNT);
 
-	/* TIMER on IRQ-0 */
-	idt_register_isr(32, &isr_32, 0x08, 0x8E);
+
+	set_trap_gate(  0, &isr_unimpl);
+	set_trap_gate(  1, &isr_unimpl);
+	set_trap_gate(  2, &isr_unimpl);
+	set_system_gate(3, &isr_unimpl);
+	set_system_gate(4, &isr_unimpl);
+	set_system_gate(5, &isr_unimpl);
+	set_trap_gate(  6, &isr_unimpl);
+	set_trap_gate(  7, &isr_unimpl);
+	set_trap_gate(  8, &isr_double_fault);
+	set_trap_gate(  9, &isr_unimpl);
+	set_trap_gate( 10, &isr_unimpl);
+	set_trap_gate( 11, &isr_unimpl);
+	set_trap_gate( 12, &isr_unimpl);
+	set_trap_gate( 13, &isr_unimpl);
+	set_trap_gate( 14, &isr_unimpl);
+	set_trap_gate( 15, &isr_reserved);
+	set_trap_gate( 16, &isr_unimpl);
+
+	/* ISR 15 and 17-32 : hardware reserved */
+	for (i = 17; i < 32; i++)
+		set_trap_gate(i, &isr_reserved);
+
+	/* ISR 32 : TIMER on IRQ-0 */
+	set_intr_gate(32, &isr_32);
+
 
 	load_idt();
-}
-
-
-void
-idt_register_isr(uint8_t isr_vector_num, void (* isr_vector)(void), uint16_t sel, uint8_t flg)
-{
-	/* Flags layout
-		+---+---+---+---+---+---+---+---+
-		| P |  DPL  | S |    GateType   |
-		+---+---+---+---+---+---+---+---+
-	 */
-	IDT[isr_vector_num].offset_lo = (uint16_t) ((uint32_t) &isr_vector & 0xFFFF);
-	IDT[isr_vector_num].selector = sel;
-	IDT[isr_vector_num].zero = 0x00;
-	IDT[isr_vector_num].flags = flg;
-	IDT[isr_vector_num].offset_hi = (uint16_t) ((uint32_t) &isr_vector >> 16);
 }
 
 
@@ -121,8 +130,29 @@ IRQ_unmask(uint8_t line)
 
 
 void
-isr_timer(void)
+do_timer(void)
 {
-	printf("time is up\n");
-	eoi(0);
+	jiffies++;
+	printf("Timer Jiffies = %d\n", jiffies);
+}
+
+
+void
+do_reserved(void)
+{
+	printf("Reserved\n");
+}
+
+
+void
+do_unimpl(void)
+{
+	printf("unimplemented Trap\n");
+}
+
+
+void
+do_double_fault(void)
+{
+	printf("DOUBLE FAULT\n");
 }

@@ -47,7 +47,7 @@ init(unsigned long magic, unsigned long addr)
 
 
 	/* setup IDT */
-	printf("IDT setup ...");
+	printf("IDT setup ... ");
 	init_idt();
 	printf("done.\n");
 
@@ -83,7 +83,7 @@ init(unsigned long magic, unsigned long addr)
 	printf("starting scheduler...\n");
 	proto_cr_schedule();
 #endif
-
+	
 	/* set interrupt flag and then loop here */
 	sti();
 	noploop();
@@ -192,7 +192,7 @@ print_banner(void)
 	printf(" __  __ ______ __  __ ______ ____   _____\n");
 	printf("|  \\/  |  ____|  \\/  |  ____/ __ \\ / ____|\n");
 	printf("| \\  / | |__  | \\  / | |__ | |  | | (___  \n");
-	printf("| |\\/| |  __| | |\\/| |  __|| |  | |\\___\\\n");
+	printf("| |\\/| |  __| | |\\/| |  __|| |  | |\\___ \\\n");
 	printf("| |  | | |____| |  | | |___| |__| |____) |\n");
 	printf("|_|  |_|______|_|  |_|______\\____/|_____/\n");
 }
