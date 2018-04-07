@@ -1,16 +1,22 @@
 #ifndef THREADS
 #define THREADS
 
+#include <types.h>
+
+#define MAX_THREADCOUNT 0x10
+
+/* default 8kB for each thread */
+#define THREAD_STACK_SIZE 8192
+
 typedef struct TCB
 {
-	void * (*callable)(void *);
-	void * stack;
 	uint32_t esp;
+	void * stack;
+	void * (*callable)(void *);
 	void * retval;
 } TCB;
 
-
-void thread_create(void * (callable*) (void *));
+int thread_create(void * (*callable) (void *));
 void thread_exit(void);
 
 

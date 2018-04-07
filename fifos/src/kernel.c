@@ -12,7 +12,7 @@
 
 // #define ENABLE_CR
 #ifdef ENABLE_CR
-	#include <coroutines.h>
+	#include <proto_cr.h>
 #endif
 
 

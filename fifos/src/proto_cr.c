@@ -1,4 +1,4 @@
-#include <coroutines.h>
+#include <proto_cr.h>
 
 #include <kvideo.h>
 #include <kmalloc.h>
