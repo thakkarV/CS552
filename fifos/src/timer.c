@@ -5,7 +5,7 @@
 void
 init_pit(void)
 {
-	/* channel 0, lo/hi access, sq wave, 16-bit mode -- 00110110 */
+	/* channel 0, lo/hi access, rate generator, 16-bit mode -- 00110110 */
 	outb(PIT_COMMAND, 0x34);
 
 	/* send lo byte and hi byte to set up desired frequency */

@@ -1,25 +1,36 @@
 #ifndef SCHED
 #define SCHED
 
-#define tid_t unsigned int
+#include <types.h>
+#include <threads.h>
 
-typedef struct runq
+typedef enum
 {
-	int (*task)();
-	tid_t tid; // thread ID
-	int is_ready;
-	struct runq *prev;
-	struct runq *next;
-} runq;
+	NEW = 0,
+	READY,
+	RUNNING,
+	BLOCKED,
+	EXITED
+} TASK_STATUS;
+
+
+typedef struct task_struct
+{
+	tid_t tid;
+	TCB * thread;
+	enum TASK_STATUS;
+	struct task_struct *prev;
+	struct task_struct *next;
+} task_struct;
+
+static task_struct * __run_queue;
+static task_struct * current;
 
 void sched(void);
+void dispatch(void);
 void init_runq(void);
-void remove_thread_byref(runq *);
+void register_thread(TCB *);
+void remove_thread_byref(task_struct *);
 void remove_thread_bytid(tid_t);
-
-
-// stackless threads
-int thread1(void);
-int thread2(void);
 
 #endif // SCHED

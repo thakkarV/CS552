@@ -49,7 +49,6 @@ init_idt(void)
 	// clear IDT and ensure all zeros
 	memset(&IDT, 0x0, sizeof(struct IDTDesc) * ISR_COUNT);
 
-
 	set_trap_gate(  0, &isr_unimpl);
 	set_trap_gate(  1, &isr_unimpl);
 	set_trap_gate(  2, &isr_unimpl);
@@ -135,7 +134,8 @@ void
 do_timer(void)
 {
 	jiffies++;
-	printf("Timer Jiffies = %d\n", jiffies);
+	if (jiffies % 1000 == 0)
+		printf("Timer Jiffies = %d\n", jiffies);
 }
 
 
