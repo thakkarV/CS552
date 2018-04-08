@@ -1,28 +1,38 @@
 #include <sched.h>
 #include <kmalloc.h>
-#include <thread.h>
+#include <threads.h>
 #include <types.h>
 
 
-static uint32_t thread_count;
-static task_struct * __run_queue_head;
-static task_struct * current;
+static uint32_t __thread_count;
+static task_struct_t * __run_queue_head;
+static task_struct_t * __current_task;
 
 
-static task_struct * sched_select_next(void);
+static task_struct_t * sched_select_next_rr(void);
 
 
-void
-sched_register_tcb(TCB * tcb)
+tid_t
+sched_register_thread(void * (*callable) (void *), void * args)
 {
+	if (__thread_count == MAX_THREADCOUNT)
+		return -1;
+
 	/* allocate task struct */
-	task_struct * ts = kmalloc( sizeof(task_struct) );
-	ts->tid = thread_count++;
-	ts->tcb = tcb;
+	task_struct_t * ts = kmalloc(sizeof(task_struct_t));
+
+	/* init task metadata */
+	ts->tid = __thread_count++;
 	ts->status = NEW;
 	ts->priority = 0;
 
-	/* add new task to run queue */
+	/* Setup thread environment */
+	ts->callable = callable;
+	ts->args = args;
+	ts->stack = kmalloc(THREAD_STACK_SIZE);
+	ts->esp = ts->stack + THREAD_STACK_SIZE - 1;
+
+	/* add task to run queue */
 	if (!__run_queue_head)
 	{
 		__run_queue_head = ts;
@@ -37,32 +47,50 @@ sched_register_tcb(TCB * tcb)
 		__run_queue_head->prev->next = ts;
 		__run_queue_head->prev = ts;
 	}
+
+	return ts->tid;
 }
 
 
-static task_struct *
-sched_select_next(void)
+void
+sched_finalize_thread(void)
 {
-	return current->next;
+	kfree(__current_task->stack);
+	__current_task->status = EXITED;
+	__thread_count--;
+}
+
+
+/* ROUND ROBIN POLICY BASED TASK PICKER */
+static task_struct_t *
+sched_select_next_rr(void)
+{
+	return __current_task->next;
 }
 
 
 void
 schedule(void)
 {
-	current->status = READY;
-	SAVE_CONTEXT(&(current->tcb->esp));
+	/* Set current to ready, and save its machine context */
+	__current_task->status = READY;
 
-	current = sched_select_next();
+	SAVE_CONTEXT(__current_task->esp);
+	/* FURTHER CODE MUST NOT MANIPULATE STACK IN NET EFFECT */
 
-	if(current->status == NEW)
+	/* Pick next task to be run */
+	__current_task = sched_select_next_rr();
+
+	/* Nimble handinling required if the task has never run before */
+	if(__current_task->status == NEW)
 	{
-		current->status = RUNNING;
+		__current_task->status = RUNNING;
 	}
 	else
 	{
-		current->status = RUNNING;
-		DISPATCH(current);
+		/* Task switching is just infinite reucurison over all the running threads */
+		__current_task->status = RUNNING;
+		DISPATCH(__current_task->esp);
 		return;
 	}
 }
