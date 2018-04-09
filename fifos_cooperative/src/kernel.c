@@ -16,7 +16,7 @@
 #endif
 
 
-// #define ENABLE_STATEFUL_CR
+#define ENABLE_STATEFUL_CR
 #ifdef ENABLE_STATEFUL_CR
 	#include <stateful_cr.h>
 	#include <sched.h>
@@ -77,60 +77,7 @@ init(unsigned long magic, unsigned long addr)
 	init_kmalloc(mbi);
 	printf("done.\n");
 
-	// print_banner();
-
-	// int ** mem = kmalloc(4 * sizeof(int *));
-	// if (!mem)
-	// {
-	// 	printf("malloc returned null\n");
-	// }
-	// else
-	// {
-
-	// 	printf("pointer from malloc = 0x%x\n", mem);
-	// 	*mem = mbi;
-	// 	printf("actual val at ptr = 0x%x | expetced = 0x%x\n", *mem, mbi);
-	// 	kfree(mem);
-
-	// 	// try again
-	// 	mem = kmalloc(4 * sizeof(int *));
-	// 	printf("mem pointer = 0x%x\n", mem);
-	// 	*mem = 0xdeadbeef;
-	// 	printf("actual val at ptr = 0x%x | expetced = 0x%x\n", *mem, 0xdeadbeef);
-
-	// 	// try again
-	// 	int **  mem2 = kmalloc(16 * sizeof(int *));
-	// 	printf("mem2 pointer = 0x%x\n", mem2);
-	// 	*mem2 = 0xbeef;
-	// 	printf("actual val at ptr = 0x%x | expetced = 0x%x\n", *mem2, 0xbeef);
-		
-	// 	mem = kmalloc(4 * sizeof(int *));
-	// 	printf("mem pointer = 0x%x\n", mem);
-	// 	*mem = 0xdead;
-	// 	printf("actual val at ptr = 0x%x | expetced = 0x%x\n", *mem, 0xdead);
-
-	// 	kfree(mem2);
-	// 	// kfree(mem);
-	// }
-
-	uint32_t i = 0;
-	uint32_t j = 512;
-	char * memptr[20];
-	for (i = 0; i < 15; i++)
-	{
-		j += j;
-		memptr[i] = kmalloc(j * sizeof(char));
-		printf("malloc pointer = 0x%x actual alloc size = %d\n", memptr[i], j);
-	}
-
-	// for (i = 0; i < 15; i++)
-	// {
-	// 	kfree(memptr[i]);
-	// }
-	kfree(memptr[10]);
-
-	int * mem = kmalloc(4);
-	printf("malloc pointer = 0x%x actual alloc size = %d\n", mem, 4);
+	print_banner();
 
 	/* START PROTO COROUTINES */
 #ifdef ENABLE_PROTO_CR
@@ -151,7 +98,6 @@ init(unsigned long magic, unsigned long addr)
 	stateful_cr_register_routines();
 	printf("done.\n");
 
-	
 	/* START SCHED */
 	// cls();
 	printf("starting scheduler...\n");

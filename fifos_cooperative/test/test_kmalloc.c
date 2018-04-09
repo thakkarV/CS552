@@ -40,3 +40,19 @@ test_kmalloc(void)
 		kfree(mem);
 	}
 }
+
+
+// uint32_t i = 0;
+// uint32_t j = 512;
+// void * memptr[20];
+// for (i = 0; i < 10; i++)
+// {
+// 	j += j;
+// 	memptr[i] = kmalloc(j * sizeof(char));
+// 	printf("%d: malloc pointer = 0x%x actual alloc size = %d\n", i, memptr[i], j);
+// }
+
+// for (i = 0; i < 10; i++)
+// {
+// 	kfree(memptr[i]);
+// }

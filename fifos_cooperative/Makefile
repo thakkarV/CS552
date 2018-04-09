@@ -46,7 +46,7 @@ rbin:
 	qemu-system-i386 -kernel $(BINDIR)/$(TARGET) -m 128M -d cpu,exec,in_asm,cpu_reset,int
 
 rdisk:
-	qemu-system-i386 ./fifos.img -d cpu,exec,in_asm,cpu_reset,int
+	qemu-system-i386 ./fifos.img -m 128M -d cpu,exec,in_asm,cpu_reset,int
 
 remake: clean all
 

@@ -9,15 +9,15 @@ void
 stateful_cr_thread1(void)
 {
 	int i;
-	static int j;
+	int j;
 	int counter = 0;
 
 	while (1)
 	{
 		/* execute instructions in this thread */
-		for (i = 0; i < 10; i++)
+		for (i = 0; i < 3; i++)
 		{
-			printf ("<1> : %d", counter++);
+			printf (" <1>:%d ", counter++);
 		}
 		printf ("\n");
 
@@ -38,7 +38,7 @@ void
 stateful_cr_thread2(void)
 {
 	int i;
-	static int j;
+	int j;
 	int counter = 0;
 
 	while (1)
@@ -46,7 +46,7 @@ stateful_cr_thread2(void)
 		/* execute instructions in this thread */
 		for (i = 0; i < 5; i++)
 		{
-			printf ("<2> : %d", counter++);
+			printf (" <2>:%d ", counter++);
 		}
 		printf ("\n");
 
@@ -73,11 +73,11 @@ stateful_cr_register_routines(void)
 		printf("Could not create thread 1\n");
 	}
 
+
 	tid_t thread2_id = thread_create(stateful_cr_thread2);
 	if (thread2_id == -1)
 	{
 		printf("Could not create thread 2\n");
 	}
-
 	/* run threads */
 }

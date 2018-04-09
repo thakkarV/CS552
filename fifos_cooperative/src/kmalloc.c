@@ -5,6 +5,7 @@
 #include <kvideo.h>
 
 // #define DEBUG
+// #define DEBUGFREE
 
 #define ALIGNTO(size, boundry) (size + boundry - 1) & ~(boundry - 1)
 #define BOUNDRY 16
@@ -20,7 +21,7 @@ static block_header_t * __splice_block_out(block_header_t *, block_header_t *);
 static block_header_t * __splice_block_in(block_header_t *, size_t);
 
 
-/* LINKED LIST for the free store  */ 
+/* LINKED LIST for the free store  */
 static block_header_t * __store_global_head = NULL;
 
 
@@ -96,7 +97,7 @@ kmalloc(size_t size)
 	 * 				AND
 	 *      current is not free
 	**/
-	while (current && (current->size < alloc_size) && !(current->is_free))
+	while (!current || (current->size < alloc_size) || !(current->is_free))
 		current = current->next;
 
 
@@ -171,42 +172,66 @@ krealloc(void * source, size_t new_size)
 void
 kfree(void * buffer)
 {
-	block_header_t * header;
+	// block_header_t * header;
 
 	if (!buffer || !__store_global_head)
 		return;
 
-	header = __get_block_header(buffer);
+	block_header_t * header = __store_global_head;
+	block_header_t * lookup_header;
+	char * tmp = buffer;
+	tmp -= BLK_HEADER_SIZE;
+	lookup_header = (block_header_t *) tmp;
 
-	#ifdef DEBUG
-		printf("kfree called on buffer 0x%x\n", buffer);
-		printf("kfree header 0x%x, blk size = 0x%x\n", header, header->size);
-	#endif
+	int found = false;
+	while (true)
+	{
+		if (lookup_header == header)
+		{
+			header = lookup_header;
+			found = true;
+			break;
+		}
 
-	if (!header)
+		if (header->next)
+		{
+			header = header->next;
+		}
+		else
+		{
+			break;
+		}
+	}
+	
+	if (!found)
 		return;
 
-	
+	// header = __get_block_header(buffer);
+	// printf("kfree called on buffer 0x%x\n", buffer);
+
+	// if (!header)
+	// 	return;
+
 	header->is_free = true;
 
 	// now splice this block out if the surrounding blocks are also free
-	if (header->next)
-	{
-		if (header->next->is_free)
-		{
-			// header = __splice_block_out(header, header->next);
-			header->is_free = true;
-		}
-	}
+	// if (header->next)
+	// {
+	// 	if (header->next->is_free)
+	// 	{
+	// 		// header = __splice_block_out(header, header->next);
+	// 		header->is_free = true;
+	// 	}
+	// }
 	
-	if (header->prev)
-	{
-		if (header->prev->is_free)
-		{
-			// header = __splice_block_out(header->prev, header);
-			header->is_free = true;
-		}
-	}
+	// if (header->prev)
+	// {
+	// 	if (header->prev->is_free)
+	// 	{
+	// 		// header = __splice_block_out(header->prev, header);
+	// 		header->is_free = true;
+	// 	}
+	// }
 }
 
 
@@ -220,19 +245,38 @@ __get_block_header(void * buffer)
 	tmp -= BLK_HEADER_SIZE;
 	lookup_header = (block_header_t *) tmp;
 
-	#ifdef DEBUG
-		printf("getter called
-		 on buffer 0x%x\n", buffer);
+	#ifdef DEBUGFREE
+		printf("getter called on buffer 0x%x\n", buffer);
 		printf("getter lookup header = 0x%x\n", lookup_header);
 	#endif
 
-	while (current != NULL)
+	while (true)
 	{
 		if (lookup_header == current)
-			return lookup_header;
+		{
+			// printf("returning lookup_header = 0x%x\n", lookup_header);
+			return current;
+		}
 
-		current = current->next;
+		if (current->next)
+		{
+			current = current->next;
+		}
+		else
+		{
+			return NULL;
+		}
 	}
+
+	// while (current)
+	// {
+	// 	if (lookup_header == current)
+	// 	{
+	// 		return lookup_header;
+	// 	}
+
+	// 	current = current->next;
+	// }
 	return NULL;
 }
 
@@ -240,7 +284,7 @@ __get_block_header(void * buffer)
 static block_header_t *
 __splice_block_out(block_header_t * lo_header, block_header_t * hi_header)
 {
-	#ifdef DEBUG
+	#ifdef DEBUGFREE
 		printf("splicing 0x%x and 0x%x together\n", lo_header, hi_header);
 	#endif
 	// change size
