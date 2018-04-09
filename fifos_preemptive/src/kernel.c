@@ -16,7 +16,7 @@
 #endif
 
 
-// #define ENABLE_STATEFUL_CR
+#define ENABLE_STATEFUL_CR
 #ifdef ENABLE_STATEFUL_CR
 	#include <stateful_cr.h>
 	#include <sched.h>
@@ -93,13 +93,13 @@ init(unsigned long magic, unsigned long addr)
 	
 	/* START STSCKFUL COROUTINES */
 #ifdef ENABLE_STATEFUL_CR
+	cls();
 	printf("registering stateful coroutines ... ");
-	stateful_cr_register_routine();
+	stateful_cr_register_routines();
 	printf("done.\n");
 
 	
 	/* START SCHED */
-	cls();
 	printf("starting scheduler...\n");
 	schedule();
 #endif

@@ -12,7 +12,7 @@ static task_struct_t * sched_select_next_rr(void);
 
 
 /* default 8kB for each thread */
-#define THREAD_STACK_SIZE 8192
+#define THREAD_STACK_SIZE 512
 #define MAX_THREADCOUNT 0x10
 
 #define SAVE_CONTEXT(task_esp_addr) \
@@ -70,11 +70,8 @@ __asm__ volatile(               \
 tid_t
 sched_register_thread(void (*callable) (void))
 {
-	__asm__ volatile ("cli" ::: "memory");
-
 	if (__thread_count == MAX_THREADCOUNT)
 	{
-		__asm__ volatile ("sti" ::: "memory");
 		return -1;
 	}
 
@@ -92,10 +89,11 @@ sched_register_thread(void (*callable) (void))
 	ts->stack = kmalloc(THREAD_STACK_SIZE);
 	ts->esp = ts->stack + THREAD_STACK_SIZE - 1;
 
-	/* add task to run queue */
+	/* add task to run queue and init current task if this is the first */
 	if (!__run_queue_head)
 	{
 		__run_queue_head = ts;
+		__current_task = ts;
 		ts->next = ts;
 		ts->prev = ts;
 	}
@@ -108,7 +106,6 @@ sched_register_thread(void (*callable) (void))
 		__run_queue_head->prev = ts;
 	}
 
-	__asm__ volatile ("sti" ::: "memory");
 	return ts->tid;
 }
 
@@ -116,8 +113,6 @@ sched_register_thread(void (*callable) (void))
 void
 sched_finalize_thread(void)
 {
-	__asm__ volatile ("cli" ::: "memory");
-
 	kfree(__current_task->stack);
 	__current_task->status = EXITED;
 	// __current_task->retval = retval;
@@ -131,41 +126,49 @@ sched_finalize_thread(void)
 static task_struct_t *
 sched_select_next_rr(void)
 {
-	return __current_task->next;
+	int i = 0;
+
+	while (i++ != __thread_count+1)
+	{
+		if (__current_task->next->status != EXITED)
+			return __current_task->next;
+		else
+			__current_task = __current_task->next;
+	}
+
+	printf("Halted!\n");
+	while (true);
 }
 
 
 void
 schedule(void)
 {
-	__asm__ volatile ("cli" ::: "memory");
-
 	/* Set current to ready, and save its machine context */
-	if (__current_task->status != EXITED)
+	if (__current_task->status == RUNNING)
+	{
+		SAVE_CONTEXT(__current_task->esp);
 		__current_task->status = READY;
-	
-	SAVE_CONTEXT(__current_task->esp);
+	}
 	/* FURTHER CODE MUST NOT MANIPULATE STACK IN NET EFFECT */
 
-	/* Pick next task to be run */
-	__current_task = sched_select_next_rr();
+	/* pick next task to be run */
+	if (__current_task->status != NEW)
+		__current_task = sched_select_next_rr();
 
-	/* Nimble handinling required if the task has never run before */
+
+	/* nimble handinling required if the task has never run before */
 	if(__current_task->status == NEW)
 	{
 		__current_task->status = RUNNING;
-
-		
-		__asm__ volatile ("sti" ::: "memory");
 		START_NEW_THREAD_NOARG(__current_task->callable, __current_task->esp, sched_finalize_thread);
 	}
 	else
 	{
-		/* Task switching is just infinite reucurison over all the running threads */
 		__current_task->status = RUNNING;
-		DISPATCH(__current_task->esp);
 
-		__asm__ volatile ("sti" ::: "memory");
+		/* task switching is just infinite reucurison over all the running threads */
+		DISPATCH(__current_task->esp);
 		return;
 	}
 }

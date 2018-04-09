@@ -134,8 +134,8 @@ void
 do_timer(void)
 {
 	jiffies++;
-	if (jiffies % 1000 == 0)
-		printf("Timer Jiffies = %d\n", jiffies);
+	// if (jiffies % 1000 == 0)
+		// printf("Timer Jiffies = %d\n", jiffies);
 }
 
 

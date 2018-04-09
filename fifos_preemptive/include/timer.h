@@ -7,7 +7,7 @@
 
 /* base frequency and desired frequency in Hz */
 #define PIT_BASE_FRQ 1193182
-#define PIT_INT_FRQ 23864
+#define PIT_INT_FRQ 200
 
 void init_pit(void);
 
