@@ -10,9 +10,16 @@
 
 
 
-// #define ENABLE_CR
-#ifdef ENABLE_CR
+// #define ENABLE_PROTO_CR
+#ifdef ENABLE_PROTO_CR
 	#include <proto_cr.h>
+#endif
+
+
+// #define ENABLE_STATEFUL_CR
+#ifdef ENABLE_STATEFUL_CR
+	#include <stateful_cr.h>
+	#include <sched.h>
 #endif
 
 
@@ -72,8 +79,8 @@ init(unsigned long magic, unsigned long addr)
 	print_banner();
 
 	/* START PROTO COROUTINES */
-#ifdef ENABLE_CR
-	printf("registering coroutines ... ");
+#ifdef ENABLE_PROTO_CR
+	printf("registering proto coroutines ... ");
 	proto_cr_register_routine();
 	printf("done.\n");
 
@@ -84,6 +91,19 @@ init(unsigned long magic, unsigned long addr)
 	proto_cr_schedule();
 #endif
 	
+	/* START STSCKFUL COROUTINES */
+#ifdef ENABLE_STATEFUL_CR
+	printf("registering stateful coroutines ... ");
+	stateful_cr_register_routine();
+	printf("done.\n");
+
+	
+	/* START SCHED */
+	cls();
+	printf("starting scheduler...\n");
+	schedule();
+#endif
+
 	/* set interrupt flag and then loop here */
 	sti();
 	noploop();

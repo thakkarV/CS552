@@ -4,14 +4,10 @@
 #include <types.h>
 
 tid_t
-thread_create(void * (* callable) (void *), void * args)
+thread_create(void (* callable) (void))
 {
-	__asm__ volatile("cli"::);
-
 	/* register this func to the scheduler to create a new thread */
-	tid_t tid = sched_register_thread(callable, args);
-
-	__asm__ volatile("sti"::);
+	tid_t tid = sched_register_thread(callable);
 	return tid;
 }
 
@@ -19,9 +15,5 @@ thread_create(void * (* callable) (void *), void * args)
 void
 thread_exit(void)
 {
-	__asm__ volatile("cli"::);
-
 	sched_finalize_thread();
-
-	__asm__ volatile("sti"::);
 }
