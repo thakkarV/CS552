@@ -9,7 +9,7 @@ void
 stateful_cr_thread1(void)
 {
 	int i;
-	int j;
+	int j = 0;
 	int counter = 0;
 
 	while (1)
@@ -38,7 +38,7 @@ void
 stateful_cr_thread2(void)
 {
 	int i;
-	int j;
+	int j = 0;
 	int counter = 0;
 
 	while (1)

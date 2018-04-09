@@ -128,7 +128,7 @@ sched_select_next_rr(void)
 {
 	int i = 0;
 
-	while (i++ != __thread_count)
+	while (i++ != __thread_count+1)
 	{
 		if (__current_task->next->status != EXITED)
 			return __current_task->next;
