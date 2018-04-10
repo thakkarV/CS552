@@ -9,13 +9,6 @@
 #include <multiboot.h>
 
 
-
-// #define ENABLE_PROTO_CR
-#ifdef ENABLE_PROTO_CR
-	#include <proto_cr.h>
-#endif
-
-
 #define ENABLE_STATEFUL_CR
 #ifdef ENABLE_STATEFUL_CR
 	#include <stateful_cr.h>
@@ -77,19 +70,6 @@ init(unsigned long magic, unsigned long addr)
 	printf("done.\n");
 
 	print_banner();
-
-	/* START PROTO COROUTINES */
-#ifdef ENABLE_PROTO_CR
-	printf("registering proto coroutines ... ");
-	proto_cr_register_routine();
-	printf("done.\n");
-
-	
-	/* START SCHED */
-	cls();
-	printf("starting scheduler...\n");
-	proto_cr_schedule();
-#endif
 	
 	/* START STSCKFUL COROUTINES */
 #ifdef ENABLE_STATEFUL_CR
@@ -98,9 +78,8 @@ init(unsigned long magic, unsigned long addr)
 	stateful_cr_register_routines();
 	printf("done.\n");
 
-	
 	/* START SCHED */
-	printf("starting preemortive scheduler...\n");
+	printf("starting preemptive scheduler ...\n");
 #endif
 
 	/* set interrupt flag and then loop here */

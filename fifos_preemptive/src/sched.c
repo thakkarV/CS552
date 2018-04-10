@@ -15,12 +15,6 @@ static task_struct_t * sched_select_next_rr(void);
 #define THREAD_STACK_SIZE 512
 #define MAX_THREADCOUNT 0x10
 
-#define SAVE_CONTEXT_old(task_esp_addr) \
-__asm__ volatile(                   \
-	"movl %%esp, %0"                \
-	: "=r" (task_esp_addr)          \
-	:                               \
-	: "memory")
 
 #define SAVE_CONTEXT(task_esp_addr) \
 __asm__ volatile(                   \
@@ -69,8 +63,8 @@ __asm__ volatile(               \
 	"movl %1, %%esp\n\t"                                    \
 	"pushl %2\n\t"                                          \
 	"pushl %0\n\t"                                          \
-	"sti\n\t"                                             \
-	"ret\n\t"                                             \
+	"sti\n\t"                                               \
+	"ret\n\t"                                               \
 	:                                                       \
 	: "rm" (func), "rm" (esp), "rm" (exit_routine)          \
 	: "memory")
@@ -185,7 +179,7 @@ void
 do_timer(void)
 {
 	jiffies++;
-	if (++__current_task->counter < 1000)
+	if (++__current_task->counter < 2)
 		return;
 
 	__current_task->counter = 0;

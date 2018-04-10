@@ -1,5 +1,4 @@
 #include <stateful_cr.h>
-#include <sched.h>
 #include <kvideo.h>
 #include <kmalloc.h>
 #include <threads.h>
@@ -15,14 +14,11 @@ stateful_cr_thread1(void)
 	while (1)
 	{
 		/* execute instructions in this thread */
-		for (i = 0; i < 3; i++)
+		for (i = 0; i < 4; i++)
 		{
 			printf (" <1>:%d ", counter++);
 		}
 		printf ("\n");
-
-		/* yield and switch to another thread */
-		schedule();
 
 		/* check if done with this thread */
 		if (++j == 3)
@@ -50,9 +46,6 @@ stateful_cr_thread2(void)
 		}
 		printf ("\n");
 
-		/* yield and switch to another thread */
-		schedule();
-
 		/* check if done with this thread */
 		if (++j == 5)
 			break;
@@ -70,14 +63,21 @@ stateful_cr_register_routines(void)
 	tid_t thread1_id = thread_create(stateful_cr_thread1);
 	if (thread1_id == -1)
 	{
-		printf("Could not create thread 1\n");
+		printf("\n    Could not create thread 1\n");
+	}
+	else
+	{
+		printf("\n    Thread 1 created with tid = %d\n", thread1_id);
 	}
 
 
 	tid_t thread2_id = thread_create(stateful_cr_thread2);
 	if (thread2_id == -1)
 	{
-		printf("Could not create thread 2\n");
+		printf("    Could not create thread 2\n");
 	}
-	/* run threads */
+	else
+	{
+		printf("    Thread 2 created with tid = %d\n", thread2_id);
+	}
 }
