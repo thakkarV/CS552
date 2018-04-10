@@ -100,8 +100,7 @@ init(unsigned long magic, unsigned long addr)
 
 	
 	/* START SCHED */
-	printf("starting scheduler...\n");
-	schedule();
+	printf("starting preemortive scheduler...\n");
 #endif
 
 	/* set interrupt flag and then loop here */

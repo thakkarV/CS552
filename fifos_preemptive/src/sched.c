@@ -6,14 +6,21 @@
 static uint32_t __thread_count;
 static task_struct_t * __run_queue_head;
 static task_struct_t * __current_task;
+static task_struct_t * __next_task;
 
 static task_struct_t * sched_select_next_rr(void);
-
 
 
 /* default 8kB for each thread */
 #define THREAD_STACK_SIZE 512
 #define MAX_THREADCOUNT 0x10
+
+#define SAVE_CONTEXT_old(task_esp_addr) \
+__asm__ volatile(                   \
+	"movl %%esp, %0"                \
+	: "=r" (task_esp_addr)          \
+	:                               \
+	: "memory")
 
 #define SAVE_CONTEXT(task_esp_addr) \
 __asm__ volatile(                   \
@@ -59,11 +66,13 @@ __asm__ volatile(               \
 
 #define START_NEW_THREAD_NOARG(func, esp, exit_routine)     \
 	__asm__ volatile(                                       \
-	"movl %0, %%esp\n\t"                                    \
-	"pushl %1\n\t"                                          \
-	"jmp %2\n\t"                                            \
+	"movl %1, %%esp\n\t"                                    \
+	"pushl %2\n\t"                                          \
+	"pushl %0\n\t"                                          \
+	"sti\n\t"                                             \
+	"ret\n\t"                                             \
 	:                                                       \
-	: "rm" (esp), "rm" (exit_routine), "rm" (func)          \
+	: "rm" (func), "rm" (esp), "rm" (exit_routine)          \
 	: "memory")
 
 
@@ -82,6 +91,7 @@ sched_register_thread(void (*callable) (void))
 	ts->tid = __thread_count++;
 	ts->status = NEW;
 	ts->priority = 0;
+	ts->counter = 0;
 
 	/* Setup thread environment */
 	ts->callable = callable;
@@ -147,15 +157,14 @@ schedule(void)
 	/* Set current to ready, and save its machine context */
 	if (__current_task->status == RUNNING)
 	{
-		SAVE_CONTEXT(__current_task->esp);
 		__current_task->status = READY;
+		SAVE_CONTEXT(__current_task->esp);
 	}
 	/* FURTHER CODE MUST NOT MANIPULATE STACK IN NET EFFECT */
 
 	/* pick next task to be run */
 	if (__current_task->status != NEW)
 		__current_task = sched_select_next_rr();
-
 
 	/* nimble handinling required if the task has never run before */
 	if(__current_task->status == NEW)
@@ -166,9 +175,19 @@ schedule(void)
 	else
 	{
 		__current_task->status = RUNNING;
-
 		/* task switching is just infinite reucurison over all the running threads */
 		DISPATCH(__current_task->esp);
-		return;
 	}
+}
+
+
+void
+do_timer(void)
+{
+	jiffies++;
+	if (++__current_task->counter < 1000)
+		return;
+
+	__current_task->counter = 0;
+	schedule();
 }

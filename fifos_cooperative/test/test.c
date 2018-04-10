@@ -114,5 +114,7 @@ int main(int argc, char const * argv [])
 
 	// START_NEW_NOARG_THREAD(thread_noarg, (char*)foo + 1023, thread_exit);
 
+
+	printf(sizeof(unsigned int));
 	return 0;
 }

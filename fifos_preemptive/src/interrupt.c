@@ -6,7 +6,8 @@
 
 static struct IDTR idtr;
 static struct IDTDesc IDT[ISR_COUNT];
-static long jiffies;
+
+extern void do_timer(void);
 
 void
 init_pic(void)
@@ -24,6 +25,11 @@ init_pic(void)
 
 	/* ICW3 - tell Slave PIC its cascade identity */
 	outb(PIC2_DATA, 0x2);
+
+	for (int i = 1; i < 16; ++i)
+	{
+		IRQ_mask(i);
+	}
 }
 
 
@@ -127,15 +133,6 @@ IRQ_unmask(uint8_t line)
 	foo = 9;
 	value = inb(port) & ~(1 << line);
 	outb(port, value);
-}
-
-
-void
-do_timer(void)
-{
-	jiffies++;
-	// if (jiffies % 1000 == 0)
-		// printf("Timer Jiffies = %d\n", jiffies);
 }
 
 

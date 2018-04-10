@@ -65,7 +65,6 @@ extern void isr_double_fault(void);
 extern void isr_kbd(void);
 
 /* C HANDLERS */
-void do_timer(void);
 void do_reserved(void);
 void do_unimpl(void);
 void do_double_fault(void);

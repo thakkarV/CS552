@@ -4,6 +4,8 @@
 #include <types.h>
 #include <threads.h>
 
+static long volatile jiffies;
+
 typedef enum
 {
 	NEW = 0,
