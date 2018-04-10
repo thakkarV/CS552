@@ -1,5 +1,9 @@
 MEMEOS (fifos assignment)
 
+Vijay Thakkar and Karanraj Chauhan
+CS552 - Operating systems
+Boston University, April 2018
+
 Submission contains two directories
 	fifos/fifos_cooperative
 	fifos/fifos_preemptive
