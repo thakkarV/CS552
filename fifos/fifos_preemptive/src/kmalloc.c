@@ -19,13 +19,14 @@
 static block_header_t * __get_block_header(void *);
 static block_header_t * __splice_block_out(block_header_t *, block_header_t *);
 static block_header_t * __splice_block_in(block_header_t *, size_t);
+static void __debug_print_store(void);
 
 
 /* LINKED LIST for the free store  */
 static block_header_t * __store_global_head = NULL;
 
 
-/* INIT STATIC VALUES */ 	
+/* INIT STATIC VALUES */
 static void * __mem_store_base;      /* start of the store */
 static void * __mem_store_end;       /* end of the store */
 static size_t __mem_store_size;      /* lenght of the store */
@@ -67,11 +68,6 @@ init_kmalloc(multiboot_info_t * mbi)
 	__store_global_head->next = NULL;
 	__store_global_head->size = __mem_store_size - BLK_HEADER_SIZE;
 	__store_global_head->is_free = true;
-
-	#ifdef DEBUG
-		printf("Global store head = 0x%x\n", __store_global_head);
-		printf("Global store size = 0x%x\n", __store_global_head->size);
-	#endif
 }
 
 
@@ -81,9 +77,6 @@ kmalloc(size_t size)
 	if (size <= 0)
 		return NULL;
 
-	#ifdef DEBUG
-		printf("alloc size = 0x%x | ", size);
-	#endif
 	// size_t alloc_size = ALIGNTO(size + BLK_HEADER_SIZE, BOUNDRY);
 	size_t alloc_size = size;
 
@@ -121,9 +114,7 @@ kmalloc(size_t size)
 
 	/* MARK USED */
 	current->is_free = false;
-	#ifdef DEBUG
-		printf("Retruning data pointer = 0x%x", current + 1);
-	#endif
+
 	return current + 1;
 }
 
@@ -172,66 +163,21 @@ krealloc(void * source, size_t new_size)
 void
 kfree(void * buffer)
 {
-	// block_header_t * header;
-
 	if (!buffer || !__store_global_head)
 		return;
 
-	block_header_t * header = __store_global_head;
-	block_header_t * lookup_header;
-	char * tmp = buffer;
-	tmp -= BLK_HEADER_SIZE;
-	lookup_header = (block_header_t *) tmp;
+	block_header_t * header = __get_block_header(buffer);
 
-	int found = false;
-	while (true)
-	{
-		if (lookup_header == header)
-		{
-			header = lookup_header;
-			found = true;
-			break;
-		}
-
-		if (header->next)
-		{
-			header = header->next;
-		}
-		else
-		{
-			break;
-		}
-	}
-	
-	if (!found)
+	if (!header)
 		return;
 
-	// header = __get_block_header(buffer);
-	// printf("kfree called on buffer 0x%x\n", buffer);
+	if (header->next && header->next->is_free)
+		header = __splice_block_out(header, header->next);
 
-	// if (!header)
-	// 	return;
+	if (header->prev && header->prev->is_free)
+		header = __splice_block_out(header->prev, header);
 
 	header->is_free = true;
-
-	// now splice this block out if the surrounding blocks are also free
-	// if (header->next)
-	// {
-	// 	if (header->next->is_free)
-	// 	{
-	// 		// header = __splice_block_out(header, header->next);
-	// 		header->is_free = true;
-	// 	}
-	// }
-	
-	// if (header->prev)
-	// {
-	// 	if (header->prev->is_free)
-	// 	{
-	// 		// header = __splice_block_out(header->prev, header);
-	// 		header->is_free = true;
-	// 	}
-	// }
 }
 
 
@@ -239,61 +185,38 @@ static block_header_t *
 __get_block_header(void * buffer)
 {
 	block_header_t * current = __store_global_head;
-
-	block_header_t * lookup_header;
-	char * tmp = buffer;
-	tmp -= BLK_HEADER_SIZE;
-	lookup_header = (block_header_t *) tmp;
-
-	#ifdef DEBUGFREE
-		printf("getter called on buffer 0x%x\n", buffer);
-		printf("getter lookup header = 0x%x\n", lookup_header);
-	#endif
+	block_header_t * lookup_header = (block_header_t *) buffer - 1;
 
 	while (true)
 	{
-		if (lookup_header == current)
-		{
-			// printf("returning lookup_header = 0x%x\n", lookup_header);
+		if (current == lookup_header)
 			return current;
-		}
 
-		if (current->next)
-		{
-			current = current->next;
-		}
-		else
-		{
+		if (!current->next)
 			return NULL;
-		}
+
+		current = current->next;
 	}
-
-	// while (current)
-	// {
-	// 	if (lookup_header == current)
-	// 	{
-	// 		return lookup_header;
-	// 	}
-
-	// 	current = current->next;
-	// }
-	return NULL;
 }
 
 
 static block_header_t *
 __splice_block_out(block_header_t * lo_header, block_header_t * hi_header)
 {
-	#ifdef DEBUGFREE
-		printf("splicing 0x%x and 0x%x together\n", lo_header, hi_header);
-	#endif
 	// change size
 	lo_header->size += hi_header->size + BLK_HEADER_SIZE;
 
-	// splice pointers
-	lo_header->next = hi_header->next;
-	hi_header->next->prev = lo_header;
-
+	// the high header could be the last block in the store, handle it in the edge case
+	if (hi_header->next)
+	{
+		// splice pointers
+		lo_header->next = hi_header->next;
+		hi_header->next->prev = lo_header;
+	}
+	else
+	{
+		lo_header->next = NULL;
+	}
 	return lo_header;
 }
 
@@ -301,13 +224,10 @@ __splice_block_out(block_header_t * lo_header, block_header_t * hi_header)
 static block_header_t *
 __splice_block_in(block_header_t * current, size_t alloc_size)
 {
-	#ifdef DEBUG
-		printf("Current old block pointer = 0x%x with size = 0x%x\n", current, current->size);
-	#endif
 	/* init new block header if we have the space to do so
 	 * notice we have to add the current block header offset
 	**/
-	if (current-> size > alloc_size + 2 * BLK_HEADER_SIZE)
+	if (current->size > alloc_size + 2 * BLK_HEADER_SIZE)
 	{
 		block_header_t * new = (block_header_t *) ((char *) current + alloc_size + BLK_HEADER_SIZE);
 		new->prev = current;
@@ -318,6 +238,11 @@ __splice_block_in(block_header_t * current, size_t alloc_size)
 		if (current->next)
 		{
 			new->next = current->next;
+			current->next->prev = new;
+		}
+		else
+		{
+			new->next = NULL;
 		}
 		
 		// new size is old - what we have to allocate - new's block header size
@@ -329,10 +254,19 @@ __splice_block_in(block_header_t * current, size_t alloc_size)
 		current->size = alloc_size;
 	}
 	
-	#ifdef DEBUG
-		printf("New block pointer = 0x%x with size = 0x%x\n", new, new->size);
-		printf("Current new block pointer = 0x%x with size = 0x%x\n", current, current->size);
-	#endif
-
 	return current;
+}
+
+
+static void
+__debug_print_store(void)
+{
+	block_header_t * current = __store_global_head;
+
+	printf("STORE-> ");
+	do
+	{
+		printf("0x%x (0x%x) %d -> ", current, current->size, current->is_free);
+	} while((current = current->next));
+	printf("NULL\n");
 }

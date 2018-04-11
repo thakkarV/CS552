@@ -16,7 +16,7 @@
 #endif
 
 
-#define ENABLE_STATEFUL_CR
+// #define ENABLE_STATEFUL_CR
 #ifdef ENABLE_STATEFUL_CR
 	#include <stateful_cr.h>
 	#include <sched.h>
@@ -47,32 +47,11 @@ init(unsigned long magic, unsigned long addr)
 	mbi = (multiboot_info_t *) addr;
 
 	/* MULTIBOOT CHECKS */
+	printf("Multiboot flags check ... ");
 	multiboot_flagscheck(mbi);
+	printf("done.\n");
 
 	/* init KERNEL MALLOC */
-	printf("Multiboot flags check done.\n");
-
-
-	/* setup IDT */
-	// printf("IDT setup ... ");
-	// init_idt();
-	// printf("done.\n");
-
-
-	/* init KERNEL PIT */
-	// printf("PIT init ... ");
-	// init_pit();
-	// printf("done.\n");
-
-
-	/* init KERNEL PIC */
-	// printf("PIC init ... ");
-	// init_pic();
-	// printf("done.\n");
-
-
-	/* init KERNEL MALLOC */
-	cls();
 	printf("kernel malloc init ... ");
 	init_kmalloc(mbi);
 	printf("done.\n");
