@@ -15,7 +15,6 @@ typedef enum
 	EXITED
 } TASK_STATUS;
 
-
 typedef struct task_struct_t
 {
 	/* Context */
@@ -24,12 +23,13 @@ typedef struct task_struct_t
 	/* Data */
 	void * stack;
 	void (*callable)(void);
-	// void * args;
-	// void * retval;
+	void * arg;
+	void * retval;
 
 	/* Metadata */
 	tid_t tid;
-	long counter;
+	long utime;
+	long sleep_time;
 	long priority;
 	TASK_STATUS status;
 	struct task_struct_t * prev;
@@ -38,7 +38,12 @@ typedef struct task_struct_t
 
 
 void schedule(void);
-tid_t sched_register_thread(void (*) (void ));
+tid_t sched_register_thread(void (*) (void));
 void sched_finalize_thread(void);
+void init_sched(void);
+void __sleep_on(uint32_t milliseconds);
+
+void splice_inq(task_struct_t *, task_struct_t *);
+task_struct_t * splice_outq(task_struct_t * head, task_struct_t * element);
 
 #endif // SCHED
