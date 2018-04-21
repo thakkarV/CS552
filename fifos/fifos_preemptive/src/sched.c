@@ -5,99 +5,101 @@
 
 static volatile uint32_t __thread_count;
 
-static task_struct_t * __idle_task;
+// sched tasks
+static task_struct_t *__idle_task;
+static task_struct_t *__current_task;
 
-static task_struct_t * __runq_head;
-static task_struct_t * __current_task;
+// Sched queues
+static task_struct_t *__runq_head;
+static task_struct_t *__waitq_head;
+static task_struct_t *__doneq_head;
 
-static task_struct_t * __waitq_head;
-
-static task_struct_t * __doneq_head;
-
-
-static task_struct_t * sched_select_next_rr(void);
+// sched ops
 static void do_idle(void);
+static task_struct_t *sched_select_next_rr(void);
+static void service_waitq(void);
+
+// list ops
+static void splice_inq(task_struct_t **, task_struct_t *);
+static void splice_outq(task_struct_t **, task_struct_t *);
 
 /* default 8kB for each thread */
 #define THREAD_STACK_SIZE 512
 #define MAX_THREADCOUNT 0x10
 
-
 #define SAVE_CONTEXT(task_esp_addr) \
-__asm__ volatile(                   \
-	"pushf\n\t"                     \
-	"push %%eax\n\t"                \
-	"push %%ebx\n\t"                \
-	"push %%ecx\n\t"                \
-	"push %%edx\n\t"                \
-	"push %%esi\n\t"                \
-	"push %%edi\n\t"                \
-	"push %%ebp\n\t"                \
-	"push %%ss\n\t"                 \
-	"push %%ds\n\t"                 \
-	"push %%fs\n\t"                 \
-	"push %%gs\n\t"                 \
-	"push %%es\n\t"                 \
-	"movl %%esp, %0"                \
-	: "=r" (task_esp_addr)          \
-	:                               \
+__asm__ volatile(         \
+	"pushf\n\t"           \
+	"push %%eax\n\t"      \
+	"push %%ebx\n\t"      \
+	"push %%ecx\n\t"      \
+	"push %%edx\n\t"      \
+	"push %%esi\n\t"      \
+	"push %%edi\n\t"      \
+	"push %%ebp\n\t"      \
+	"push %%ss\n\t"       \
+	"push %%ds\n\t"       \
+	"push %%fs\n\t"       \
+	"push %%gs\n\t"       \
+	"push %%es\n\t"       \
+	"movl %%esp, %0"      \
+	: "=r"(task_esp_addr) \
+	:                     \
 	: "memory")
-
 
 #define DISPATCH(task_esp_addr) \
-__asm__ volatile(               \
-	"movl %0, %%esp\n\t"        \
-	"pop %%es\n\t"              \
-	"pop %%gs\n\t"              \
-	"pop %%fs\n\t"              \
-	"pop %%ds\n\t"              \
-	"pop %%ss\n\t"              \
-	"pop %%ebp\n\t"             \
-	"pop %%edi\n\t"             \
-	"pop %%esi\n\t"             \
-	"pop %%edx\n\t"             \
-	"pop %%ecx\n\t"             \
-	"pop %%ebx\n\t"             \
-	"pop %%eax\n\t"             \
-	"popf\n\t"                  \
-	:                           \
-	: "r" (task_esp_addr)       \
+__asm__ volatile(        \
+	"movl %0, %%esp\n\t" \
+	"pop %%es\n\t"       \
+	"pop %%gs\n\t"       \
+	"pop %%fs\n\t"       \
+	"pop %%ds\n\t"       \
+	"pop %%ss\n\t"       \
+	"pop %%ebp\n\t"      \
+	"pop %%edi\n\t"      \
+	"pop %%esi\n\t"      \
+	"pop %%edx\n\t"      \
+	"pop %%ecx\n\t"      \
+	"pop %%ebx\n\t"      \
+	"pop %%eax\n\t"      \
+	"popf\n\t"           \
+	:                    \
+	: "r"(task_esp_addr) \
 	: "memory")
 
-
-#define START_NEW_THREAD_NOARG(func, esp, exit_routine)     \
-	__asm__ volatile(                                       \
-	"movl %1, %%esp\n\t"                                    \
-	"pushl %2\n\t"                                          \
-	"pushl %0\n\t"                                          \
-	"sti\n\t"                                               \
-	"ret\n\t"                                               \
-	:                                                       \
-	: "rm" (func), "rm" (esp), "rm" (exit_routine)          \
-	: "memory")
+#define START_NEW_THREAD_NOARG(func, esp, exit_routine) \
+	__asm__ volatile(                                   \
+		"movl %1, %%esp\n\t"                            \
+		"pushl %2\n\t"                                  \
+		"pushl %0\n\t"                                  \
+		"sti\n\t"                                       \
+		"ret\n\t"                                       \
+		:                                               \
+		: "rm"(func), "rm"(esp), "rm"(exit_routine)     \
+		: "memory")
 
 /** IA-32 CALLING CONVENTION
  * Caller : push old EBP, move ESP to EBP, push all args, call
  * Callee : index args relative to ebp, save retval in EAX, leave, ret
 **/
-#define START_NEW_THREAD(func, esp, arg, ret, exit_routine)   \
-	__asm__ volatile(                                         \
-	"movl %0, %%esp\n\t"                                      \
-	"pushl %1\n\t"                                            \
-	"enter\n\t"                                               \
-	"pushl %2\n\t"                                            \
-	"sti\n\t"                                                 \
-	"call %3\n\t"                                             \
-	"movl %%eax, %4"                                          \
-	"leave\n\t"                                               \
-	"ret\n\t"                                                 \
-	:                                                         \
-	: "rm" (esp),                                             \
-	  "rm" (exit_routine),                                    \
-	  "rm" (arg),                                             \
-	  "rm" (func),                                            \
-	  "rm" (ret)                                              \
-	: "memory")
+#define START_NEW_THREAD(func, esp, arg, ret, exit_routine) \
+	__asm__ volatile(                                       \
+		"movl %0, %%esp\n\t"                                \
+		"pushl %1\n\t"                                      \
+		"enter\n\t"                                         \
+		"pushl %2\n\t"                                      \
+		"sti\n\t"                                           \
+		"call %3\n\t"                                       \
+		"movl %%eax, %4"                                    \
+		"leave\n\t"                                         \
+		"ret\n\t"                                           \
+		:                                                   \
+		: "rm"(esp),                                        \
+		  "rm"(exit_routine),                               \
+		  "rm"(arg),                                        \
+		  "rm"(func),                                       \
+		  "rm"(ret)                                         \
+		: "memory")
 
 
 void
@@ -108,6 +110,9 @@ init_sched(void)
 	__idle_task->callable = do_idle;
 	__idle_task->stack = kmalloc(sizeof(0x100));
 	__idle_task->esp = __idle_task->stack + 0x100;
+
+	if (!__current_task)
+		__current_task = __idle_task;
 }
 
 
@@ -135,15 +140,8 @@ sched_register_thread(void (*callable) (void))
 	ts->esp = ts->stack + THREAD_STACK_SIZE - 1;
 
 	/* add task to run queue and init current task if this is the first */
-	if (!__runq_head)
-	{
-		__runq_head = ts;
-		__current_task = ts;
-		ts->next = ts;
-		ts->prev = ts;
-	}
-	else
-		splice_inq(__runq_head, ts);
+	splice_inq(&__runq_head, ts);
+
 
 	return ts->tid;
 }
@@ -152,26 +150,25 @@ sched_register_thread(void (*callable) (void))
 void
 sched_finalize_thread(void)
 {
-	__asm__ volatile ("cli"::);
+	__asm__ volatile("cli":::"memory");
 	task_struct_t * curr_cpy = __current_task;
 	__current_task = __current_task->prev;
 
 	kfree(curr_cpy->stack);
 	curr_cpy->status = EXITED;
-	
+
 	// remove from runq and add to waitq
-	__runq_head = splice_outq(__runq_head, curr_cpy);
-	
-	if (__doneq_head)
-		splice_inq(__doneq_head, curr_cpy);
-	else
-		__doneq_head = curr_cpy;
-	
+	splice_outq(&__runq_head, curr_cpy);
+	splice_inq(&__doneq_head, curr_cpy);
+
 	// __current_task->retval = retval;
 	__thread_count--;
+	__asm__ volatile("sti":::"memory");
 
-	__asm__ volatile ("sti"::);
-	while(1);
+	// this schedule will run in the freeing thread's stack space
+	// but this is not an issue since this exit routine will not be interrupted
+	// and the stack will be marked free and therefore reaped
+	schedule();
 }
 
 
@@ -191,7 +188,7 @@ sched_select_next_rr(void)
 
 	if (!__runq_head)
 		return __idle_task;
-	
+
 	int i = 0;
 	while (i++ != __thread_count + 1)
 	{
@@ -208,7 +205,7 @@ sched_select_next_rr(void)
 void
 schedule(void)
 {
-	/* Set current to ready, and save its machine context */
+	/* PART 0: Set current to ready, and save its machine context */
 	if (__current_task->status == RUNNING)
 	{
 		__current_task->status = READY;
@@ -217,21 +214,20 @@ schedule(void)
 
 	/* FURTHER CODE MUST NOT MANIPULATE STACK IN NET EFFECT */
 
-	/* increment all sleep timers */
-	if (__waitq_head && __waitq_head->utime >= __waitq_head->sleep_time)
+	/* PART 1: check all sleeping tasks to see if they are ready to be woken up */
+	if (__waitq_head)
 	{
-		// we would normally have a list for the queue so multiple tasks could sleep
-		__waitq_head->status = READY;
+		service_waitq();
 	}
 
-	/* pick next task to be run */
+	/* PART 2: pick next task to be run */
 	if (__current_task->status != NEW)
 		__current_task = sched_select_next_rr();
 
-
-	/* nimble handinling required if the task has never run before */
-	if(__current_task->status == NEW)
+	/* PART 3: switch threads */
+	if (__current_task->status == NEW)
 	{
+		/* nimble handinling required if the task has never run before */
 		__current_task->status = RUNNING;
 		START_NEW_THREAD_NOARG(
 			__current_task->callable,
@@ -251,7 +247,7 @@ schedule(void)
 void
 do_timer(void)
 {
-	task_struct_t * waitq_head = __waitq_head;
+	task_struct_t *waitq_head = __waitq_head;
 	if (__waitq_head)
 	{
 		do
@@ -270,10 +266,37 @@ do_timer(void)
 }
 
 
+static void
+service_waitq(void)
+{
+	task_struct_t *waitq = __waitq_head;
+	task_struct_t *tmp;
+
+	// TODO: Verify that this loop works and looks at each task once
+	do
+	{
+		if (waitq->utime >= waitq->sleep_time)
+		{
+			tmp = waitq->next;
+			waitq->status = READY;
+			splice_outq(&__waitq_head, waitq);
+			splice_inq(&__runq_head, waitq);
+			waitq = tmp;
+		}
+		else
+		{
+			waitq = waitq->next;
+		}
+	} while (waitq != __waitq_head);
+}
+
+
 void
 __sleep_on(uint32_t milliseconds)
 {
-	task_struct_t * curr_cpy = __current_task;
+	__asm__ volatile("cli":::"memory");
+
+	task_struct_t *curr_cpy = __current_task;
 	__current_task = __current_task->prev;
 
 	// set metadata
@@ -282,13 +305,19 @@ __sleep_on(uint32_t milliseconds)
 	curr_cpy->sleep_time = milliseconds;
 
 	// remove from runq and add to waitq
-	__runq_head = splice_outq(__runq_head, curr_cpy);
-	if (__waitq_head)
-		splice_inq(__waitq_head, curr_cpy);
-	else
-		__waitq_head = curr_cpy;
+	splice_outq(&__runq_head, curr_cpy);
+	splice_inq(&__waitq_head, curr_cpy);
+
+	// this is somewhat hacky
+	// ideally save context should only be called by the scheduler
+	// but since we are setting the current task to blocked
+	// and then changing the pointer "__current_task" we have to do it here
+	// otherwise we will not be able to set the context for this thread
+	// and all hell will break loose when we try to resume it
+	SAVE_CONTEXT(curr_cpy->esp);
 
 	// block
+	__asm__ volatile("sti":::"memory");
 	schedule();
 
 	// when resumed, reset time counters
@@ -300,34 +329,57 @@ __sleep_on(uint32_t milliseconds)
 static void
 do_idle(void)
 {
-	while(1) __asm__ volatile("nop" ::);
+	while (true)
+		__asm__ volatile("nop" ::);
 }
 
 
-void
-splice_inq(task_struct_t * q_head, task_struct_t * element)
+static void
+splice_inq(task_struct_t **head_ptr, task_struct_t *element)
 {
-	element->next = q_head;
-	element->prev = q_head->prev;
+	if (*head_ptr)
+	{
+		element->next = *head_ptr;
+		element->prev = (*head_ptr)->prev;
 
-	q_head->prev->next = element;
-	q_head->prev = element;
+		(*head_ptr)->prev->next = element;
+		(*head_ptr)->prev = element;
+	}
+	else
+	{
+		*head_ptr = element;
+		(*head_ptr)->next = element;
+		(*head_ptr)->prev = element;
+	}
 }
 
 // always returns the new head pointer so that it is not leaked
-task_struct_t *
-splice_outq(task_struct_t * head, task_struct_t * element)
+static void
+splice_outq(task_struct_t **head_ptr, task_struct_t *element)
 {
-	task_struct_t * q_head;
-	if (head == element)
-		q_head = head;
-	else
-		q_head = head->next;
+	// TODO: make sure this makes sense
+	if (!(*head_ptr))
+		return;
+
+	// element being splced out is the head
+	if (element == *head_ptr)
+	{
+		// only one element left in queue
+		if (*head_ptr == (*head_ptr)->next)
+		{
+			*head_ptr = NULL;
+			return;
+		}
+
+		// more than one left in queue
+		else
+		{
+			*head_ptr = element->next;
+		}
+	}
 
 	element->prev->next = element->next;
 	element->next->prev = element->prev;
 	element->next = NULL;
 	element->prev = NULL;
-
-	return q_head;	
 }

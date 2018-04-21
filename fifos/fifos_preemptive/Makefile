@@ -53,3 +53,6 @@ remake: clean all
 rrb: clean all rbin
 
 rrd: clean all install rdisk
+
+debug: clean all
+	qemu-system-i386 -kernel $(BINDIR)/$(TARGET) -d cpu,exec,in_asm,cpu_reset,int -s -S

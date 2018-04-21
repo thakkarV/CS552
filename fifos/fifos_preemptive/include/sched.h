@@ -43,7 +43,4 @@ void sched_finalize_thread(void);
 void init_sched(void);
 void __sleep_on(uint32_t milliseconds);
 
-void splice_inq(task_struct_t *, task_struct_t *);
-task_struct_t * splice_outq(task_struct_t * head, task_struct_t * element);
-
 #endif // SCHED
