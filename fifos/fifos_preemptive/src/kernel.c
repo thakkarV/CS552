@@ -69,11 +69,17 @@ init(unsigned long magic, unsigned long addr)
 	init_kmalloc(mbi);
 	printf("done.\n");
 
+
+	/* init SCHEDULER */
+	printf("sched init ... ");
+	init_sched();
+	printf("done.\n");
+
 	print_banner();
 	
 	/* START STSCKFUL COROUTINES */
 #ifdef ENABLE_STATEFUL_CR
-	cls();
+	// cls();
 	printf("registering stateful coroutines ... ");
 	stateful_cr_register_routines();
 	printf("done.\n");
@@ -187,12 +193,12 @@ multiboot_flagscheck(multiboot_info_t * mbi)
 void
 print_banner(void)
 {
-	printf(" __  __ ______ __  __ ______ ____   _____\n");
+	printf(" __  __ ______ __  __ ______ ____   _____ \n");
 	printf("|  \\/  |  ____|  \\/  |  ____/ __ \\ / ____|\n");
 	printf("| \\  / | |__  | \\  / | |__ | |  | | (___  \n");
-	printf("| |\\/| |  __| | |\\/| |  __|| |  | |\\___ \\\n");
+	printf("| |\\/| |  __| | |\\/| |  __|| |  | |\\___  \\\n");
 	printf("| |  | | |____| |  | | |___| |__| |____) |\n");
-	printf("|_|  |_|______|_|  |_|______\\____/|_____/\n");
+	printf("|_|  |_|______|_|  |_|______\\____/|_____/ \n");
 }
 
 void
