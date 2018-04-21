@@ -34,7 +34,7 @@ typedef uint64 uint64_t;
 #endif
 
 // SCHEDULER
-#define tid_t unsigned int
+typedef int tid_t;
 
 
 #endif // TYPES
