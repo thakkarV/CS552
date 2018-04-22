@@ -6,7 +6,7 @@
 
 static long volatile jiffies;
 
-typedef enum
+typedef enum TASK_STATUS
 {
 	NEW = 0,
 	READY,
@@ -22,7 +22,7 @@ typedef struct task_struct_t
 
 	/* Data */
 	void * stack;
-	void (*callable)(void);
+	void * (*callable)(void *);
 	void * arg;
 	void * retval;
 
@@ -38,7 +38,7 @@ typedef struct task_struct_t
 
 
 void schedule(void);
-tid_t sched_register_thread(void (*) (void));
+tid_t sched_register_thread(void * (*) (void *), void *);
 void sched_finalize_thread(void);
 void init_sched(void);
 void __sleep_on(uint32_t milliseconds);

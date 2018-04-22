@@ -82,23 +82,22 @@ __asm__ volatile(        \
  * Caller : push old EBP, move ESP to EBP, push all args, call
  * Callee : index args relative to ebp, save retval in EAX, leave, ret
 **/
-#define START_NEW_THREAD(func, esp, arg, ret, exit_routine) \
+#define START_NEW_THREAD(func, esp, arg, ret_ptr, exit_routine) \
 	__asm__ volatile(                                       \
-		"movl %0, %%esp\n\t"                                \
-		"pushl %1\n\t"                                      \
-		"enter\n\t"                                         \
+		"movl %1, %%esp\n\t"                                \
 		"pushl %2\n\t"                                      \
+		"movl %%esp, %%ebp\n\t"                             \
+		"pushl %3\n\t"                                      \
 		"sti\n\t"                                           \
-		"call %3\n\t"                                       \
-		"movl %%eax, %4"                                    \
-		"leave\n\t"                                         \
+		"call %4\n\t"                                       \
+		"movl %%eax, %0\n\t"                                \
+		"movl %%ebp, %%esp\n\t"                             \
 		"ret\n\t"                                           \
-		:                                                   \
+		: "=r"(ret_ptr)                                     \
 		: "rm"(esp),                                        \
 		  "rm"(exit_routine),                               \
 		  "rm"(arg),                                        \
-		  "rm"(func),                                       \
-		  "rm"(ret)                                         \
+		  "rm"(func)                                        \
 		: "memory")
 
 
@@ -117,7 +116,7 @@ init_sched(void)
 
 
 tid_t
-sched_register_thread(void (*callable) (void))
+sched_register_thread(void * (*callable) (void *), void * arg)
 {
 	if (__thread_count == MAX_THREADCOUNT)
 	{
@@ -135,13 +134,12 @@ sched_register_thread(void (*callable) (void))
 
 	/* Setup thread environment */
 	ts->callable = callable;
-	// ts->args = args;
+	ts->arg = arg;
 	ts->stack = kmalloc(THREAD_STACK_SIZE);
 	ts->esp = ts->stack + THREAD_STACK_SIZE - 1;
 
 	/* add task to run queue and init current task if this is the first */
 	splice_inq(&__runq_head, ts);
-
 
 	return ts->tid;
 }
@@ -151,6 +149,7 @@ void
 sched_finalize_thread(void)
 {
 	__asm__ volatile("cli":::"memory");
+	printf("Ret Value = 0x%x\n", __current_task->retval);
 	task_struct_t * curr_cpy = __current_task;
 	__current_task = __current_task->prev;
 
@@ -229,9 +228,11 @@ schedule(void)
 	{
 		/* nimble handinling required if the task has never run before */
 		__current_task->status = RUNNING;
-		START_NEW_THREAD_NOARG(
+		START_NEW_THREAD(
 			__current_task->callable,
 			__current_task->esp,
+			__current_task->arg,
+			__current_task->retval,
 			sched_finalize_thread
 		);
 	}
