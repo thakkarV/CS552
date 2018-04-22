@@ -287,7 +287,9 @@ service_waitq(void)
 		{
 			waitq = waitq->next;
 		}
-	} while (waitq != __waitq_head);
+	// keep checking until either we loop back to the queue head
+	// OR the queue has been emptied
+	} while (__waitq_head && waitq != __waitq_head);
 }
 
 
@@ -319,7 +321,7 @@ __sleep_on(uint32_t milliseconds)
 	// block
 	__asm__ volatile("sti":::"memory");
 	schedule();
-
+	
 	// when resumed, reset time counters
 	__current_task->utime = 0;
 	__current_task->sleep_time = 0;
@@ -353,7 +355,7 @@ splice_inq(task_struct_t **head_ptr, task_struct_t *element)
 	}
 }
 
-// always returns the new head pointer so that it is not leaked
+
 static void
 splice_outq(task_struct_t **head_ptr, task_struct_t *element)
 {

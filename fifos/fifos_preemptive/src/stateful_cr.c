@@ -13,7 +13,7 @@ stateful_cr_thread1(void)
 
 	while (1)
 	{
-		// msleep(2);
+		msleep(500);		
 		/* execute instructions in this thread */
 		for (i = 0; i < 4; i++)
 		{
@@ -40,6 +40,7 @@ stateful_cr_thread2(void)
 
 	while (1)
 	{
+		msleep(1000);		
 		/* execute instructions in this thread */
 		for (i = 0; i < 5; i++)
 		{
@@ -66,6 +67,7 @@ stateful_cr_thread3(void)
 
 	while (1)
 	{
+		msleep(3000);
 		/* execute instructions in this thread */
 		for (i = 0; i < 4; i++)
 		{

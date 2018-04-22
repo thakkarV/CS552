@@ -79,7 +79,7 @@ init(unsigned long magic, unsigned long addr)
 	
 	/* START STSCKFUL COROUTINES */
 #ifdef ENABLE_STATEFUL_CR
-	// cls();
+	cls();
 	printf("registering stateful coroutines ... ");
 	stateful_cr_register_routines();
 	printf("done.\n");
