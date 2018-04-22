@@ -108,8 +108,8 @@ init_sched(void)
 	__idle_task = kmalloc(sizeof(task_struct_t));
 	__idle_task->status = NEW;
 	__idle_task->callable = do_idle;
-	__idle_task->stack = kmalloc(0x40);
-	__idle_task->esp = __idle_task->stack + 0x40;
+	__idle_task->stack = kmalloc(0x100);
+	__idle_task->esp = __idle_task->stack + 0x100 - 1;
 
 	if (!__current_task)
 		__current_task = __idle_task;
