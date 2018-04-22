@@ -24,7 +24,7 @@ static void splice_inq(task_struct_t **, task_struct_t *);
 static void splice_outq(task_struct_t **, task_struct_t *);
 
 /* default 8kB for each thread */
-#define THREAD_STACK_SIZE 512
+#define THREAD_STACK_SIZE 8196
 #define MAX_THREADCOUNT 0x10
 
 #define SAVE_CONTEXT(task_esp_addr) \

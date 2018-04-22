@@ -10,6 +10,7 @@
 #define ALIGNTO(size, boundry) (size + boundry - 1) & ~(boundry - 1)
 #define BOUNDRY 16
 #define BLK_FRAGEMENT_THRESHOLD 32
+#define STORE_OFFSET 0xFFFFF
 
 /* bytes to be added for each malloc call for the bookeeping BLK_HEADER_SIZE */
 #define BLK_HEADER_SIZE sizeof(block_header_t)
@@ -58,9 +59,14 @@ init_kmalloc(multiboot_info_t * mbi)
 	}
 
 	/* save free store metadata */
-	__mem_store_base = store_addr;
+	// this offset business is a totoal hack
+	// without this the malloc will start allocating memory 
+	// where the kernel code is loaded into by the boot loader
+	// need to make this more general than just a hardcoded
+	// two meg offset. should work for a long time though. ugh...
+	__mem_store_base = store_addr + STORE_OFFSET;
 	__mem_store_end = (void *) (((char *) store_addr) + store_size);
-	__mem_store_size = store_size;
+	__mem_store_size = store_size - STORE_OFFSET;
 
 	/* make initial single entry for the free store */
 	__store_global_head = (block_header_t *) __mem_store_base;
