@@ -4,6 +4,7 @@
 #include <types.h>
 
 static volatile uint32_t __thread_count;
+static volatile uint32_t __tid_counter;
 
 // sched tasks
 static task_struct_t *__idle_task;
@@ -109,9 +110,6 @@ init_sched(void)
 	__idle_task->callable = do_idle;
 	__idle_task->stack = kmalloc(0x100);
 	__idle_task->esp = __idle_task->stack + 0x100 - 1;
-
-	if (!__current_task)
-		__current_task = __idle_task;
 }
 
 
@@ -119,15 +117,13 @@ tid_t
 sched_register_thread(void * (*callable) (void *), void * arg)
 {
 	if (__thread_count == MAX_THREADCOUNT)
-	{
 		return -1;
-	}
 
 	/* allocate task struct */
 	task_struct_t * ts = kmalloc(sizeof(task_struct_t));
 
 	/* init task metadata */
-	ts->tid = __thread_count++;
+	ts->tid = __tid_counter++;
 	ts->status = NEW;
 	ts->priority = 0;
 	ts->utime = 0;
@@ -139,8 +135,11 @@ sched_register_thread(void * (*callable) (void *), void * arg)
 	ts->esp = ts->stack + THREAD_STACK_SIZE - 1;
 
 	/* add task to run queue and init current task if this is the first */
+	if (!__current_task)
+		__current_task = ts;
+	
 	splice_inq(&__runq_head, ts);
-
+	__thread_count++;
 	return ts->tid;
 }
 
@@ -149,7 +148,6 @@ void
 sched_finalize_thread(void)
 {
 	__asm__ volatile("cli":::"memory");
-	printf("Ret Value = 0x%x\n", __current_task->retval);
 	task_struct_t * curr_cpy = __current_task;
 	__current_task = __current_task->prev;
 
@@ -177,13 +175,6 @@ sched_select_next_rr(void)
 {
 	if (__current_task == __idle_task)
 		__current_task = __runq_head;
-
-	if (__waitq_head && __waitq_head->status == READY)
-	{
-		__current_task = __waitq_head;
-		__waitq_head = NULL;
-		return __current_task;
-	}
 
 	if (!__runq_head)
 		return __idle_task;
@@ -215,9 +206,7 @@ schedule(void)
 
 	/* PART 1: check all sleeping tasks to see if they are ready to be woken up */
 	if (__waitq_head)
-	{
 		service_waitq();
-	}
 
 	/* PART 2: pick next task to be run */
 	if (__current_task->status != NEW)
@@ -239,7 +228,7 @@ schedule(void)
 	else
 	{
 		__current_task->status = RUNNING;
-		/* task switching is just infinite reucurison over all the running threads */
+		/* task switching is just infinite recurison over all the running threads */
 		DISPATCH(__current_task->esp);
 	}
 }
@@ -311,12 +300,14 @@ __sleep_on(uint32_t milliseconds)
 	splice_outq(&__runq_head, curr_cpy);
 	splice_inq(&__waitq_head, curr_cpy);
 
-	// this is somewhat hacky
-	// ideally save context should only be called by the scheduler
-	// but since we are setting the current task to blocked
-	// and then changing the pointer "__current_task" we have to do it here
-	// otherwise we will not be able to set the context for this thread
-	// and all hell will break loose when we try to resume it
+	/* TODO: make this better unified into the scheduler if possible
+	 * this is somewhat hacky
+	 * ideally save context should only be called by the scheduler
+	 * but since we are setting the current task to blocked
+	 * and then changing the pointer "__current_task" we have to do it here
+	 * otherwise we will not be able to set the context for this thread
+	 * and all hell will break loose when we try to resume it
+	**/
 	SAVE_CONTEXT(curr_cpy->esp);
 
 	// block
@@ -333,7 +324,7 @@ static void
 do_idle(void)
 {
 	while (true)
-		__asm__ volatile("nop" ::);
+		__asm__ volatile("nop":::"memory");
 }
 
 
@@ -373,7 +364,6 @@ splice_outq(task_struct_t **head_ptr, task_struct_t *element)
 			*head_ptr = NULL;
 			return;
 		}
-
 		// more than one left in queue
 		else
 		{
