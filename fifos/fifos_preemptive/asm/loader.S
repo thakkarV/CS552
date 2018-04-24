@@ -99,9 +99,9 @@ multiboot_entry:
 	movw    %ax, %es
 	movw    %ax, %fs
 	movw    %ax, %gs
-	pop %ax
+	pop     %ax
 
-	/* Reset EFLAGS. */
+	/* Reset EFLAGS */
 	pushl   $0
 	popf
 
@@ -122,7 +122,7 @@ loop:
 	jmp     loop
 
 halt_message:
-	.asciz  "Halted"
+	.asciz  "HCF"
 
 	/* Our stack area. */
 	.comm   stack, STACK_SIZE
