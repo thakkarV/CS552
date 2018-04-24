@@ -94,11 +94,11 @@ __asm__ volatile(        \
 		"movl %%eax, %0\n\t"                                \
 		"movl %%ebp, %%esp\n\t"                             \
 		"ret\n\t"                                           \
-		: "=r"(current->retval)                                     \
-		: "rm"(current->esp),                                        \
+		: "=r"(current->retval)                             \
+		: "rm"(current->esp),                               \
 		  "rm"(exit_routine),                               \
-		  "rm"(current->arg),                                        \
-		  "rm"(current->callable)                                        \
+		  "rm"(current->arg),                               \
+		  "rm"(current->callable)                           \
 		: "memory")
 
 
