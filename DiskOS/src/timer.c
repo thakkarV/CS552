@@ -1,5 +1,5 @@
-#include <timer.h>
-#include <kportio.h>	/* inb, outb */
+#include <sys/timer.h>
+#include <sys/kportio.h>	/* inb, outb */
 #include <kvideo.h>		/* printf */
 
 void

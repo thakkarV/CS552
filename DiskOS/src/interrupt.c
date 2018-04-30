@@ -1,8 +1,8 @@
-#include <interrupt.h>
-#include <kportio.h>
-#include <kstdlib.h>
+#include <sys/interrupt.h>
+#include <sys/types.h>
+#include <sys/kportio.h>
+#include <stdlib.h>
 #include <kvideo.h>
-#include <types.h>
 
 static struct IDTR idtr;
 static struct IDTDesc IDT[ISR_COUNT];

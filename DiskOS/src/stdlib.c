@@ -1,5 +1,5 @@
-#include <kstdlib.h>
-#include <types.h>
+#include <stdlib.h>
+#include <sys/types.h>
 
 
 void

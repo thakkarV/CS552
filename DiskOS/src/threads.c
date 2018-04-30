@@ -1,7 +1,7 @@
+#include <sys/types.h>
+#include <sys/sched.h>
 #include <threads.h>
-#include <sched.h>
 #include <kmalloc.h>
-#include <types.h>
 
 tid_t
 thread_create(void * (* callable) (void *), void * arg)

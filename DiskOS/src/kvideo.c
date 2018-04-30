@@ -1,5 +1,4 @@
 #include <kvideo.h>
-
 /* Macros */
 /* Some screen stuff. */
 /* The number of columns. */

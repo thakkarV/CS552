@@ -1,7 +1,7 @@
-#ifndef UFS_1_0
-#define UFS_1_0
+#ifndef SYS_UFS_1_0
+#define SYS_UFS_1_0
 
-#include <types.h>
+#include <sys/types.h>
 
 // block size of 256 bytes
 #define UFS_BLOCK_SIZE 0x100
@@ -113,4 +113,4 @@ typedef struct ufs_datablock
 	char data[UFS_BLOCK_SIZE];
 } __attribute__((packed)) ufs_datablock_t;
 
-#endif // UFS_1_0
+#endif // SYS_UFS_1_0

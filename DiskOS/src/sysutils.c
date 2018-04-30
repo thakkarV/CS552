@@ -1,7 +1,5 @@
-#include <sysutils.h>
+#include <sys/timer.h>
 #include <sched.h>
-#include <kvideo.h>
-#include <timer.h>
 
 void
 msleep(uint32_t milliseconds)

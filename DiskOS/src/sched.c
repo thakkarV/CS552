@@ -1,7 +1,6 @@
-#include <sched.h>
+#include <sys/sched.h>
+#include <sys/types.h>
 #include <kmalloc.h>
-#include <threads.h>
-#include <types.h>
 
 static volatile uint32_t __thread_count;
 static volatile uint32_t __tid_counter;
@@ -44,7 +43,7 @@ __asm__ volatile(         \
 	"push %%gs\n\t"       \
 	"push %%es\n\t"       \
 	"movl %%esp, %0"      \
-	: "=r"(current->esp) \
+	: "=r"(current->esp)  \
 	:                     \
 	: "memory")
 

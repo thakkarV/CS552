@@ -1,5 +1,5 @@
 #define ASM_FILE 1
-#include <multiboot.h>
+#include <sys/multiboot.h>
 
 /* C symbol format. HAVE_ASM_USCORE is defined by configure. */
 #ifdef HAVE_ASM_USCORE

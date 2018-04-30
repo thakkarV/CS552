@@ -1,7 +1,11 @@
-#ifndef SCHED
-#define SCHED
+#ifndef SYS_SCHED
+#define SYS_SCHED
 
+#include <sys/types.h>
+#include <threads.h>
 #include <sys/vfs.h>
+
+static long volatile jiffies;
 
 typedef enum TASK_STATUS
 {
@@ -37,5 +41,12 @@ typedef struct task_struct_t
 	struct task_struct_t *prev;
 	struct task_struct_t *next;
 } task_struct_t;
+
+
+void schedule(void);
+tid_t sched_register_thread(void * (*) (void *), void *);
+void sched_finalize_thread(void);
+void init_sched(void);
+void __sleep_on(uint32_t milliseconds);
 
 #endif // SCHED

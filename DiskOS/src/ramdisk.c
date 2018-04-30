@@ -1,7 +1,7 @@
 #include <ramdisk.h>
-#include <ufs.h>
-
-#include <kstdlib.h>
+#include <sys/ufs.h>
+#include <sched.h>
+#include <stdlib.h>
 
 static ufs_superblock_t *__superblk;
 static inode_t          *__inode_array;
@@ -11,6 +11,8 @@ static ufs_dirblock_t   *__root_blk;
 // bitmap ops
 static void set_blk_bitmap(int, inode_status_t);
 static bool get_blk_bitmap(int);
+
+extern task_struct_t *__current_task;
 
 void
 init_ramdisk(void *fs_base_addr)

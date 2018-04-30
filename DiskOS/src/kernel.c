@@ -1,8 +1,8 @@
-#include <multiboot.h>
+#include <sys/multiboot.h>
+#include <timer.h>
 #include <kernel.h>
 #include <kvideo.h>
 #include <kmalloc.h>
-#include <timer.h>
 #include <interrupt.h>
 #include <ramdisk.h>
 

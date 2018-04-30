@@ -1,5 +1,5 @@
-#ifndef TYPES
-#define TYPES
+#ifndef SYS_TYPES
+#define SYS_TYPES
 
 #define false 0
 #define true 1
@@ -37,4 +37,4 @@ typedef uint64 uint64_t;
 typedef int tid_t;
 
 
-#endif // TYPES
+#endif // SYS_TYPES

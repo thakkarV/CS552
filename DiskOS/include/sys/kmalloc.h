@@ -1,8 +1,18 @@
-#ifndef KMALLOC
-#define KMALLOC
+#ifndef SYS_KMALLOC
+#define SYS_KMALLOC
 
 #include <sys/types.h>
 #include <sys/multiboot.h>
+
+/* NOTE : BLOCK SIZE DOES NOT INCLUDE BLOCK HEADER METADATA VOERHEAD */
+struct block_header
+{
+	struct block_header *prev;
+	struct block_header *next;
+	size_t size;
+	int is_free;
+} __attribute__((packed));
+typedef struct block_header block_header_t;
 
 /* OS initialization routine for the dynamic allocator
  * two inputs are the base addresses for the mem regions

@@ -1,7 +1,7 @@
 #ifndef SYS_VFS
 #define SYS_VFS
 
-#include <ufs.h>
+#include <sys/ufs.h>
 
 #define NUM_MAX_FD 0x10
 
