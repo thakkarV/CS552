@@ -3,6 +3,7 @@
 
 #include <types.h>
 #include <threads.h>
+#include <vfs.h>
 
 static long volatile jiffies;
 
@@ -17,23 +18,28 @@ typedef enum TASK_STATUS
 
 typedef struct task_struct_t
 {
-	/* Context */
+	/* CONTEXT */
 	uint32_t esp;
 
-	/* Data */
+	/* DATA */
 	void * stack;
 	void * (*callable)(void *);
 	void * arg;
 	void * retval;
 
-	/* Metadata */
+	/* METADATA */
 	tid_t tid;
 	long utime;
 	long sleep_time;
 	long priority;
 	TASK_STATUS status;
-	struct task_struct_t * prev;
-	struct task_struct_t * next;
+
+	/* FILESYSTEM */
+	fd_table_t fd_table;
+
+	/* SCHED Q PTR */
+	struct task_struct_t *prev;
+	struct task_struct_t *next;
 } task_struct_t;
 
 
