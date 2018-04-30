@@ -43,10 +43,10 @@ clean:
 	-rm -f $(OBJS) $(TARGET) *~
 
 rbin:
-	qemu-system-i386 -kernel $(BINDIR)/$(TARGET) -d cpu,exec,in_asm,cpu_reset,int
+	qemu-system-i386 -kernel $(BINDIR)/$(TARGET) 
 
 rdisk:
-	qemu-system-i386 ./fifos.img -d cpu,exec,in_asm,cpu_reset,int
+	qemu-system-i386 ./fifos.img
 
 remake: clean all
 

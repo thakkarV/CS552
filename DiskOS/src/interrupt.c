@@ -61,7 +61,7 @@ init_idt(void)
 	set_trap_gate( 14, &isr_page_fault);
 	set_trap_gate( 15, &isr_reserved);
 	set_trap_gate( 16, &isr_x87_fpu_except);
-
+ 
 	/* ISR 15 and 17-32 : hardware reserved */
 	for (i = 17; i < 32; i++)
 		set_trap_gate(i, &isr_reserved);
@@ -118,8 +118,6 @@ irq_unmask(uint8_t line)
 		port = PIC2_DATA;
 		line -= 8;
 	}
-	uint8_t foo;
-	foo = 9;
 	value = inb(port) & ~(1 << line);
 	outb(port, value);
 }

@@ -224,7 +224,7 @@ itoa (char *buf, int base, int d)
 void
 __terminal_change_attrib(int code)
 {
-	static const char const COLOR_LUT[16] = 
+	static const char COLOR_LUT[16] = 
 	{
 		DBLACK, DRED,  DGREEN, ORANGE,
 		DBLUE,  DPINK, DCYAN,  LGREY,

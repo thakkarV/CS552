@@ -109,7 +109,7 @@ init_sched(void)
 	__idle_task->status = NEW;
 	__idle_task->callable = do_idle;
 	__idle_task->stack = kmalloc(0x100);
-	__idle_task->esp = __idle_task->stack + 0x100 - 1;
+	__idle_task->esp = (uint32_t) __idle_task->stack + 0x100 - 1;
 }
 
 
