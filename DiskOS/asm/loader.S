@@ -111,7 +111,7 @@ multiboot_entry:
 	pushl   %eax
 
 	/* Now enter the C main function... */
-	call    EXT_C(init)
+	call    EXT_C(kmain)
 
 	/* Halt. */
 	pushl   $halt_message

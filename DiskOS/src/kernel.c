@@ -1,15 +1,13 @@
+#include <multiboot.h>
 #include <kernel.h>
-
 #include <kvideo.h>
 #include <kmalloc.h>
-
-#include <interrupt.h>
 #include <timer.h>
+#include <interrupt.h>
+#include <ramdisk.h>
 
-#include <multiboot.h>
 
-
-#define ENABLE_STATEFUL_CR
+// #define ENABLE_STATEFUL_CR
 #ifdef ENABLE_STATEFUL_CR
 	#include <stateful_cr.h>
 	#include <sched.h>
@@ -22,7 +20,7 @@
 /* Check if MAGIC is valid and print the Multiboot information structure
 pointed by ADDR. */
 void
-init(unsigned long magic, unsigned long addr)
+kmain(unsigned long magic, unsigned long addr)
 {
 	multiboot_info_t *mbi;
 
@@ -73,6 +71,12 @@ init(unsigned long magic, unsigned long addr)
 	/* init SCHEDULER */
 	printf("sched init ... ");
 	init_sched();
+	printf("done.\n");
+
+	/* init RDISK */
+	printf("sched ram disk ... ");	
+	void * ramdisk_base_addr = kmalloc(UFS_RAMDISK_SIZE);
+	init_ramdisk(ramdisk_base_addr);
 	printf("done.\n");
 
 	print_banner();
