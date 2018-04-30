@@ -67,9 +67,9 @@ typedef struct superblock
 	uint32_t num_dirs;
 	uint32_t num_files;
 
-	inode_t        *inode_array;
-	uint8_t        *blk_bitmap;
-	ufs_dirblock_t *root_blk;
+	struct inode         *inode_array;
+	uint8_t              *blk_bitmap;
+	struct ufs_datablock *root_blk;
 
 	// padding at the end to ensure size of 64 bytes
 	uint32_t padding[53];
@@ -86,9 +86,9 @@ typedef struct inode
 	ufs_blocktype_t type;
 	size_t size;
 	uint32_t attrib;
-	ufs_datablock_t * direct_block_ptrs[8];
-	ufs_datablock_t ** indirect_block_ptr;
-	ufs_datablock_t *** double_indirect_block_ptr;
+	struct ufs_datablock *direct_block_ptrs[8];
+	struct ufs_datablock **indirect_block_ptr;
+	struct ufs_datablock ***double_indirect_block_ptr;
 
 	// padding at the end to ensure size of 64 bytes
 	uint32_t padding[3];
