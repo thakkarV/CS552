@@ -35,6 +35,8 @@
 *.i*86
 *.x86_64
 *.hex
+bin/
+obj/
 
 # Debug files
 *.dSYM/
@@ -59,3 +61,6 @@ dkms.conf
 *.jpg
 *.jpeg
 *.bmp
+
+# vs code internal
+.vscode/
