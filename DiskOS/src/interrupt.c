@@ -1,7 +1,6 @@
 #include <sys/interrupt.h>
 #include <sys/types.h>
-#include <sys/kportio.h>
-#include <stdlib.h>
+#include <sys/stdlib.h>
 #include <kvideo.h>
 
 static struct IDTR idtr;

@@ -1,7 +1,7 @@
 #include <sys/kmalloc.h>
 #include <sys/multiboot.h>
 #include <sys/types.h>
-#include <stdlib.h>
+#include <sys/stdlib.h>
 #include <kvideo.h>
 
 // #define DEBUG

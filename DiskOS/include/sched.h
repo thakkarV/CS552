@@ -31,11 +31,12 @@ typedef struct task_struct_t
 	TASK_STATUS status;
 
 	/* FILESYSTEM */
-	fd_table_t fd_table;
+    FILE * fd_table[NUM_MAX_FD];
 
 	/* SCHED Q PTR */
 	struct task_struct_t *prev;
 	struct task_struct_t *next;
-} task_struct_t;
+} __attribute__((packed)) task_struct_t;
+
 
 #endif // SCHED

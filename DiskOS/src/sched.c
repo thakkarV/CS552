@@ -146,6 +146,7 @@ sched_register_thread(void * (*callable) (void *), void * arg)
 void
 sched_finalize_thread(void)
 {
+	__asm__ volatile("pushf":::"memory");
 	__asm__ volatile("cli":::"memory");
 	task_struct_t * curr_cpy = __current_task;
 	__current_task = __current_task->prev;
@@ -159,7 +160,7 @@ sched_finalize_thread(void)
 
 	// __current_task->retval = retval;
 	__thread_count--;
-	__asm__ volatile("sti":::"memory");
+	__asm__ volatile("popf":::"memory");
 
 	// this schedule will run in the freeing thread's stack space
 	// but this is not an issue since this exit routine will not be interrupted
@@ -280,8 +281,9 @@ service_waitq(void)
 
 
 void
-__sleep_on(uint32_t milliseconds)
+__sleep_on(uint32_t systicks)
 {
+	__asm__ volatile("pushf":::"memory");
 	__asm__ volatile("cli":::"memory");
 
 	task_struct_t *curr_cpy = __current_task;
@@ -290,7 +292,7 @@ __sleep_on(uint32_t milliseconds)
 	// set metadata
 	curr_cpy->status = BLOCKED;
 	curr_cpy->utime = 0;
-	curr_cpy->sleep_time = milliseconds;
+	curr_cpy->sleep_time = systicks;
 
 	// remove from runq and add to waitq
 	splice_outq(&__runq_head, curr_cpy);
@@ -302,12 +304,12 @@ __sleep_on(uint32_t milliseconds)
 	 * but since we are setting the current task to blocked
 	 * and then changing the pointer "__current_task" we have to do it here
 	 * otherwise we will not be able to set the context for this thread
-	 * and all hell will break loose when we try to resume it
+	 * and all hell will break loose when we try to `resume it
 	**/
 	SAVE_CONTEXT(curr_cpy);
 
 	// block
-	__asm__ volatile("sti":::"memory");
+	__asm__ volatile("popf":::"memory");
 	schedule();
 	
 	// when resumed, reset time counters

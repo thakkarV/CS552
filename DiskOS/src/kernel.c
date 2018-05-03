@@ -73,8 +73,8 @@ kmain(unsigned long magic, unsigned long addr)
 	init_sched();
 	printf("done.\n");
 
-	/* init RDISK */
-	printf("sched ram disk ... ");	
+	/* init RAM DISK */
+	printf("ram disk init ... ");	
 	void * ramdisk_base_addr = kmalloc(UFS_RAMDISK_SIZE);
 	init_ramdisk(ramdisk_base_addr);
 	printf("done.\n");

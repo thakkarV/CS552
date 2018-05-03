@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <sys/stdlib.h>
 #include <sys/types.h>
 
 
@@ -34,4 +34,34 @@ memcpy(void * dest, void * source, size_t len)
 		while (len--)
 			*(d--) = *(s--);
 	}
+}
+
+bool
+strcmp(char *str1, char *str2)
+{
+	while (str1 && str2)
+	{
+		if (str1++ != str2++)
+			return false;
+	}
+
+	if (!str1 && !str2)
+		return true;
+	else
+		return false;
+}
+
+uint8_t
+inb(uint16_t port)
+{
+	uint8_t ret;
+	__asm__ volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
+	return ret;
+}
+
+
+void
+outb(uint16_t port, uint8_t val)
+{
+	__asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
 }

@@ -1,7 +1,8 @@
 #include <ramdisk.h>
+#include <sys/stdlib.h>
 #include <sys/ufs.h>
+#include <sys/vfs.h>
 #include <sched.h>
-#include <stdlib.h>
 
 static ufs_superblock_t *__superblk;
 static inode_t          *__inode_array;
@@ -17,10 +18,10 @@ extern task_struct_t *__current_task;
 void
 init_ramdisk(void *fs_base_addr)
 {
-    /* initialize the whole 2 MB region to null */
+    /* 0: initialize the whole 2 MB region to null */
     memset(fs_base_addr, 0, UFS_RAMDISK_SIZE);
 
-    /* 0: INIT SUPERBLOCK */
+    /* 1: INIT SUPERBLOCK */
     __superblk = (ufs_superblock_t *) fs_base_addr;
     __superblk->magic = UFS_HEADER_MAGIC;
 
@@ -31,17 +32,17 @@ init_ramdisk(void *fs_base_addr)
     __superblk->num_inodes = UFS_NUM_MAX_INODES;
     __superblk->num_free_inodes = UFS_NUM_MAX_INODES - 1;
 
-    /* 1: INIT INODE ARRAY */
+    /* 2: INIT INODE ARRAY */
     __inode_array = (inode_t *) fs_base_addr + UFS_BLOCK_SIZE;
 
-    /* 2: INIT INODE BITMAP */
+    /* 3: INIT INODE BITMAP */
     __blk_bitmap = (uint8_t *) __inode_array +
         (UFS_NUM_MAX_INODES * sizeof(inode_t));
     set_blk_bitmap(0, OCCUPIED);
 
-    /* 3: INIT ROOT DIRECTORY BLOCK */
+    /* 4: INIT ROOT DIRECTORY BLOCK */
     __root_blk = (ufs_dirblock_t *) __blk_bitmap +
-        + (UFS_BLOCK_SIZE * UFS_NUM_BITMAP_BLOCKS);
+        (UFS_BLOCK_SIZE * UFS_NUM_BITMAP_BLOCKS);
     __inode_array[0].type = DIR;
     // TODO: figure out dir names
 
@@ -50,33 +51,48 @@ init_ramdisk(void *fs_base_addr)
     __superblk->root_blk    = __root_blk;
 }
 
+int
+rd_open(char * path)
+{
+    // see if this proc can open any more files
+    int fd = get_avail_fd();
+    if (fd == -1)
+        return fd;
+    
+    // check path validity
+
+    // return fd if all checks pass
+    return fd;
+}
+
 
 static void
-set_blk_bitmap(int inode_index, inode_status_t mark)
+set_blk_bitmap(int blk_index, inode_status_t mark)
 {
-    if (inode_index < 0 || inode_index > UFS_NUM_MAX_INODES)
+    if (blk_index < 0 ||
+        blk_index > (UFS_NUM_BITMAP_BLOCKS * UFS_BLOCK_SIZE) / sizeof(uint8_t))
         return;
     
-    uint8_t val = __blk_bitmap[inode_index / (sizeof(uint8_t) * 8)];
-    uint8_t pos = __blk_bitmap[inode_index % (sizeof(uint8_t) * 8)];
+    uint8_t val = __blk_bitmap[blk_index / (sizeof(uint8_t) * 8)];
+    uint8_t pos = __blk_bitmap[blk_index % (sizeof(uint8_t) * 8)];
 
     if (mark == FREE)
         val &= ~(1 << pos);
     else // mark OCCUPIED
         val |= (1 << pos);
 
-    __blk_bitmap[inode_index / (sizeof(uint8_t) * 8)] = val;
+    __blk_bitmap[blk_index / (sizeof(uint8_t) * 8)] = val;
 }
 
 
 static bool
-is_blk_free(int inode_index)
+is_blk_free(int blk_index)
 {
-    if (inode_index < 0 || inode_index > UFS_NUM_MAX_INODES)
+    if (blk_index < 0 || blk_index > UFS_NUM_MAX_INODES)
         return false;
     
-    uint8_t val = __blk_bitmap[inode_index / (sizeof(uint8_t) * 8)];
-    uint8_t pos = __blk_bitmap[inode_index % (sizeof(uint8_t) * 8)];
+    uint8_t val = __blk_bitmap[blk_index / (sizeof(uint8_t) * 8)];
+    uint8_t pos = __blk_bitmap[blk_index % (sizeof(uint8_t) * 8)];
 
     return ((val >> pos) & 1);
 }
