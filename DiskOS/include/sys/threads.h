@@ -13,9 +13,9 @@ typedef struct mutex
     int flag;
 } __attribute__((packed)) kthread_mutex_t;
 
-void kthread_mutex_init(kthread_mutex_t *);
-void kthread_mutex_destroy(kthread_mutex_t *);
-void kthread_mutex_lock(kthread_mutex_t *);
-void kthread_mutex_unlock(kthread_mutex_t *);
+void kthread_mutex_init(volatile kthread_mutex_t *);
+void kthread_mutex_destroy(volatile kthread_mutex_t *);
+void kthread_mutex_lock(volatile kthread_mutex_t *);
+void kthread_mutex_unlock(volatile kthread_mutex_t *);
 
 #endif // THREADS

@@ -3,6 +3,7 @@
 #include <kvideo.h>
 #include <kmalloc.h>
 
+static kthread_mutex_t lock;
 
 void *
 stateful_cr_thread1(void * arg)
@@ -14,13 +15,15 @@ stateful_cr_thread1(void * arg)
 
 	while (1)
 	{
-		msleep(500);		
+		// msleep(500);
 		/* execute instructions in this thread */
+		// kthread_mutex_lock(&lock);
 		for (i = 0; i < 4; i++)
 		{
 			printf (" <1>:%d ", counter++);
 		}
 		printf ("\n");
+		// kthread_mutex_unlock(&lock);
 
 		/* check if done with this thread */
 		if (++j == 3)
@@ -43,13 +46,15 @@ stateful_cr_thread2(void * arg)
 
 	while (1)
 	{
-		msleep(1000);		
+		// msleep(1000);
 		/* execute instructions in this thread */
+		// kthread_mutex_lock(&lock);
 		for (i = 0; i < 5; i++)
 		{
 			printf (" <2>:%d ", counter++);
 		}
 		printf ("\n");
+		// kthread_mutex_unlock(&lock);
 
 		/* check if done with this thread */
 		if (++j == 5)
@@ -72,14 +77,16 @@ stateful_cr_thread3(void * arg)
 
 	while (1)
 	{
-		msleep(3000);
+		// msleep(3000);
+		// kthread_mutex_lock(&lock);
 		/* execute instructions in this thread */
 		for (i = 0; i < 4; i++)
 		{
 			printf (" <3>:%d ", counter++);
 		}
 		printf ("\n");
-
+		// kthread_mutex_unlock(&lock);
+		
 		/* check if done with this thread */
 		if (++j == 2)
 			break;
@@ -93,6 +100,8 @@ stateful_cr_thread3(void * arg)
 void
 stateful_cr_register_routines(void)
 {
+	kthread_mutex_init(&lock);
+
 	/* create threads and register with scheduler */
 	tid_t thread1_id = kthread_create(stateful_cr_thread1, 0xDEAD);
 	if (thread1_id == -1)

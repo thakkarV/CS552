@@ -146,7 +146,7 @@ sched_register_thread(void * (*callable) (void *), void * arg)
 void
 sched_finalize_thread(void)
 {
-	__asm__ volatile("pushf":::"memory");
+	// __asm__ volatile("pushf":::"memory");
 	__asm__ volatile("cli":::"memory");
 	task_struct_t * curr_cpy = __current_task;
 	__current_task = __current_task->prev;
@@ -160,7 +160,7 @@ sched_finalize_thread(void)
 
 	// __current_task->retval = retval;
 	__thread_count--;
-	__asm__ volatile("popf":::"memory");
+	__asm__ volatile("sti":::"memory");
 
 	// this schedule will run in the freeing thread's stack space
 	// but this is not an issue since this exit routine will not be interrupted
@@ -245,8 +245,8 @@ do_timer(void)
 	}
 
 	jiffies++;
-	if (++__current_task->utime < 2)
-		return;
+	// if (++__current_task->utime < 2)
+	// 	return;
 
 	__current_task->utime = 0;
 	schedule();
@@ -281,9 +281,8 @@ service_waitq(void)
 
 
 void
-__sleep_on(uint32_t systicks)
+__sleep_on(unsigned long systicks)
 {
-	__asm__ volatile("pushf":::"memory");
 	__asm__ volatile("cli":::"memory");
 
 	task_struct_t *curr_cpy = __current_task;
@@ -309,7 +308,7 @@ __sleep_on(uint32_t systicks)
 	SAVE_CONTEXT(curr_cpy);
 
 	// block
-	__asm__ volatile("popf":::"memory");
+	__asm__ volatile("sti":::"memory");
 	schedule();
 	
 	// when resumed, reset time counters

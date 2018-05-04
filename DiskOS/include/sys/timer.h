@@ -9,7 +9,7 @@
 #define PIT_BASE_FRQ 1193182
 
 /* decreasing this decreases frequency */
-#define PIT_INT_FRQ 500
+#define PIT_INT_FRQ 50000
 
 void init_pit(void);
 

@@ -7,7 +7,7 @@
 #include <ramdisk.h>
 
 
-// #define ENABLE_STATEFUL_CR
+#define ENABLE_STATEFUL_CR
 #ifdef ENABLE_STATEFUL_CR
 	#include <stateful_cr.h>
 	#include <sched.h>

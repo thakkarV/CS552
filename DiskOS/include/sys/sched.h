@@ -29,8 +29,8 @@ typedef struct task_struct_t
 
 	/* METADATA */
 	tid_t tid;
-	long utime;
-	long sleep_time;
+	unsigned long utime;
+	unsigned long sleep_time;
 	long priority;
 	TASK_STATUS status;
 

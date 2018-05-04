@@ -38,5 +38,6 @@ typedef struct task_struct_t
 	struct task_struct_t *next;
 } __attribute__((packed)) task_struct_t;
 
+void __sleep_on(uint32_t milliseconds);
 
 #endif // SCHED
