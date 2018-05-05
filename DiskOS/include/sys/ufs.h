@@ -24,6 +24,11 @@
 // leftover lenght / UFS_BLOCK_SIZE
 #define UFS_NUM_MAX_BLOCKS 0xB57
 
+// max number of files a directory can have
+#define UFS_MAX_FILE_IN_DIR 16
+
+#define UFS_DIR_DELIM "/"
+
 /* LOGICAL LAYOUT OF UNIX FILESYSTEM - 256 byte block size
 	I) Superblock
 		blk number 0
@@ -67,9 +72,9 @@ typedef struct superblock
 	uint32_t num_dirs;
 	uint32_t num_files;
 
-	struct inode         *inode_array;
-	uint8_t              *blk_bitmap;
-	struct ufs_datablock *root_blk;
+	inode_t         *inode_array;
+	uint8_t         *blk_bitmap;
+	ufs_datablock_t *root_blk;
 
 	// padding at the end to ensure size of 64 bytes
 	uint32_t padding[53];
@@ -95,20 +100,20 @@ typedef struct inode
 } __attribute__((packed)) inode_t;
 
 
-typedef struct ufs_dirent
+typedef struct dirent
 {
 	char filename[14];
 	uint16_t inode_num;
 } __attribute__((packed)) ufs_dirent_t;
 
-typedef struct ufs_dirblock
+typedef struct dirblock
 {
 	// number of dir entries is equal to = FS_BLOCK_SIZE / sizeof(dirent)
-	struct ufs_dirent entries[16];
+	ufs_dirent_t entries[UFS_MAX_FILE_IN_DIR];
 } __attribute__((packed)) ufs_dirblock_t;
 
 
-typedef struct ufs_datablock
+typedef struct datablock
 {
 	char data[UFS_BLOCK_SIZE];
 } __attribute__((packed)) ufs_datablock_t;
