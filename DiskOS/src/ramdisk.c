@@ -1,5 +1,6 @@
 #include <ramdisk.h>
 #include <sys/stdlib.h>
+#include <sys/threads.h>
 #include <sys/ufs.h>
 #include <sys/vfs.h>
 #include <sched.h>
@@ -8,10 +9,14 @@ static ufs_superblock_t *__superblk;
 static inode_t          *__inode_array;
 static uint8_t          *__blk_bitmap;
 static ufs_dirblock_t   *__root_blk;
+static kthread_mutex_t* fs_header_lock;
 
 // bitmap ops
 static void set_blk_bitmap(int, inode_status_t);
 static bool get_blk_bitmap(int);
+
+// helpers
+static inode_t * get_file_inode(char *, ufs_dirblock_t *);
 
 extern task_struct_t *__current_task;
 
@@ -51,18 +56,78 @@ init_ramdisk(void *fs_base_addr)
     __superblk->root_blk    = __root_blk;
 }
 
+
 int
 rd_open(char * path)
 {
     // see if this proc can open any more files
     int fd = get_avail_fd();
     if (fd == -1)
-        return fd;
+        return -1;
     
     // check path validity
+    inode_t * file_inode = get_file_inode(path, __root_blk);
+	
+    // file path was invalid
+    if (!file_inode)
+        return -1;
 
-    // return fd if all checks pass
+    // create control block file object and set metadata
+    FILE *file_obj = kmalloc(sizeof(FILE));
+    file_obj->fd = fd;
+    file_obj->inode_ptr = file_inode;
+    file_obj->path = (char *) kmalloc(strlen(path));
+    strcpy(path, file_obj->path);
+    file_obj->seek_head = 0;
+
+    // add the file obj in the control block at the opended fd
+    __current_task->fd_table[fd] = file_obj;
     return fd;
+}
+
+
+int
+rd_close(int fd)
+{
+    FILE *file_obj = __current_task->fd_table[fd];
+    if (!file_obj)
+        return -1;
+    
+    kfree(file_obj->path);
+    kfree(file_obj);
+
+    return 0;
+}
+
+
+static inode_t *
+get_file_inode(char * path, ufs_dirblock_t * dir_blk)
+{
+    inode_t * inode_ptr;
+	
+	if (!path)
+		return NULL;
+
+    int i;
+    for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
+    {
+        if (str_is_prefix(path, dir_blk->entries[i].filename))
+        {
+            inode_ptr = __inode_array + dir_blk->entries[i].inode_num;
+
+            // the found prefix could be an incomplete path to a dir block
+            if (inode_ptr->type == DIR)
+            {
+                path = strtok(path, UFS_DIR_DELIM);
+                return get_file_inode(path, inode_ptr->direct_block_ptrs[0]);
+            }
+            
+            // or the file itself
+            else return inode_ptr;
+        }
+    }
+
+    return NULL;
 }
 
 

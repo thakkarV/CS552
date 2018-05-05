@@ -10,7 +10,7 @@ typedef struct FILE
 {
     int fd;
     size_t seek_head;
-    char path[14];
+    char * path;
     inode_t * inode_ptr;
 } __attribute__((packed)) FILE;
 
