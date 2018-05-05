@@ -7,16 +7,16 @@
 #define UFS_BLOCK_SIZE 0x100
 
 // disk size of 2 MB
-#define UFS_DISK_SIZE 0x1FFFFE
+#define UFS_DISK_SIZE 0x20000
 
 // superblock maging number if and when serialized to disk
 #define UFS_HEADER_MAGIC 0x1337D00D
 
 // direct pointers
-#define NUM_DIRECT_PTRS 12
+#define UFS_NUM_DIRECT_PTRS 8
 
 // number of pointers in block
-#define NUM_PTRS_PER_BLK UFS_BLOCK_SIZE/(sizeof(ufs_datablock_t *))
+#define UFS_NUM_PTRS_PER_BLK UFS_BLOCK_SIZE/(sizeof(ufs_datablock_t *))
 
 // length of inode arrya in number of blocks
 #define UFS_SIZEOF_INODE_ARRAY 0x100
@@ -78,21 +78,24 @@ typedef struct inode
 	ufs_blocktype_t type;
 	size_t size;
 	uint32_t attrib;
-	struct ufs_datablock *direct_block_ptrs[8];
-	struct ufs_datablock **indirect_block_ptr;
-	struct ufs_datablock ***double_indirect_block_ptr;
+	ufs_datablock_t *direct_block_ptrs[8];
+	ufs_datablock_t **indirect_block_ptr;
+	ufs_datablock_t ***double_indirect_block_ptr;
 
 	// padding at the end to ensure size of 64 bytes
 	uint32_t padding[3];
 } __attribute__((packed)) inode_t;
 
 
+// FORMAT OF A SINGLE DIRECTORY ENTRY
 typedef struct dirent
 {
 	char filename[14];
 	uint16_t inode_num;
 } __attribute__((packed)) ufs_dirent_t;
 
+
+// DIRECTORY BLOCK
 typedef struct dirblock
 {
 	// number of dir entries is equal to = FS_BLOCK_SIZE / sizeof(dirent)
@@ -100,12 +103,14 @@ typedef struct dirblock
 } __attribute__((packed)) ufs_dirblock_t;
 
 
+// DATA BLOCK
 typedef struct datablock
 {
 	char data[UFS_BLOCK_SIZE];
 } __attribute__((packed)) ufs_datablock_t;
 
 
+// SUPER BLOCK
 typedef struct superblock
 {
 	uint32_t magic;
@@ -125,5 +130,13 @@ typedef struct superblock
 	uint32_t padding[53];
 } __attribute__((packed)) ufs_superblock_t;
 
+
+// GENERIC BLOCK
+typedef union block
+{
+	ufs_datablock_t  data;
+	ufs_dirblock_t   directory;
+	ufs_superblock_t superblock;
+} __attribute__((packed)) ufs_block;
 
 #endif // SYS_UFS_1_0

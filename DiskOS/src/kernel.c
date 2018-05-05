@@ -75,7 +75,7 @@ kmain(unsigned long magic, unsigned long addr)
 
 	/* init RAM DISK */
 	printf("ram disk init ... ");	
-	void * ramdisk_base_addr = kmalloc(UFS_RAMDISK_SIZE);
+	void * ramdisk_base_addr = kmalloc(UFS_DISK_SIZE);
 	init_ramdisk(ramdisk_base_addr);
 	printf("done.\n");
 

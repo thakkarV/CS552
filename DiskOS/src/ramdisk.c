@@ -9,7 +9,7 @@ static ufs_superblock_t *__superblk;
 static inode_t          *__inode_array;
 static uint8_t          *__blk_bitmap;
 static ufs_dirblock_t   *__root_blk;
-static kthread_mutex_t* fs_header_lock;
+static kthread_mutex_t  *fs_header_lock;
 
 // bitmap ops
 static void set_blk_bitmap(int, inode_status_t);
@@ -24,7 +24,7 @@ void
 init_ramdisk(void *fs_base_addr)
 {
     /* 0: initialize the whole 2 MB region to null */
-    memset(fs_base_addr, 0, UFS_RAMDISK_SIZE);
+    memset(fs_base_addr, 0, UFS_DISK_SIZE);
 
     /* 1: INIT SUPERBLOCK */
     __superblk = (ufs_superblock_t *) fs_base_addr;
@@ -100,6 +100,186 @@ rd_close(int fd)
 }
 
 
+int
+rd_read(int fd, char * buf, int num_bytes)
+{
+	FILE * file_obj = __current_task->fd_table[fd];
+	inode_t * file_inode = file_obj->inode_ptr;	
+	
+    // check if valid fd
+    if (!file_obj)
+		return EBADF;
+	
+	// bad buffer
+	if (!buf)
+		return EBADBUF;
+
+	// file overread
+    if (num_bytes < 0 || num_bytes > file_inode->size - file_obj->seek_head)
+		return EOVERREAD;
+
+    int read_counter = 0;
+
+	// first we set up the scanner read head blk pointers and indexes
+	ufs_datablock_t ***double_blk_ptr = file_inode->double_indirect_block_ptr;
+	ufs_datablock_t  **single_blk_ptr = file_inode->indirect_block_ptr;
+	ufs_datablock_t   *direct_blk_ptr = file_inode->direct_block_ptrs;
+	ufs_datablock_t   *blk_ptr;
+	int double_blk_idx;
+	int single_blk_idx;
+	int blk_num    = file_obj->seek_head / UFS_BLOCK_SIZE;
+	int blk_offset = file_obj->seek_head % UFS_BLOCK_SIZE;
+	
+	// SETUP PONITERS AND INDEXES FOR READING
+	// reading from direct mapped region
+	if (blk_num < UFS_NUM_DIRECT_PTRS)
+	{
+		// set initial indexes
+		double_blk_idx = 0;
+		single_blk_idx = 0;
+
+		// set initial pointers
+		blk_ptr = file_inode->direct_block_ptrs[file_obj->seek_head % UFS_BLOCK_SIZE];
+	}
+
+	// reading from singly differed region
+	else if (blk_num < UFS_NUM_DIRECT_PTRS + UFS_NUM_PTRS_PER_BLK)
+	{
+		// set initial indexes
+		double_blk_idx = 0;
+		single_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS) % UFS_NUM_PTRS_PER_BLK;
+		
+		// set initial pointers
+		blk_ptr = single_blk_ptr[single_blk_idx];
+	}
+
+	// rading from doubly deffered region
+	else
+	{
+		// set initial indexes		
+		double_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS) / UFS_NUM_PTRS_PER_BLK;
+		single_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS) % UFS_NUM_PTRS_PER_BLK;
+		
+		// set initial pointers
+		single_blk_ptr = double_blk_ptr[double_blk_idx];
+		blk_ptr = single_blk_ptr[single_blk_idx];
+	}
+
+	// START READING
+	goto start_reading;
+	while (double_blk_idx < UFS_NUM_PTRS_PER_BLK)
+	{
+		while (single_blk_idx < UFS_NUM_PTRS_PER_BLK)
+		{
+			start_reading:
+			while (blk_offset < UFS_BLOCK_SIZE)
+			{
+				*buf++ = blk_ptr->data[blk_offset++];
+				if (++read_counter == num_bytes)
+					break;
+			}
+
+			if (++read_counter == num_bytes)
+				break;
+
+			blk_offset = 0;
+			blk_num++;
+
+			// handle direct pointer edge case
+			if (blk_num < UFS_NUM_DIRECT_PTRS)
+			{
+				blk_ptr = direct_blk_ptr[blk_num];
+			}
+			else
+			{
+				single_blk_idx++;
+				blk_ptr = single_blk_ptr[single_blk_idx];
+			}
+		}
+
+		if (++read_counter == num_bytes)
+			break;
+
+		double_blk_idx++;
+		single_blk_ptr = double_blk_ptr[double_blk_idx];
+
+		single_blk_idx = 0;
+		blk_ptr = single_blk_ptr[single_blk_idx];		
+	}
+
+    return 0;
+}
+
+
+// int
+// rd_write(int fd, char * buf, int num_bytes_to_write)
+// {
+//     // check if valid fd
+//     if (!__current_task->fd_table[0])
+//     {
+//         printf("invalid fd=%d\n", fd);
+//         return -1;
+//     }
+
+//     // check if valid buf
+//     if (!buf)
+//     {
+//         printf("invalid data input buf\n");
+//         return -1;
+//     }
+
+//     // check if valid num_bytes_to_write
+//     if (num_bytes_to_write < 0 || num_bytes_to_write > UFS_NUM_MAX_BLOCKS*UFS_BLOCK_SIZE)
+//     {
+//         printf("invalid num_bytes_to_write=%d\n", num_bytes_to_write);
+//         return -1;
+//     }
+
+//     // get file struct
+//     FILE * file_obj = __current_task->fd_table[fd];
+//     size_t seek_head = file_obj->seek_head;
+
+//     inode_t * file_inode = file_obj->inode_ptr;
+
+//     // block number where the required byte is
+//     int block_num;
+
+//     // start reading from first block
+//     int num_bytes_written = 0;
+//     while (num_bytes_written != num_bytes_to_write)    // or !EOF
+//     {
+//         block_num = (seek_head + num_bytes_written)/UFS_BLOCK_SIZE;
+
+//         if (block_num < NUM_DIRECT_PTRS)
+//         {
+//             printf("blk num %d, char num %d\n", num_bytes_written/UFS_BLOCK_SIZE, num_bytes_written%UFS_BLOCK_SIZE);
+//             (file_inode->direct_block_ptrs[num_bytes_written/UFS_BLOCK_SIZE])->data[num_bytes_written%UFS_BLOCK_SIZE] = *(buf + num_bytes_written);
+//         }
+//         else if (block_num < NUM_DIRECT_PTRS + NUM_PTRS_PER_BLK)
+//         {
+//             printf("ptr num %d, char num %d\n", block_num-NUM_DIRECT_PTRS, num_bytes_written%UFS_BLOCK_SIZE);
+//             (*(file_inode->indirect_block_ptr) + (block_num-NUM_DIRECT_PTRS))->data[num_bytes_written%UFS_BLOCK_SIZE] = *(buf + num_bytes_written);
+//         }
+//         else if (block_num < NUM_DIRECT_PTRS + NUM_PTRS_PER_BLK + NUM_PTRS_PER_BLK*NUM_PTRS_PER_BLK)
+//         {
+//             printf("indir ptr num %d, ptr num %d, char num %d\n", (block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)/NUM_PTRS_PER_BLK, (block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)%NUM_PTRS_PER_BLK, num_bytes_written%UFS_BLOCK_SIZE);
+//             ( *( *(file_inode->indirect_block_ptr) + ((block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)/NUM_PTRS_PER_BLK) ) + ((block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)%NUM_PTRS_PER_BLK) )->data[num_bytes_written%UFS_BLOCK_SIZE] = *(buf + num_bytes_written);
+//         }
+//         else
+//         {   
+//             // should never reach here
+//             printf("num_bytes_to_write too large\n");
+//             return -1;
+//         }
+        
+//         num_bytes_written++;
+//     }
+
+//     return num_bytes_written;
+// }
+
+// HELPER SUBROUTINES
+
 static inode_t *
 get_file_inode(char * path, ufs_dirblock_t * dir_blk)
 {
@@ -129,142 +309,6 @@ get_file_inode(char * path, ufs_dirblock_t * dir_blk)
 
     return NULL;
 }
-
-
-// // todo: add check for EOF
-// int
-// rd_read(int fd, char * address, int num_bytes_to_read)
-// {
-//     // check if valid fd
-//     if (!__current_task->fd_table[0])
-//     {
-//         printf("invalid fd=%d\n", fd);
-//         return -1;
-//     }
-
-//     // check if valid address
-//     if (!address)
-//     {
-//         printf("invalid output address\n");
-//         return -1;
-//     }
-
-//     // check if valid num_bytes_to_read
-//     if (num_bytes_to_read < 0 || num_bytes_to_read > UFS_NUM_MAX_BLOCKS*UFS_BLOCK_SIZE)
-//     {
-//         printf("invalid num_bytes_to_read=%d\n", num_bytes_to_read);
-//         return -1;
-//     }
-
-//     // get file struct
-//     FILE * file_obj = __current_task->fd_table[fd];
-//     inode_t * file_inode_ptr = file_obj->inode_ptr;
-
-//     // block number where the required byte is
-//     int block_num;
-
-//     // start reading from first block
-//     int num_bytes_read = 0;
-//     while (num_bytes_read != num_bytes_to_read)    // or !EOF
-//     {
-//         block_num = num_bytes_read/UFS_BLOCK_SIZE;
-
-//         if (block_num < NUM_DIRECT_PTRS)
-//         {
-//             printf("blk num %d, char num %d\n", num_bytes_read/UFS_BLOCK_SIZE, num_bytes_read%UFS_BLOCK_SIZE);
-//             *(address + num_bytes_read) = (file_inode_ptr->direct_block_ptrs[num_bytes_read/UFS_BLOCK_SIZE])->data[num_bytes_read%UFS_BLOCK_SIZE];
-//         }
-//         else if (block_num < NUM_DIRECT_PTRS + NUM_PTRS_PER_BLK)
-//         {
-//             printf("ptr num %d, char num %d\n", block_num-NUM_DIRECT_PTRS, num_bytes_read%UFS_BLOCK_SIZE);
-//             *(address + num_bytes_read) = (*(file_inode_ptr->indirect_block_ptr) + (block_num-NUM_DIRECT_PTRS))->data[num_bytes_read%UFS_BLOCK_SIZE];
-//         }
-//         else if (block_num < NUM_DIRECT_PTRS + NUM_PTRS_PER_BLK + NUM_PTRS_PER_BLK*NUM_PTRS_PER_BLK)
-//         {
-//             printf("indir ptr num %d, ptr num %d, char num %d\n", (block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)/NUM_PTRS_PER_BLK, (block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)%NUM_PTRS_PER_BLK, num_bytes_read%UFS_BLOCK_SIZE);
-//             *(address + num_bytes_read) = ( *( *(file_inode_ptr->indirect_block_ptr) + ((block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)/NUM_PTRS_PER_BLK) ) + ((block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)%NUM_PTRS_PER_BLK) )->data[num_bytes_read%UFS_BLOCK_SIZE];
-//         }
-//         else
-//         {   
-//             // should never reach here
-//             printf("num_bytes_to_read too large\n");
-//             return -1;
-//         }
-
-//         num_bytes_read++;
-
-//     }
-
-//     return num_bytes_read;
-// }
-
-
-// int
-// rd_write(int fd, char * address, int num_bytes_to_write)
-// {
-//     // check if valid fd
-//     if (!__current_task->fd_table[0])
-//     {
-//         printf("invalid fd=%d\n", fd);
-//         return -1;
-//     }
-
-//     // check if valid address
-//     if (!address)
-//     {
-//         printf("invalid data input address\n");
-//         return -1;
-//     }
-
-//     // check if valid num_bytes_to_write
-//     if (num_bytes_to_write < 0 || num_bytes_to_write > UFS_NUM_MAX_BLOCKS*UFS_BLOCK_SIZE)
-//     {
-//         printf("invalid num_bytes_to_write=%d\n", num_bytes_to_write);
-//         return -1;
-//     }
-
-//     // get file struct
-//     FILE * file_obj = __current_task->fd_table[fd];
-//     size_t seek_head = file_obj->seek_head;
-
-//     inode_t * file_inode_ptr = file_obj->inode_ptr;
-
-//     // block number where the required byte is
-//     int block_num;
-
-//     // start reading from first block
-//     int num_bytes_written = 0;
-//     while (num_bytes_written != num_bytes_to_write)    // or !EOF
-//     {
-//         block_num = (seek_head + num_bytes_written)/UFS_BLOCK_SIZE;
-
-//         if (block_num < NUM_DIRECT_PTRS)
-//         {
-//             printf("blk num %d, char num %d\n", num_bytes_written/UFS_BLOCK_SIZE, num_bytes_written%UFS_BLOCK_SIZE);
-//             (file_inode_ptr->direct_block_ptrs[num_bytes_written/UFS_BLOCK_SIZE])->data[num_bytes_written%UFS_BLOCK_SIZE] = *(address + num_bytes_written);
-//         }
-//         else if (block_num < NUM_DIRECT_PTRS + NUM_PTRS_PER_BLK)
-//         {
-//             printf("ptr num %d, char num %d\n", block_num-NUM_DIRECT_PTRS, num_bytes_written%UFS_BLOCK_SIZE);
-//             (*(file_inode_ptr->indirect_block_ptr) + (block_num-NUM_DIRECT_PTRS))->data[num_bytes_written%UFS_BLOCK_SIZE] = *(address + num_bytes_written);
-//         }
-//         else if (block_num < NUM_DIRECT_PTRS + NUM_PTRS_PER_BLK + NUM_PTRS_PER_BLK*NUM_PTRS_PER_BLK)
-//         {
-//             printf("indir ptr num %d, ptr num %d, char num %d\n", (block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)/NUM_PTRS_PER_BLK, (block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)%NUM_PTRS_PER_BLK, num_bytes_written%UFS_BLOCK_SIZE);
-//             ( *( *(file_inode_ptr->indirect_block_ptr) + ((block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)/NUM_PTRS_PER_BLK) ) + ((block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)%NUM_PTRS_PER_BLK) )->data[num_bytes_written%UFS_BLOCK_SIZE] = *(address + num_bytes_written);
-//         }
-//         else
-//         {   
-//             // should never reach here
-//             printf("num_bytes_to_write too large\n");
-//             return -1;
-//         }
-        
-//         num_bytes_written++;
-//     }
-
-//     return num_bytes_written;
-// }
 
 
 static void

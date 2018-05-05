@@ -1,7 +1,10 @@
 #ifndef UFS_RAMDISK
 #define UFS_RAMDISK
 
-#define UFS_RAMDISK_SIZE 0x1FFFFE
+#define EBADF     1 // bad fd
+#define EFAULT    2 // buf outside process address space
+#define EBADBUF   3 // bad buffer address
+#define EOVERREAD 4 // trying to read beyond file end
 
 void init_ramdisk(void *);
 
