@@ -7,7 +7,7 @@ static volatile uint32_t __tid_counter;
 
 // sched tasks
 static task_struct_t *__idle_task;
-static task_struct_t *__current_task;
+task_struct_t *__current_task;
 
 // Sched queues
 static task_struct_t *__runq_head;

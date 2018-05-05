@@ -61,25 +61,6 @@ typedef enum inode_status
     FREE = 1
 } inode_status_t;
 
-typedef struct superblock
-{
-	uint32_t magic;
-	uint32_t num_blocks;
-	size_t   block_size;
-	uint32_t num_inodes;
-	uint32_t num_free_blocks;
-	uint32_t num_free_inodes;
-	uint32_t num_dirs;
-	uint32_t num_files;
-
-	inode_t         *inode_array;
-	uint8_t         *blk_bitmap;
-	ufs_datablock_t *root_blk;
-
-	// padding at the end to ensure size of 64 bytes
-	uint32_t padding[53];
-} __attribute__((packed)) ufs_superblock_t;
-
 // SIZEOF(inode) = 64 BYTES
 typedef struct inode
 {
@@ -117,5 +98,26 @@ typedef struct datablock
 {
 	char data[UFS_BLOCK_SIZE];
 } __attribute__((packed)) ufs_datablock_t;
+
+
+typedef struct superblock
+{
+	uint32_t magic;
+	uint32_t num_blocks;
+	size_t   block_size;
+	uint32_t num_inodes;
+	uint32_t num_free_blocks;
+	uint32_t num_free_inodes;
+	uint32_t num_dirs;
+	uint32_t num_files;
+
+	inode_t         *inode_array;
+	uint8_t         *blk_bitmap;
+	ufs_datablock_t *root_blk;
+
+	// padding at the end to ensure size of 64 bytes
+	uint32_t padding[53];
+} __attribute__((packed)) ufs_superblock_t;
+
 
 #endif // SYS_UFS_1_0
