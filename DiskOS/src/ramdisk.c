@@ -131,6 +131,142 @@ get_file_inode(char * path, ufs_dirblock_t * dir_blk)
 }
 
 
+// // todo: add check for EOF
+// int
+// rd_read(int fd, char * address, int num_bytes_to_read)
+// {
+//     // check if valid fd
+//     if (!__current_task->fd_table[0])
+//     {
+//         printf("invalid fd=%d\n", fd);
+//         return -1;
+//     }
+
+//     // check if valid address
+//     if (!address)
+//     {
+//         printf("invalid output address\n");
+//         return -1;
+//     }
+
+//     // check if valid num_bytes_to_read
+//     if (num_bytes_to_read < 0 || num_bytes_to_read > UFS_NUM_MAX_BLOCKS*UFS_BLOCK_SIZE)
+//     {
+//         printf("invalid num_bytes_to_read=%d\n", num_bytes_to_read);
+//         return -1;
+//     }
+
+//     // get file struct
+//     FILE * file_obj = __current_task->fd_table[fd];
+//     inode_t * file_inode_ptr = file_obj->inode_ptr;
+
+//     // block number where the required byte is
+//     int block_num;
+
+//     // start reading from first block
+//     int num_bytes_read = 0;
+//     while (num_bytes_read != num_bytes_to_read)    // or !EOF
+//     {
+//         block_num = num_bytes_read/UFS_BLOCK_SIZE;
+
+//         if (block_num < NUM_DIRECT_PTRS)
+//         {
+//             printf("blk num %d, char num %d\n", num_bytes_read/UFS_BLOCK_SIZE, num_bytes_read%UFS_BLOCK_SIZE);
+//             *(address + num_bytes_read) = (file_inode_ptr->direct_block_ptrs[num_bytes_read/UFS_BLOCK_SIZE])->data[num_bytes_read%UFS_BLOCK_SIZE];
+//         }
+//         else if (block_num < NUM_DIRECT_PTRS + NUM_PTRS_PER_BLK)
+//         {
+//             printf("ptr num %d, char num %d\n", block_num-NUM_DIRECT_PTRS, num_bytes_read%UFS_BLOCK_SIZE);
+//             *(address + num_bytes_read) = (*(file_inode_ptr->indirect_block_ptr) + (block_num-NUM_DIRECT_PTRS))->data[num_bytes_read%UFS_BLOCK_SIZE];
+//         }
+//         else if (block_num < NUM_DIRECT_PTRS + NUM_PTRS_PER_BLK + NUM_PTRS_PER_BLK*NUM_PTRS_PER_BLK)
+//         {
+//             printf("indir ptr num %d, ptr num %d, char num %d\n", (block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)/NUM_PTRS_PER_BLK, (block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)%NUM_PTRS_PER_BLK, num_bytes_read%UFS_BLOCK_SIZE);
+//             *(address + num_bytes_read) = ( *( *(file_inode_ptr->indirect_block_ptr) + ((block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)/NUM_PTRS_PER_BLK) ) + ((block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)%NUM_PTRS_PER_BLK) )->data[num_bytes_read%UFS_BLOCK_SIZE];
+//         }
+//         else
+//         {   
+//             // should never reach here
+//             printf("num_bytes_to_read too large\n");
+//             return -1;
+//         }
+
+//         num_bytes_read++;
+
+//     }
+
+//     return num_bytes_read;
+// }
+
+
+// int
+// rd_write(int fd, char * address, int num_bytes_to_write)
+// {
+//     // check if valid fd
+//     if (!__current_task->fd_table[0])
+//     {
+//         printf("invalid fd=%d\n", fd);
+//         return -1;
+//     }
+
+//     // check if valid address
+//     if (!address)
+//     {
+//         printf("invalid data input address\n");
+//         return -1;
+//     }
+
+//     // check if valid num_bytes_to_write
+//     if (num_bytes_to_write < 0 || num_bytes_to_write > UFS_NUM_MAX_BLOCKS*UFS_BLOCK_SIZE)
+//     {
+//         printf("invalid num_bytes_to_write=%d\n", num_bytes_to_write);
+//         return -1;
+//     }
+
+//     // get file struct
+//     FILE * file_obj = __current_task->fd_table[fd];
+//     size_t seek_head = file_obj->seek_head;
+
+//     inode_t * file_inode_ptr = file_obj->inode_ptr;
+
+//     // block number where the required byte is
+//     int block_num;
+
+//     // start reading from first block
+//     int num_bytes_written = 0;
+//     while (num_bytes_written != num_bytes_to_write)    // or !EOF
+//     {
+//         block_num = (seek_head + num_bytes_written)/UFS_BLOCK_SIZE;
+
+//         if (block_num < NUM_DIRECT_PTRS)
+//         {
+//             printf("blk num %d, char num %d\n", num_bytes_written/UFS_BLOCK_SIZE, num_bytes_written%UFS_BLOCK_SIZE);
+//             (file_inode_ptr->direct_block_ptrs[num_bytes_written/UFS_BLOCK_SIZE])->data[num_bytes_written%UFS_BLOCK_SIZE] = *(address + num_bytes_written);
+//         }
+//         else if (block_num < NUM_DIRECT_PTRS + NUM_PTRS_PER_BLK)
+//         {
+//             printf("ptr num %d, char num %d\n", block_num-NUM_DIRECT_PTRS, num_bytes_written%UFS_BLOCK_SIZE);
+//             (*(file_inode_ptr->indirect_block_ptr) + (block_num-NUM_DIRECT_PTRS))->data[num_bytes_written%UFS_BLOCK_SIZE] = *(address + num_bytes_written);
+//         }
+//         else if (block_num < NUM_DIRECT_PTRS + NUM_PTRS_PER_BLK + NUM_PTRS_PER_BLK*NUM_PTRS_PER_BLK)
+//         {
+//             printf("indir ptr num %d, ptr num %d, char num %d\n", (block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)/NUM_PTRS_PER_BLK, (block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)%NUM_PTRS_PER_BLK, num_bytes_written%UFS_BLOCK_SIZE);
+//             ( *( *(file_inode_ptr->indirect_block_ptr) + ((block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)/NUM_PTRS_PER_BLK) ) + ((block_num-NUM_DIRECT_PTRS-NUM_PTRS_PER_BLK)%NUM_PTRS_PER_BLK) )->data[num_bytes_written%UFS_BLOCK_SIZE] = *(address + num_bytes_written);
+//         }
+//         else
+//         {   
+//             // should never reach here
+//             printf("num_bytes_to_write too large\n");
+//             return -1;
+//         }
+        
+//         num_bytes_written++;
+//     }
+
+//     return num_bytes_written;
+// }
+
+
 static void
 set_blk_bitmap(int blk_index, inode_status_t mark)
 {

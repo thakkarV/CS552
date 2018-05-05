@@ -12,6 +12,12 @@
 // superblock maging number if and when serialized to disk
 #define UFS_HEADER_MAGIC 0x1337D00D
 
+// direct pointers
+#define NUM_DIRECT_PTRS 12
+
+// number of pointers in block
+#define NUM_PTRS_PER_BLK UFS_BLOCK_SIZE/(sizeof(ufs_datablock_t *))
+
 // length of inode arrya in number of blocks
 #define UFS_SIZEOF_INODE_ARRAY 0x100
 
