@@ -95,7 +95,7 @@ rd_close(int fd)
     
     kfree(file_obj->path);
     kfree(file_obj);
-
+    __current_task->fd_table[fd] = NULL;
     return 0;
 }
 
@@ -123,7 +123,7 @@ rd_read(int fd, char * buf, int num_bytes)
 	// first we set up the scanner read head blk pointers and indexes
 	ufs_datablock_t ***double_blk_ptr = file_inode->double_indirect_block_ptr;
 	ufs_datablock_t  **single_blk_ptr = file_inode->indirect_block_ptr;
-	ufs_datablock_t   *direct_blk_ptr = file_inode->direct_block_ptrs;
+	ufs_datablock_t  **direct_blk_ptr = file_inode->direct_block_ptrs;
 	ufs_datablock_t   *blk_ptr;
 	int double_blk_idx;
 	int single_blk_idx;
