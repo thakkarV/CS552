@@ -33,6 +33,9 @@
 // max number of files a directory can have
 #define UFS_MAX_FILE_IN_DIR 16
 
+// TODO: max file size
+#define UFS_MAX_FILESIZE
+
 #define UFS_DIR_DELIM "/"
 
 /* LOGICAL LAYOUT OF UNIX FILESYSTEM - 256 byte block size
@@ -57,14 +60,15 @@
 
 typedef enum ufs_blocktype
 {
-	DIR = 0,
-	REG = 1
+	FREE = 0,
+	DIR = 1,
+	REG = 2
 } ufs_blocktype_t;
 
 typedef enum inode_status
 {
-    OCCUPIED = 0,
-    FREE = 1
+    OCCUPIED = false,
+    FREE = true
 } inode_status_t;
 
 // SIZEOF(inode) = 64 BYTES
