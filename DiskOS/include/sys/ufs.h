@@ -16,7 +16,7 @@
 #define UFS_NUM_DIRECT_PTRS 8
 
 // number of pointers in block
-#define UFS_NUM_PTRS_PER_BLK UFS_BLOCK_SIZE/(sizeof(ufs_datablock_t *))
+#define UFS_NUM_PTRS_PER_BLK (UFS_BLOCK_SIZE / sizeof(ufs_datablock_t *))
 
 // length of inode arrya in number of blocks
 #define UFS_SIZEOF_INODE_ARRAY 0x100
@@ -31,7 +31,7 @@
 #define UFS_NUM_MAX_BLOCKS 0xB57
 
 // max number of files a directory can have
-#define UFS_MAX_FILE_IN_DIR 16
+#define UFS_MAX_FILE_IN_DIR (UFS_BLOCK_SIZE / sizeof(ufs_dirent_t))
 
 // TODO: max file size
 #define UFS_MAX_FILESIZE
@@ -141,6 +141,6 @@ typedef union block
 	ufs_datablock_t  data;
 	ufs_dirblock_t   directory;
 	ufs_superblock_t superblock;
-} __attribute__((packed)) ufs_block;
+} __attribute__((packed)) ufs_block_t;
 
 #endif // SYS_UFS_1_0

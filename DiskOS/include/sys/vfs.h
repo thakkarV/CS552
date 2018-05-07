@@ -9,6 +9,7 @@ int get_avail_fd(void);
 typedef struct FILE
 {
     int fd;
+    int dir_pos;
     size_t seek_head;
     char * path;
     inode_t * inode_ptr;

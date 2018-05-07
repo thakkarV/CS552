@@ -7,6 +7,8 @@
 #define EBOUNDS   -4 // trying to read or beyond file end/max size
 #define EBADPATH  -5 // bad input path
 #define EMAXF     -6 // out of allocatable file discriptors
+#define ENODIR    -7 // fd does not point to a directory entry
+#define ENOREG    -8 // fd does not point to a regular file
 
 void init_rdisk(void *);
 

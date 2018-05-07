@@ -116,6 +116,9 @@ rd_open(char * path)
 int
 rd_close(int fd)
 {
+    if (fd < 0 || fd > NUM_MAX_FD)
+        return EBADF;
+    
     FILE *file_obj = __current_task->fd_table[fd];
     if (!file_obj)
         return EBADF;
@@ -133,6 +136,9 @@ rd_close(int fd)
 int
 rd_lseek(int fd, int pos)
 {
+    if (fd < 0 || fd > NUM_MAX_FD)
+        return EBADF;
+    
     FILE *file_obj = __current_task->fd_table[fd];
     if (!file_obj)
         return EBADF;
@@ -143,12 +149,45 @@ rd_lseek(int fd, int pos)
 
 
 /* 
+ * copes a dirent to the calling process for the dir opened at the input fd
+ * keeps track of the last read dir with the FILE->dir_pos
+**/
+int
+rd_readdir(int fd, char * address)
+{
+    if (fd < 0 || fd > NUM_MAX_FD)
+        return EBADF;
+    
+    FILE *file_obj = __current_task->fd_table[fd];
+    if (!file_obj)
+        return EBADF;
+    
+    // fd does not point to a dir
+    if (file_obj->inode_ptr->type != DIR)
+        return ENODIR;
+    
+    ufs_dirblock_t *dir_ptr = (ufs_dirblock_t *) file_obj->inode_ptr->direct_block_ptrs[0];
+    memcpy(address, (void *) &dir_ptr->entries[file_obj->dir_pos++], sizeof(ufs_dirent_t));
+
+    // last entry in this dir
+    if (file_obj->dir_pos == UFS_MAX_FILE_IN_DIR)
+        return 1;
+    // not the last entry in this dir
+    else
+        return 0;
+}
+
+
+/* 
  * read from file num_bytes bytes pointed to by the given fd to buf
  * @return 0 if successful. Error codes otherwise
 **/
 int
 rd_read(int fd, char * buf, int num_bytes)
 {
+    if (fd < 0 || fd > NUM_MAX_FD)
+        return EBADF;
+    
 	FILE * file_obj = __current_task->fd_table[fd];
 	inode_t * file_inode = file_obj->inode_ptr;
 	
@@ -267,6 +306,9 @@ rd_read(int fd, char * buf, int num_bytes)
 int
 rd_write(int fd, char * buf, int num_bytes)
 {
+    if (fd < 0 || fd > NUM_MAX_FD)
+        return EBADF;
+    
     FILE * file_obj = __current_task->fd_table[fd];
 	inode_t * file_inode = file_obj->inode_ptr;
 	
