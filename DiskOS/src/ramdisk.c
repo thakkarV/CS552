@@ -128,6 +128,21 @@ rd_close(int fd)
 
 
 /* 
+ * moves the seek head to the absolute input position
+**/
+int
+rd_lseek(int fd, int pos)
+{
+    FILE *file_obj = __current_task->fd_table[fd];
+    if (!file_obj)
+        return EBADF;
+    
+    file_obj->seek_head = pos;
+    return 0;
+}
+
+
+/* 
  * read from file num_bytes bytes pointed to by the given fd to buf
  * @return 0 if successful. Error codes otherwise
 **/
