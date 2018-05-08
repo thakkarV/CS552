@@ -9,6 +9,14 @@
 #define EMAXF     -6 // out of allocatable file discriptors
 #define ENODIR    -7 // fd does not point to a directory entry
 #define ENOREG    -8 // fd does not point to a regular file
+#define EINVAL    -9 // otherwise invalid input or behavior
+
+typedef enum WHENCE
+{
+    SEEK_SET,
+    SEEK_CUR,
+    SEEK_END
+};
 
 void init_rdisk(void *);
 
@@ -19,7 +27,7 @@ int rd_open(char *);
 int rd_close(int fd);
 int rd_read(int, char *, int);
 int rd_write(int, char *, int);
-int rd_lseek(int, int);
+int rd_lseek(int, int, int);
 int rd_unlink(char *);
 int rd_readdir(int, char *);
 

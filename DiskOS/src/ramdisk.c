@@ -7,13 +7,13 @@
 
 // global fs checkpointers
 static ufs_superblock_t *__superblk;
-static inode_t          *__inode_array;
+static inode_t         **__inode_array;
 static uint8_t          *__blk_bitmap;
 static ufs_dirblock_t   *__root_blk;
 static kthread_mutex_t  *fs_header_lock;
 
 // lock for the globl pointers
-static kthread_mutex_t fs_head_lock;
+static kthread_mutex_t __fs_head_lock;
 
 // bitmap ops
 static void set_blk_bitmap(int, inode_status_t);
@@ -21,6 +21,7 @@ static bool get_blk_bitmap(int);
 
 // helpers
 static inode_t * get_file_inode(char *, ufs_dirblock_t *);
+static inode_t * get_parent_dir_inode(char *, ufs_dirblock_t *);
 static void do_write_preprocess(inode_t *, size_t, int);
 
 // low level file block manipulators
@@ -44,13 +45,11 @@ init_rdisk(void *fs_base_addr)
 
     /* 1: INIT SUPERBLOCK */
     __superblk = (ufs_superblock_t *) fs_base_addr;
-    __superblk->magic = UFS_HEADER_MAGIC;
-
-    __superblk->block_size = UFS_BLOCK_SIZE;
-    __superblk->num_blocks = UFS_NUM_MAX_BLOCKS;
+    __superblk->magic           = UFS_HEADER_MAGIC;
+    __superblk->block_size      = UFS_BLOCK_SIZE;
+    __superblk->num_blocks      = UFS_NUM_MAX_BLOCKS;
     __superblk->num_free_blocks = UFS_NUM_MAX_BLOCKS - 1;
-    
-    __superblk->num_inodes = UFS_NUM_MAX_INODES;
+    __superblk->num_inodes      = UFS_NUM_MAX_INODES;
     __superblk->num_free_inodes = UFS_NUM_MAX_INODES - 1;
 
     /* 2: INIT INODE ARRAY */
@@ -61,17 +60,92 @@ init_rdisk(void *fs_base_addr)
         (UFS_NUM_MAX_INODES * sizeof(inode_t));
     set_blk_bitmap(0, OCCUPIED);
 
-    /* 4: INIT ROOT DIRECTORY BLOCK */
+    /* 4: INIT ROOT DIRECTORY BLOCK AND INODE */
     __root_blk = (ufs_dirblock_t *) __blk_bitmap +
         (UFS_BLOCK_SIZE * UFS_NUM_BITMAP_BLOCKS);
-    __inode_array[0].type = DIR;
-    // TODO: figure out dir names
+    __inode_array[0]->type = DIR;
+    __inode_array[0]->dirblock_ptr = &__root_blk;
 
     __superblk->inode_array = __inode_array;
     __superblk->blk_bitmap  = __blk_bitmap;
     __superblk->root_blk    = __root_blk;
 
-    kthread_mutex_init(&fs_head_lock);
+    kthread_mutex_init(&__fs_head_lock);
+}
+
+
+/* 
+ * creates a new REGULAR file at the input path
+ * @return 0 if successful. Error codes otherwise
+**/
+int
+rd_create(char * path)
+{
+    inode_t *file_inode;
+    inode_t *parent_dir_inode;
+
+    if (!path)
+        return EBADPATH;
+    
+    file_inode = __inode_array;
+    parent_dir_inode = get_parent_dir_inode(path, __root_blk);
+
+    // check if valid path
+    if (!parent_dir_inode)
+        return EBADPATH;
+
+    // check if parent dir has space left for a file
+    ufs_dirent_t * entry = NULL;
+    int i;
+    for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
+    {
+        if (parent_dir_inode->dirblock_ptr->entries[i].filename == NULL)
+        {
+            entry = parent_dir_inode->dirblock_ptr->entries + i;
+            break;
+        }
+    }
+
+    // dir is full, cannot create anymore files
+    if (!entry)
+        return EBOUNDS;
+    
+    // add new file's inode to the inode array
+    kthread_mutex_lock(&__fs_head_lock);
+
+    // search for the inode
+    int inode_counter = 0;
+    file_inode = __inode_array[0];
+    while (inode_counter < UFS_NUM_MAX_INODES)
+    {
+        if (file_inode->type == FREE)
+            break;
+        
+        inode_counter++;
+        file_inode++;
+    }
+    
+    if (inode_counter == UFS_NUM_MAX_INODES)
+    {
+        kthread_mutex_unlock(&__fs_head_lock);
+        return EBOUNDS;
+    }
+
+    // set inode metadata
+    file_inode->type = REG;
+    file_inode->size = 0;
+    kthread_mutex_unlock(&__fs_head_lock);
+
+    // set dirent data
+    path += strlen(path);
+    while (*path != '/') path--;
+    memcpy(entry->filename, path + 1, strlen(path));
+    entry->inode_num = inode_counter;
+    
+    if (file_inode == __inode_array)
+        return EMAXF;
+    else
+        return 0;
 }
 
 
@@ -108,10 +182,9 @@ rd_open(char * path)
 }
 
 
-
 /* 
  * close the file pointed to by the fd.
- * @return 0 if successful. -1 otherwise
+ * @return 0 if successful. error codes otherwise
 **/
 int
 rd_close(int fd)
@@ -131,10 +204,11 @@ rd_close(int fd)
 
 
 /* 
- * moves the seek head to the absolute input position
+ * move seek head according to whence mode and input offset
+ * @return 0 if successful. error codes otherwise
 **/
 int
-rd_lseek(int fd, int pos)
+rd_lseek(int fd, int offset, int whence)
 {
     if (fd < 0 || fd > NUM_MAX_FD)
         return EBADF;
@@ -142,39 +216,41 @@ rd_lseek(int fd, int pos)
     FILE *file_obj = __current_task->fd_table[fd];
     if (!file_obj)
         return EBADF;
+
+    // cannot seek if not a regular file
+    if (file_obj->inode_ptr->type != REG)
+        return ENOREG;
     
-    file_obj->seek_head = pos;
+    switch (whence)
+    {
+        case SEEK_SET :
+        {
+            if (offset < 0 || offset > UFS_MAX_FILESIZE)
+                return EBOUNDS;
+            else
+                file_obj->seek_head = offset;
+        }
+        break;
+        case SEEK_CUR :
+        {
+            if (file_obj->seek_head + offset < 0 || file_obj->seek_head + offset > UFS_MAX_FILESIZE)
+                return EBOUNDS;
+            else
+                file_obj->seek_head += offset;
+        }
+        break;
+        case SEEK_END :
+        {
+            file_obj->seek_head = file_obj->inode_ptr->size;
+        }
+        break;
+        default :
+        {
+            return EINVAL;
+        }
+    }
+
     return 0;
-}
-
-
-/* 
- * copes a dirent to the calling process for the dir opened at the input fd
- * keeps track of the last read dir with the FILE->dir_pos
-**/
-int
-rd_readdir(int fd, char * address)
-{
-    if (fd < 0 || fd > NUM_MAX_FD)
-        return EBADF;
-    
-    FILE *file_obj = __current_task->fd_table[fd];
-    if (!file_obj)
-        return EBADF;
-    
-    // fd does not point to a dir
-    if (file_obj->inode_ptr->type != DIR)
-        return ENODIR;
-    
-    ufs_dirblock_t *dir_ptr = (ufs_dirblock_t *) file_obj->inode_ptr->direct_block_ptrs[0];
-    memcpy(address, (void *) &dir_ptr->entries[file_obj->dir_pos++], sizeof(ufs_dirent_t));
-
-    // last entry in this dir
-    if (file_obj->dir_pos == UFS_MAX_FILE_IN_DIR)
-        return 1;
-    // not the last entry in this dir
-    else
-        return 0;
 }
 
 
@@ -185,9 +261,6 @@ rd_readdir(int fd, char * address)
 int
 rd_read(int fd, char * buf, int num_bytes)
 {
-    if (fd < 0 || fd > NUM_MAX_FD)
-        return EBADF;
-    
 	FILE * file_obj = __current_task->fd_table[fd];
 	inode_t * file_inode = file_obj->inode_ptr;
 	
@@ -202,6 +275,10 @@ rd_read(int fd, char * buf, int num_bytes)
 	// file overread
     if (num_bytes < 0 || num_bytes > file_inode->size - file_obj->seek_head)
 		return EBOUNDS;
+
+    // not a regular readable file
+    if (file_obj->inode_ptr->type != REG)
+        return ENOREG;
 
     int read_counter = 0;
 
@@ -270,23 +347,25 @@ rd_read(int fd, char * buf, int num_bytes)
 			blk_offset = 0;
 			blk_num++;
 
-			// handle direct pointer edge case
-			if (blk_num < UFS_NUM_DIRECT_PTRS)
-			{
-				blk_ptr = direct_blk_ptr[blk_num];
-			}
-			else
+			// if reading from the deffered blocks (single or double) in the inode
+			if (blk_num > UFS_NUM_DIRECT_PTRS)
 			{
                 single_blk_idx++;
 				blk_ptr = single_blk_ptr[single_blk_idx];
+			}
+            // otherwise reading form direct block pointers of inode
+			else
+			{
+				blk_ptr = direct_blk_ptr[blk_num];                
 			}
 		}
 
 		if (++read_counter == num_bytes)
 			break;
 
-        // if statement of the edge case of the single indirect ptr in inode
-		if (blk_num != UFS_NUM_DIRECT_PTRS + UFS_NUM_PTRS_PER_BLK)
+        // we do not incremenent the double block index the if this condition is met
+        // since it will only be met when we first start reading from the doubly deffered region
+		if (blk_num > UFS_NUM_DIRECT_PTRS + UFS_NUM_PTRS_PER_BLK)
             double_blk_idx++;
 		single_blk_ptr = double_blk_ptr[double_blk_idx];
 
@@ -294,7 +373,7 @@ rd_read(int fd, char * buf, int num_bytes)
 		blk_ptr = single_blk_ptr[single_blk_idx];		
 	}
 
-    file_obj->seek_head += num_bytes;    
+    file_obj->seek_head += num_bytes;
     return 0;
 }
 
@@ -306,9 +385,6 @@ rd_read(int fd, char * buf, int num_bytes)
 int
 rd_write(int fd, char * buf, int num_bytes)
 {
-    if (fd < 0 || fd > NUM_MAX_FD)
-        return EBADF;
-    
     FILE * file_obj = __current_task->fd_table[fd];
 	inode_t * file_inode = file_obj->inode_ptr;
 	
@@ -323,6 +399,10 @@ rd_write(int fd, char * buf, int num_bytes)
 	// file overwrite
     if (num_bytes < 0 || num_bytes + file_obj->seek_head > UFS_MAX_FILESIZE)
 		return EBOUNDS;
+
+    // not a regular readable file
+    if (file_obj->inode_ptr->type != REG)
+        return ENOREG;
 
     // get file struct
     FILE * file_obj = __current_task->fd_table[fd];
@@ -403,14 +483,9 @@ rd_write(int fd, char * buf, int num_bytes)
 
 			blk_offset = 0;
 			blk_num++;
-			// handle direct pointer edge case
-			if (blk_num < UFS_NUM_DIRECT_PTRS)
-			{
-                if (!direct_blk_ptr[blk_num])
-                    direct_blk_ptr[blk_num] = alloc_new_block();
-				blk_ptr = direct_blk_ptr[blk_num];
-			}
-			else
+
+            // if reading from the deffered blocks (single or double) in the inode
+			if (blk_num > UFS_NUM_DIRECT_PTRS)
 			{
                 single_blk_idx++;
                 if (!single_blk_ptr)
@@ -420,13 +495,20 @@ rd_write(int fd, char * buf, int num_bytes)
                     single_blk_ptr[single_blk_idx] = alloc_new_block();
 				blk_ptr = single_blk_ptr[single_blk_idx];
 			}
+            // otherwise reading form direct block pointers of inode
+			else
+			{
+				if (!direct_blk_ptr[blk_num])
+                    direct_blk_ptr[blk_num] = alloc_new_block();
+				blk_ptr = direct_blk_ptr[blk_num];
+			}
 		}
 
 	    if (++write_counter == file_obj->seek_head + num_bytes - file_inode->size)
 			break;
 
         // if statement of the edge case of the single indirect ptr in inode
-		if (blk_num != UFS_NUM_DIRECT_PTRS + UFS_NUM_PTRS_PER_BLK)
+		if (blk_num > UFS_NUM_DIRECT_PTRS + UFS_NUM_PTRS_PER_BLK)
             double_blk_idx++;
         
         if (!double_blk_ptr)
@@ -448,7 +530,10 @@ rd_write(int fd, char * buf, int num_bytes)
     file_obj->seek_head += num_bytes;    
     if (file_obj->seek_head < file_inode->size)
         __shrink_file(file_inode, file_inode->size - file_obj->seek_head);
-    file_inode->size = file_obj->seek_head;
+
+    kthread_mutex_lock(&__fs_head_lock);
+        file_inode->size = file_obj->seek_head;
+    kthread_mutex_unlock(&__fs_head_lock);
     return 0;
 }
 
@@ -488,7 +573,7 @@ do_write_preprocess(inode_t *inode, size_t seek_head, int num_bytes)
 static ufs_datablock_t *
 alloc_new_block(void)
 {
-    kthread_mutex_lock(&fs_head_lock);
+    kthread_mutex_lock(&__fs_head_lock);
     
     // scan the bitmap from start to finish looking for a block that is free
     int i;
@@ -497,11 +582,12 @@ alloc_new_block(void)
         if (get_blk_bitmap(i))
         {
             set_blk_bitmap(i, OCCUPIED);
-            kthread_mutex_unlock(&fs_head_lock);
+            kthread_mutex_unlock(&__fs_head_lock);
             return (ufs_datablock_t *) __root_blk + i;
         }
     }
-    kthread_mutex_unlock(&fs_head_lock);
+
+    kthread_mutex_unlock(&__fs_head_lock);
     return NULL;
 }
 
@@ -538,6 +624,35 @@ get_file_inode(char * path, ufs_dirblock_t * dir_blk)
     }
 
     return NULL;
+}
+
+
+/* 
+ * get the inode of the parent directory of the provided path
+ * @return pointer of the inode to the DIR file if found, NULL otherwise
+**/
+static inode_t *
+get_parent_dir_inode(char * path, ufs_dirblock_t * dir_blk)
+{
+    inode_t * inode_ptr;
+    char splice_char;
+	
+	if (!path)
+		return NULL;
+
+    size_t pathlen = strlen(path);
+    // if path itself points to a dir, then its invalid,
+    if (path[pathlen - 1] == '/')
+        return NULL;
+    
+    while (path[pathlen - 1] != '/') pathlen--;
+    splice_char = path[pathlen];
+    path[pathlen] = NULL;
+
+    inode_ptr = get_file_inode(path, dir_blk);
+
+    path[pathlen] = splice_char;
+    return inode_ptr;
 }
 
 
