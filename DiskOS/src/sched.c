@@ -134,6 +134,9 @@ sched_register_thread(void * (*callable) (void *), void * arg)
 	ts->stack = kmalloc(THREAD_STACK_SIZE);
 	ts->esp = ts->stack + THREAD_STACK_SIZE - 1;
 
+	/* init fd table to nulls */
+	memset(ts->fd_table, 0, NUM_MAX_FD * sizeof(FILE));
+
 	/* add task to run queue and init current task if this is the first */
 	if (!__current_task)
 		__current_task = ts;
