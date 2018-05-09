@@ -672,7 +672,7 @@ rd_readdir(int fd, char * address)
     if (file_obj->inode_ptr->type != DIR)
         return ENODIR;
     
-    ufs_dirblock_t *dir_ptr = (ufs_dirblock_t *) file_obj->inode_ptr->direct_block_ptrs[0];
+    ufs_dirblock_t *dir_ptr = (ufs_dirblock_t *) file_obj->inode_ptr->dirblock_ptr;
     memcpy(address, (void *) &dir_ptr->entries[file_obj->dir_pos++], sizeof(ufs_dirent_t));
 
     // last entry in this dir
@@ -746,46 +746,49 @@ rd_unlink(char * path)
 
 	// start deallocation
 	
-    if (num_blks_in_file != 0) goto start_unlink;
-	while (double_blk_idx < UFS_NUM_PTRS_PER_BLK)
-	{
-		while (single_blk_idx < UFS_NUM_PTRS_PER_BLK)
-		{
-			start_unlink:
-			if (direct_blk_idx < UFS_NUM_DIRECT_PTRS)
-			{
-                dealloc_block(direct_blk_ptr[direct_blk_idx]);
-			}
-			else
-			{
-				// do not increase idx if direct_blk_idx == 8
-				if (direct_blk_idx > UFS_NUM_DIRECT_PTRS)
-					single_blk_idx++;
+    if (num_blks_in_file != 0)
+    {
+        goto start_unlink;
+        while (double_blk_idx < UFS_NUM_PTRS_PER_BLK)
+        {
+            while (single_blk_idx < UFS_NUM_PTRS_PER_BLK)
+            {
+                start_unlink:
+                if (direct_blk_idx < UFS_NUM_DIRECT_PTRS)
+                {
+                    dealloc_block(direct_blk_ptr[direct_blk_idx]);
+                }
+                else
+                {
+                    // do not increase idx if direct_blk_idx == 8
+                    if (direct_blk_idx > UFS_NUM_DIRECT_PTRS)
+                        single_blk_idx++;
 
-				dealloc_block(single_blk_ptr[single_blk_idx]);
-			}
+                    dealloc_block(single_blk_ptr[single_blk_idx]);
+                }
 
-            if (++direct_blk_idx == num_blks_in_file)
+                if (++direct_blk_idx == num_blks_in_file)
+                    break;
+            }
+
+            // deallocate the sigle blk pointer, weather from a double region or direct inode mapped
+            if (single_blk_ptr)
+                dealloc_block(*single_blk_ptr);
+
+            if (direct_blk_idx == num_blks_in_file)
                 break;
-		}
 
-        // deallocate the sigle blk pointer, weather from a double region or direct inode mapped
-        if (single_blk_ptr)
-            dealloc_block(*single_blk_ptr);
+            // since it will only be met when we first start reading from the doubly deffered region
+            if (direct_blk_idx > UFS_NUM_DIRECT_PTRS + UFS_NUM_PTRS_PER_BLK)
+                double_blk_idx++;
+            
+            single_blk_ptr = double_blk_ptr[double_blk_idx];
+        }
 
-        if (direct_blk_idx == num_blks_in_file)
-            break;
-
-        // since it will only be met when we first start reading from the doubly deffered region
-		if (direct_blk_idx > UFS_NUM_DIRECT_PTRS + UFS_NUM_PTRS_PER_BLK)
-            double_blk_idx++;
-        
-		single_blk_ptr = double_blk_ptr[double_blk_idx];
-	}
-
-    // deallocate trailing double block pointer
-    if (double_blk_ptr)
-        dealloc_block(*double_blk_ptr);
+        // deallocate trailing double block pointer
+        if (double_blk_ptr)
+            dealloc_block(*double_blk_ptr);
+    }
 
     /* UNLINK DIR AND INODE */    
     // remove the dirent of this file from parent dirblock
@@ -879,7 +882,7 @@ get_file_inode(char * path, ufs_dirblock_t * dir_blk)
             if (inode_ptr->type == DIR)
             {
                 path = strtok(path, UFS_DIR_DELIM);
-                return get_file_inode(path, inode_ptr->direct_block_ptrs[0]);
+                return get_file_inode(path, inode_ptr->dirblock_ptr]);
             }
             
             // or the file itself
