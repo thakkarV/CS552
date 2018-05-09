@@ -11,7 +11,7 @@
 #define USE_RAMDISK
 
 /* uncomment to run test */
-#define TEST1
+// #define TEST1
 // #define TEST2
 // #define TEST3
 #define TEST4
@@ -98,7 +98,6 @@ void * run_tests(void * arg)
 	{ 
 		sprintf (pathname, PATH_PREFIX "/file");
 		pathname[5] = c++;		
-		printf("file num %d\n", i);
 		retval = rd_unlink (pathname);
 
 		if (retval < 0) {
@@ -178,9 +177,10 @@ void * run_tests(void * arg)
 
 #endif // TEST_SINGLE_INDIRECT
 
+	printf("test2 ok\n");
+	
 #endif // TEST2
 
-// TODO: replace rd_lseek parameter with SEEK_SET
 #ifdef TEST3
 
 	/* ****TEST 3: Seek and Read file test**** */

@@ -73,8 +73,8 @@ typedef enum ufs_blocktype_t
 
 typedef enum inode_status_t
 {
-    OCCUPIED = false,
-    FREE = true
+    OCCUPIED = true,
+    FREE = false
 } inode_status_t;
 
 // SIZEOF(inode) = 64 BYTES

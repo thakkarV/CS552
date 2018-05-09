@@ -830,7 +830,7 @@ alloc_block(void)
     int i;
     for (i = 0; i < 8 * UFS_NUM_BITMAP_BLOCKS * UFS_BLOCK_SIZE; i++)
     {
-        if (get_blk_bitmap(i))
+        if (!get_blk_bitmap(i))
         {
             set_blk_bitmap(i, OCCUPIED);
             kthread_mutex_unlock(&__fs_head_lock);
