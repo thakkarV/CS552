@@ -13,8 +13,8 @@
 	#include <stateful_cr.h>
 #endif
 
-#define TEST_RD
-#ifdef TEST_RD
+#define RUN_TEST
+#ifdef RUN_TEST
 	void * run_tests(void *);	
 #endif
 
@@ -93,7 +93,7 @@ kmain(unsigned long magic, unsigned long addr)
 	#endif
 
 		/* run rd tests */
-	#ifdef TEST_RD
+	#ifdef RUN_TEST
 		/* init RAM DISK */
 		printf("ram disk init ... ");
 		void * ramdisk_base_addr = kmalloc(UFS_DISK_SIZE);
