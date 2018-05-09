@@ -141,11 +141,81 @@ rd_create(char * path)
     while (*path != '/') path--;
     memcpy(entry->filename, path + 1, strlen(path));
     entry->inode_num = inode_counter;
+
+    return 0;
+}
+
+
+/* 
+ * creates a new DIRECTORY file at the input path
+ * @return 0 if successful. Error codes otherwise
+**/
+int
+rd_mkdir(char * path)
+{
+    inode_t *dir_inode;
+    inode_t *parent_dir_inode;
+
+    if (!path)
+        return EBADPATH;
     
-    if (file_inode == __inode_array)
-        return EMAXF;
-    else
-        return 0;
+    dir_inode = __inode_array;
+    parent_dir_inode = get_parent_dir_inode(path, __root_blk);
+
+    // check if valid path
+    if (!parent_dir_inode)
+        return EBADPATH;
+
+    // check if parent dir has space left for a file
+    ufs_dirent_t * entry = NULL;
+    int i;
+    for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
+    {
+        if (parent_dir_inode->dirblock_ptr->entries[i].filename == NULL)
+        {
+            entry = parent_dir_inode->dirblock_ptr->entries + i;
+            break;
+        }
+    }
+
+    // dir is full, cannot create anymore files
+    if (!entry)
+        return EBOUNDS;
+    
+    // add new file's inode to the inode array
+    kthread_mutex_lock(&__fs_head_lock);
+
+    // search for the inode
+    int inode_counter = 0;
+    dir_inode = __inode_array[0];
+    while (inode_counter < UFS_NUM_MAX_INODES)
+    {
+        if (dir_inode->type == FREE)
+            break;
+        
+        inode_counter++;
+        dir_inode++;
+    }
+    
+    if (inode_counter == UFS_NUM_MAX_INODES)
+    {
+        kthread_mutex_unlock(&__fs_head_lock);
+        return EBOUNDS;
+    }
+
+    // set inode metadata
+    dir_inode->type = DIR;
+    dir_inode->size = 0;
+    kthread_mutex_unlock(&__fs_head_lock);
+
+    // set dirent data
+    path += strlen(path);
+    while (*path != '/') path--;
+    memcpy(entry->filename, path + 1, strlen(path));
+    entry->inode_num = inode_counter;
+    
+
+    return 0;
 }
 
 
