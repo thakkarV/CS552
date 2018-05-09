@@ -24,10 +24,10 @@ static bool get_blk_bitmap(int);
 // helpers
 static inode_t * get_file_inode(char *, ufs_dirblock_t *);
 static inode_t * get_parent_dir_inode(char *, ufs_dirblock_t *);
-static void do_write_preprocess(inode_t *, size_t, int);
 
 // low level file block manipulators
 static ufs_datablock_t * alloc_block(void);
+static void dealloc_block(ufs_datablock_t *);
 static void __expand_file(inode_t *, size_t);
 static void __shrink_file(inode_t *, size_t);
 
@@ -799,30 +799,6 @@ rd_unlink(char * path)
 //
 // HELPER SUBROUTINES
 //
-
-/* 
- * EXPAND new sections of the file or SHRINK old sections before writing new data
- * wrting beyond the current file size by moving the seek head ahead using lseek
- * writing to file before the last byte of file by moving seek head behin using lseek
-**/ 
-static void
-do_write_preprocess(inode_t *inode, size_t seek_head, int num_bytes)
-{
-    // expan file up
-    if (seek_head + num_bytes > inode->size)
-    {
-        __expand_file(inode, (seek_head + num_bytes) - inode->size);
-    }
-
-    // shrink file down
-    else if (seek_head + num_bytes < inode->size)
-    {
-        __shrink_file(inode, inode->size - (seek_head + num_bytes));
-    }
-
-    // nothing to do if wrting just as many bytes as the offset from EOF
-    else return;
-}
 
 
 /* 
