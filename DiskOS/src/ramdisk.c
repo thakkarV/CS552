@@ -111,7 +111,7 @@ rd_create(char * path)
         return EBOUNDS;
     
     // add new file's inode to the inode array
-    // kthread_mutex_lock(&__fs_head_lock);
+    kthread_mutex_lock(&__fs_head_lock);
 
     // search for the inode
     int inode_counter = 0;
@@ -127,14 +127,14 @@ rd_create(char * path)
     
     if (inode_counter == UFS_NUM_MAX_INODES)
     {
-        // kthread_mutex_unlock(&__fs_head_lock);
+        kthread_mutex_unlock(&__fs_head_lock);
         return EBOUNDS;
     }
 
     // set inode metadata
     file_inode->type = REG;
     file_inode->size = 0;
-    // kthread_mutex_unlock(&__fs_head_lock);
+    kthread_mutex_unlock(&__fs_head_lock);
 
     // set dirent data
     path += strlen(path);
@@ -182,7 +182,7 @@ rd_mkdir(char * path)
         return EBOUNDS;
     
     // add new file's inode to the inode array
-    // kthread_mutex_lock(&__fs_head_lock);
+    kthread_mutex_lock(&__fs_head_lock);
 
     // search for the inode
     int inode_counter = 0;
@@ -198,14 +198,14 @@ rd_mkdir(char * path)
     
     if (inode_counter == UFS_NUM_MAX_INODES)
     {
-        // kthread_mutex_unlock(&__fs_head_lock);
+        kthread_mutex_unlock(&__fs_head_lock);
         return EBOUNDS;
     }
 
     // set inode metadata
     dir_inode->type = DIR;
     dir_inode->size = 0;
-    // kthread_mutex_unlock(&__fs_head_lock);
+    kthread_mutex_unlock(&__fs_head_lock);
 
     // set dirent data
     path += strlen(path);
@@ -647,9 +647,9 @@ rd_write(int fd, char * buf, int num_bytes)
     // if (file_obj->seek_head < file_inode->size)
     //     __shrink_file(file_inode, file_inode->size - file_obj->seek_head);
 
-    // kthread_mutex_lock(&__fs_head_lock);
+    kthread_mutex_lock(&__fs_head_lock);
         file_inode->size = file_obj->seek_head;
-    // kthread_mutex_unlock(&__fs_head_lock);
+    kthread_mutex_unlock(&__fs_head_lock);
     return 0;
 }
 
@@ -672,7 +672,7 @@ rd_readdir(int fd, char * address)
     if (file_obj->inode_ptr->type != DIR)
         return ENODIR;
     
-    ufs_dirblock_t *dir_ptr = (ufs_dirblock_t *) file_obj->inode_ptr->direct_block_ptrs[0];
+    ufs_dirblock_t *dir_ptr = (ufs_dirblock_t *) file_obj->inode_ptr->dirblock_ptr;
     memcpy(address, (void *) &dir_ptr->entries[file_obj->dir_pos++], sizeof(ufs_dirent_t));
 
     // last entry in this dir
@@ -746,46 +746,49 @@ rd_unlink(char * path)
 
 	// start deallocation
 	
-    if (num_blks_in_file != 0) goto start_unlink;
-	while (double_blk_idx < UFS_NUM_PTRS_PER_BLK)
-	{
-		while (single_blk_idx < UFS_NUM_PTRS_PER_BLK)
-		{
-			start_unlink:
-			if (direct_blk_idx < UFS_NUM_DIRECT_PTRS)
-			{
-                dealloc_block(direct_blk_ptr[direct_blk_idx]);
-			}
-			else
-			{
-				// do not increase idx if direct_blk_idx == 8
-				if (direct_blk_idx > UFS_NUM_DIRECT_PTRS)
-					single_blk_idx++;
+    if (num_blks_in_file != 0)
+    {
+        goto start_unlink;
+        while (double_blk_idx < UFS_NUM_PTRS_PER_BLK)
+        {
+            while (single_blk_idx < UFS_NUM_PTRS_PER_BLK)
+            {
+                start_unlink:
+                if (direct_blk_idx < UFS_NUM_DIRECT_PTRS)
+                {
+                    dealloc_block(direct_blk_ptr[direct_blk_idx]);
+                }
+                else
+                {
+                    // do not increase idx if direct_blk_idx == 8
+                    if (direct_blk_idx > UFS_NUM_DIRECT_PTRS)
+                        single_blk_idx++;
 
-				dealloc_block(single_blk_ptr[single_blk_idx]);
-			}
+                    dealloc_block(single_blk_ptr[single_blk_idx]);
+                }
 
-            if (++direct_blk_idx == num_blks_in_file)
+                if (++direct_blk_idx == num_blks_in_file)
+                    break;
+            }
+
+            // deallocate the sigle blk pointer, weather from a double region or direct inode mapped
+            if (single_blk_ptr)
+                dealloc_block(*single_blk_ptr);
+
+            if (direct_blk_idx == num_blks_in_file)
                 break;
-		}
 
-        // deallocate the sigle blk pointer, weather from a double region or direct inode mapped
-        if (single_blk_ptr)
-            dealloc_block(*single_blk_ptr);
+            // since it will only be met when we first start reading from the doubly deffered region
+            if (direct_blk_idx > UFS_NUM_DIRECT_PTRS + UFS_NUM_PTRS_PER_BLK)
+                double_blk_idx++;
+            
+            single_blk_ptr = double_blk_ptr[double_blk_idx];
+        }
 
-        if (direct_blk_idx == num_blks_in_file)
-            break;
-
-        // since it will only be met when we first start reading from the doubly deffered region
-		if (direct_blk_idx > UFS_NUM_DIRECT_PTRS + UFS_NUM_PTRS_PER_BLK)
-            double_blk_idx++;
-        
-		single_blk_ptr = double_blk_ptr[double_blk_idx];
-	}
-
-    // deallocate trailing double block pointer
-    if (double_blk_ptr)
-        dealloc_block(*double_blk_ptr);
+        // deallocate trailing double block pointer
+        if (double_blk_ptr)
+            dealloc_block(*double_blk_ptr);
+    }
 
     /* UNLINK DIR AND INODE */    
     // remove the dirent of this file from parent dirblock
@@ -800,9 +803,9 @@ rd_unlink(char * path)
     }
 
     /* FREE INODE */
-    // kthread_mutex_lock(&__fs_head_lock);
+    kthread_mutex_lock(&__fs_head_lock);
         memset(file_inode, 0, sizeof(inode_t));
-    // kthread_mutex_unlock(&__fs_head_lock);
+    kthread_mutex_unlock(&__fs_head_lock);
     return 0;
 }
 
@@ -819,7 +822,7 @@ rd_unlink(char * path)
 static ufs_datablock_t *
 alloc_block(void)
 {
-    // kthread_mutex_lock(&__fs_head_lock);
+    kthread_mutex_lock(&__fs_head_lock);
     
     // scan the bitmap from start to finish looking for a block that is free
     int i;
@@ -828,12 +831,12 @@ alloc_block(void)
         if (get_blk_bitmap(i))
         {
             set_blk_bitmap(i, OCCUPIED);
-            // kthread_mutex_unlock(&__fs_head_lock);
+            kthread_mutex_unlock(&__fs_head_lock);
             return (ufs_datablock_t *) __root_blk + i;
         }
     }
 
-    // kthread_mutex_unlock(&__fs_head_lock);
+    kthread_mutex_unlock(&__fs_head_lock);
     return NULL;
 }
 
@@ -845,10 +848,10 @@ static void
 dealloc_block(ufs_datablock_t * blk_ptr)
 {
     int blk_num;
-    // kthread_mutex_lock(&__fs_head_lock);
+    kthread_mutex_lock(&__fs_head_lock);
         blk_num = ( (char *)blk_ptr - (char *)__root_blk ) / sizeof(UFS_BLOCK_SIZE);
         set_blk_bitmap(blk_num, FREE);
-    // kthread_mutex_unlock(&__fs_head_lock);
+    kthread_mutex_unlock(&__fs_head_lock);
 }
 
 
@@ -880,7 +883,7 @@ get_file_inode(char * path, ufs_dirblock_t * dir_blk)
             if (inode_ptr->type == DIR)
             {
                 path = strtok(path, UFS_DIR_DELIM);
-                return get_file_inode(path, inode_ptr->direct_block_ptrs[0]);
+                return get_file_inode(path, inode_ptr->dirblock_ptr);
             }
             
             // or the file itself
