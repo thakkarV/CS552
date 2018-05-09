@@ -882,7 +882,7 @@ get_file_inode(char * path, ufs_dirblock_t * dir_blk)
             if (inode_ptr->type == DIR)
             {
                 path = strtok(path, UFS_DIR_DELIM);
-                return get_file_inode(path, inode_ptr->dirblock_ptr]);
+                return get_file_inode(path, inode_ptr->dirblock_ptr);
             }
             
             // or the file itself
