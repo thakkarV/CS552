@@ -56,7 +56,7 @@ str_is_prefix(char * str, char * prefix)
 			return false;
 	}
 
-	if (!*prefix && *str)
+	if (!*prefix)
 		return true;
 	else
 		return false;

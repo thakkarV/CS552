@@ -225,7 +225,18 @@ int
 rd_open(char * path)
 {
     // see if this proc can open any more files
-    int fd = get_avail_fd();
+    // int fd = get_avail_fd();
+    int fd = -1;
+    int i;
+    for(i = 0; i < NUM_MAX_FD; i++)
+    {
+        if (!(__current_task->fd_table[i]))
+        {
+            fd = i;
+            break;
+        }
+    }
+
     if (fd == -1)
         return EMAXF;
     
@@ -860,7 +871,7 @@ get_file_inode(char * path, ufs_dirblock_t * dir_blk)
     int i;
     for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
     {
-        if (str_is_prefix(path, dir_blk->entries[i].filename))
+        if (str_is_prefix(path+1, dir_blk->entries[i].filename))
         {
             inode_ptr = &__inode_array[dir_blk->entries[i].inode_num];
 
