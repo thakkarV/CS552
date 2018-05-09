@@ -54,7 +54,7 @@ init_rdisk(void *fs_base_addr)
     __superblk->num_free_inodes = UFS_NUM_MAX_INODES - 1;
 
     /* 2: INIT INODE ARRAY */
-    __inode_array = (inode_t **) fs_base_addr + UFS_BLOCK_SIZE;
+    __inode_array = (inode_t *) fs_base_addr + UFS_BLOCK_SIZE;
 
     /* 3: INIT INODE BITMAP */
     __blk_bitmap = (uint8_t *) __inode_array +
