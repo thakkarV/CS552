@@ -33,7 +33,7 @@ void
 kthread_mutex_lock(volatile kthread_mutex_t *mutex)
 {
 	// TODO: make actual mutexes work rather than this hack
-	__asm__ volatile ("cli" ::: "memory");
+	// __asm__ volatile ("cli" ::: "memory");
 	// while (!__sync_bool_cmpxchg(mutex, 1, 0));
 		// schedule();
 }
@@ -43,7 +43,7 @@ void
 kthread_mutex_unlock(volatile kthread_mutex_t *mutex)
 {
 	// mutex->flag = 1;
-	__asm__ volatile ("sti" ::: "memory");
+	// __asm__ volatile ("sti" ::: "memory");
 }
 
 
