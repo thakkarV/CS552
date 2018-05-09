@@ -857,8 +857,10 @@ alloc_block(void)
 static void
 dealloc_block(ufs_datablock_t * blk_ptr)
 {
+    int blk_num;
     kthread_mutex_lock(&__fs_head_lock);
-    
+        blk_num = ( (char *)blk_ptr - (char *)__root_blk ) / sizeof(UFS_BLOCK_SIZE);
+        set_blk_bitmap(blk_num, FREE);
     kthread_mutex_unlock(&__fs_head_lock);
 }
 
