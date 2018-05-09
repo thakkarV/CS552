@@ -207,6 +207,8 @@ rd_mkdir(char * path)
     dir_inode->size = 0;
     kthread_mutex_unlock(&__fs_head_lock);
 
+    dir_inode->dirblock_ptr = alloc_block();
+
     // set dirent data
     path += strlen(path);
     while (*path != '/') path--;
