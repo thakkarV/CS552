@@ -9,6 +9,9 @@
 // disk size of 2 MB
 #define UFS_DISK_SIZE 0x200000UL
 
+// total number of blocks
+#define UFS_TOTAL_NUM_BLOCKS UFS_DISK_SIZE/UFS_BLOCK_SIZE
+
 // superblock maging number if and when serialized to disk
 #define UFS_HEADER_MAGIC 0x1337D00DUL
 
@@ -28,7 +31,7 @@
 #define UFS_NUM_BITMAP_BLOCKS 4
 
 // leftover lenght / UFS_BLOCK_SIZE
-#define UFS_NUM_MAX_BLOCKS 0xB57UL
+#define UFS_NUM_MAX_BLOCKS (UFS_TOTAL_NUM_BLOCKS - UFS_SIZEOF_INODE_ARRAY - UFS_NUM_BITMAP_BLOCKS - 1)
 
 // max number of files a directory can have
 #define UFS_MAX_FILE_IN_DIR 16
