@@ -421,6 +421,7 @@ rd_write(int fd, char * buf, int num_bytes)
 	int single_blk_idx;
 	int blk_num    = file_obj->seek_head / UFS_BLOCK_SIZE;
 	int blk_offset = file_obj->seek_head % UFS_BLOCK_SIZE;
+    int actual_num_bytes = file_obj->seek_head + num_bytes - file_inode->size;
 	
 	// SETUP PONITERS AND INDEXES FOR READING
 	// writing starting in direct mapped region
@@ -444,6 +445,14 @@ rd_write(int fd, char * buf, int num_bytes)
 		single_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS) % UFS_NUM_PTRS_PER_BLK;
 		
 		// set initial pointers
+        if (!single_blk_ptr)
+        {
+            single_blk_ptr = alloc_new_block();
+            file_inode->indirect_block_ptr = single_blk_ptr;
+        }
+
+        if (!single_blk_ptr[single_blk_idx])
+            single_blk_ptr[single_blk_idx] = alloc_new_block();
 		blk_ptr = single_blk_ptr[single_blk_idx];
 	}
 
@@ -455,7 +464,18 @@ rd_write(int fd, char * buf, int num_bytes)
 		single_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS) % UFS_NUM_PTRS_PER_BLK;
 		
 		// set initial pointers
-		single_blk_ptr = double_blk_ptr[double_blk_idx];
+        if (!double_blk_ptr)
+        {
+            double_blk_ptr = alloc_new_block();
+            file_inode->double_indirect_block_ptr = double_blk_ptr;
+        }
+
+        if (!double_blk_ptr[double_blk_idx])
+            double_blk_ptr[double_blk_idx] = alloc_new_block();
+        single_blk_ptr = double_blk_ptr[double_blk_idx];
+
+        if (!single_blk_ptr[single_blk_idx])
+            single_blk_ptr[single_blk_idx] = alloc_new_block();
 		blk_ptr = single_blk_ptr[single_blk_idx];
 	}
 
@@ -474,11 +494,11 @@ rd_write(int fd, char * buf, int num_bytes)
                 else
                     blk_ptr->data[blk_offset++] = *buf++;
 
-				if (++write_counter == file_obj->seek_head + num_bytes - file_inode->size)
+				if (++write_counter == actual_num_bytes)
 					break;
 			}
 
-			if (++write_counter == file_obj->seek_head + num_bytes - file_inode->size)
+			if (++write_counter == actual_num_bytes)
 				break;
 
 			blk_offset = 0;
@@ -504,7 +524,7 @@ rd_write(int fd, char * buf, int num_bytes)
 			}
 		}
 
-	    if (++write_counter == file_obj->seek_head + num_bytes - file_inode->size)
+	    if (++write_counter == actual_num_bytes)
 			break;
 
         // if statement of the edge case of the single indirect ptr in inode
@@ -513,13 +533,13 @@ rd_write(int fd, char * buf, int num_bytes)
         
         if (!double_blk_ptr)
             double_blk_ptr = alloc_new_block();
-		single_blk_ptr = double_blk_ptr[double_blk_idx];
+		
+        if (!double_blk_ptr[double_blk_idx])
+            double_blk_ptr[double_blk_idx] = alloc_new_block();
+        single_blk_ptr = double_blk_ptr[double_blk_idx];
 
         // allocate new data block within singly deffered block if necessary        
 		single_blk_idx = 0;
-        if (!single_blk_ptr)
-            single_blk_ptr = alloc_new_block();
-        
         if (!single_blk_ptr[single_blk_idx])
             single_blk_ptr[single_blk_idx] = alloc_new_block();
 		blk_ptr = single_blk_ptr[single_blk_idx];
