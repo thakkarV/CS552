@@ -921,7 +921,7 @@ set_blk_bitmap(int blk_index, inode_status_t mark)
         return;
     
     uint8_t val = __blk_bitmap[blk_index / (sizeof(uint8_t) * 8)];
-    uint8_t pos = __blk_bitmap[blk_index % (sizeof(uint8_t) * 8)];
+    uint8_t pos = blk_index % (sizeof(uint8_t) * 8);
 
     if (mark == FREE)
         val &= ~(1 << pos);
