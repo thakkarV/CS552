@@ -581,10 +581,13 @@ rd_readdir(int fd, char * address)
 
     // last entry in this dir
     if (file_obj->dir_pos == UFS_MAX_FILE_IN_DIR)
-        return 1;
+    {
+        file_obj->dir_pos = 0;
+        return 1;        
+    }
     // not the last entry in this dir
-    else
-        return 0;
+
+    return 0;
 }
 
 
