@@ -41,9 +41,7 @@ strcmp(char *str1, char *str2)
 		if (*str1++ != *str2++)
 			return false;
 	}
-
-	if (!*str1 && !*str2) return true;
-	else return false;
+	return (!*str1 && !*str2);
 }
 
 
@@ -55,11 +53,7 @@ str_is_prefix(char * str, char * prefix)
 		if (*prefix++ != *str++)
 			return false;
 	}
-
-	if (*prefix == *str)
-		return true;
-	else
-		return false;
+	return *prefix == *str;
 }
 
 

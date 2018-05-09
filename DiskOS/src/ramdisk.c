@@ -872,11 +872,14 @@ get_file_inode(char * path, ufs_dirblock_t * dir_blk)
 	
 	if (!path)
 		return NULL;
+    
+    if (*path == '/')
+        path++;
 
     int i;
     for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
     {
-        if (str_is_prefix(path+1, dir_blk->entries[i].filename))
+        if (str_is_prefix(path, dir_blk->entries[i].filename))
         {
             inode_ptr = &__inode_array[dir_blk->entries[i].inode_num];
             return inode_ptr;
@@ -917,6 +920,10 @@ get_parent_dir_inode(char * path, ufs_dirblock_t * dir_blk)
         return NULL;
     
     while (path[pathlen - 1] != '/') pathlen--;
+
+    if (path[pathlen - 1] == '/' && pathlen > 1)
+        pathlen--;
+    
     splice_char = path[pathlen];
     path[pathlen] = NULL;
 
