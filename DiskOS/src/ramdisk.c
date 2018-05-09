@@ -734,7 +734,8 @@ rd_unlink(char * path)
         num_blks_in_file++;
 
 	// start deallocation
-	goto start_unlink;
+	
+    if (num_blks_in_file != 0) goto start_unlink;
 	while (double_blk_idx < UFS_NUM_PTRS_PER_BLK)
 	{
 		while (single_blk_idx < UFS_NUM_PTRS_PER_BLK)
