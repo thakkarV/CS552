@@ -849,7 +849,7 @@ static inode_t *
 get_file_inode(char * path, ufs_dirblock_t * dir_blk)
 {
     if (strcmp(path, UFS_DIR_DELIM))
-        return __root_blk;
+        return __inode_array[0];
     
     inode_t * inode_ptr;
 	
