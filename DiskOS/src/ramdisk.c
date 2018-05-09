@@ -874,6 +874,7 @@ get_file_inode(char * path, ufs_dirblock_t * dir_blk)
         if (str_is_prefix(path+1, dir_blk->entries[i].filename))
         {
             inode_ptr = &__inode_array[dir_blk->entries[i].inode_num];
+            return inode_ptr;
 
             // the found prefix could be an incomplete path to a dir block
             if (inode_ptr->type == DIR)

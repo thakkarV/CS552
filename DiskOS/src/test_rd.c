@@ -11,10 +11,10 @@
 #define USE_RAMDISK
 
 /* uncomment to run test */
-#define TEST1
+// #define TEST1
 // #define TEST2
 // #define TEST3
-// #define TEST4
+#define TEST4
 // #define TEST5
 
 /* uncomment to test single and double indirect pointers */
@@ -312,8 +312,9 @@ void * run_tests(void * arg)
 			return TEST_FAILURE; // exit(EXIT_FAILURE);
 		}
 
-		index_node_number = atoi(&addr[14]);
-		printf ("Contents at addr: [%s,%d]\n", addr, index_node_number);
+		// index_node_number = atoi(&addr[14]);
+		index_node_number = (&addr[14]);
+		printf ("Contents at addr: [%s,%s]\n", addr, index_node_number);
 	
 	}
 
