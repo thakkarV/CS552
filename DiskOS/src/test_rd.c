@@ -74,9 +74,10 @@ void * run_tests(void * arg)
 #ifdef TEST1
 
 	/* Generate MAXIMUM regular files */
+	char c = '0';
 	for (i = 0; i < MAX_FILES + 1; i++) { // go beyond the limit
-		sprintf (pathname, PATH_PREFIX "/file%d", i);
-
+		sprintf (pathname, PATH_PREFIX "/file");
+		pathname[5] = c++;
 		retval = rd_create (pathname);
 
 		if (retval < 0) {
@@ -92,8 +93,11 @@ void * run_tests(void * arg)
 	}   
 
 	/* Delete all the files created */
-	for (i = 0; i < MAX_FILES; i++) { 
-		sprintf (pathname, PATH_PREFIX "/file%d", i);
+	c = '0';	
+	for (i = 0; i < MAX_FILES; i++)
+	{ 
+		sprintf (pathname, PATH_PREFIX "/file");
+		pathname[5] = c++;		
 		printf("file num %d\n", i);
 		retval = rd_unlink (pathname);
 

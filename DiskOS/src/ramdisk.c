@@ -111,7 +111,7 @@ rd_create(char * path)
         return EBOUNDS;
     
     // add new file's inode to the inode array
-    kthread_mutex_lock(&__fs_head_lock);
+    // kthread_mutex_lock(&__fs_head_lock);
 
     // search for the inode
     int inode_counter = 0;
@@ -127,14 +127,14 @@ rd_create(char * path)
     
     if (inode_counter == UFS_NUM_MAX_INODES)
     {
-        kthread_mutex_unlock(&__fs_head_lock);
+        // kthread_mutex_unlock(&__fs_head_lock);
         return EBOUNDS;
     }
 
     // set inode metadata
     file_inode->type = REG;
     file_inode->size = 0;
-    kthread_mutex_unlock(&__fs_head_lock);
+    // kthread_mutex_unlock(&__fs_head_lock);
 
     // set dirent data
     path += strlen(path);
@@ -182,7 +182,7 @@ rd_mkdir(char * path)
         return EBOUNDS;
     
     // add new file's inode to the inode array
-    kthread_mutex_lock(&__fs_head_lock);
+    // kthread_mutex_lock(&__fs_head_lock);
 
     // search for the inode
     int inode_counter = 0;
@@ -198,14 +198,14 @@ rd_mkdir(char * path)
     
     if (inode_counter == UFS_NUM_MAX_INODES)
     {
-        kthread_mutex_unlock(&__fs_head_lock);
+        // kthread_mutex_unlock(&__fs_head_lock);
         return EBOUNDS;
     }
 
     // set inode metadata
     dir_inode->type = DIR;
     dir_inode->size = 0;
-    kthread_mutex_unlock(&__fs_head_lock);
+    // kthread_mutex_unlock(&__fs_head_lock);
 
     // set dirent data
     path += strlen(path);
@@ -647,9 +647,9 @@ rd_write(int fd, char * buf, int num_bytes)
     // if (file_obj->seek_head < file_inode->size)
     //     __shrink_file(file_inode, file_inode->size - file_obj->seek_head);
 
-    kthread_mutex_lock(&__fs_head_lock);
+    // kthread_mutex_lock(&__fs_head_lock);
         file_inode->size = file_obj->seek_head;
-    kthread_mutex_unlock(&__fs_head_lock);
+    // kthread_mutex_unlock(&__fs_head_lock);
     return 0;
 }
 
@@ -800,9 +800,9 @@ rd_unlink(char * path)
     }
 
     /* FREE INODE */
-    kthread_mutex_lock(&__fs_head_lock);
+    // kthread_mutex_lock(&__fs_head_lock);
         memset(file_inode, 0, sizeof(inode_t));
-    kthread_mutex_unlock(&__fs_head_lock);
+    // kthread_mutex_unlock(&__fs_head_lock);
     return 0;
 }
 
@@ -819,7 +819,7 @@ rd_unlink(char * path)
 static ufs_datablock_t *
 alloc_block(void)
 {
-    kthread_mutex_lock(&__fs_head_lock);
+    // kthread_mutex_lock(&__fs_head_lock);
     
     // scan the bitmap from start to finish looking for a block that is free
     int i;
@@ -828,12 +828,12 @@ alloc_block(void)
         if (get_blk_bitmap(i))
         {
             set_blk_bitmap(i, OCCUPIED);
-            kthread_mutex_unlock(&__fs_head_lock);
+            // kthread_mutex_unlock(&__fs_head_lock);
             return (ufs_datablock_t *) __root_blk + i;
         }
     }
 
-    kthread_mutex_unlock(&__fs_head_lock);
+    // kthread_mutex_unlock(&__fs_head_lock);
     return NULL;
 }
 
@@ -845,10 +845,10 @@ static void
 dealloc_block(ufs_datablock_t * blk_ptr)
 {
     int blk_num;
-    kthread_mutex_lock(&__fs_head_lock);
+    // kthread_mutex_lock(&__fs_head_lock);
         blk_num = ( (char *)blk_ptr - (char *)__root_blk ) / sizeof(UFS_BLOCK_SIZE);
         set_blk_bitmap(blk_num, FREE);
-    kthread_mutex_unlock(&__fs_head_lock);
+    // kthread_mutex_unlock(&__fs_head_lock);
 }
 
 

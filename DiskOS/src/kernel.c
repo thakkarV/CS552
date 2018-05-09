@@ -101,7 +101,7 @@ kmain(unsigned long magic, unsigned long addr)
 		printf("done.\n");
 
 		printf("starting tests...\n");
-		sched_register_thread(run_tests, NULL);
+		run_tests(NULL);
 	#endif
 
 	/* set interrupt flag and then loop here */
