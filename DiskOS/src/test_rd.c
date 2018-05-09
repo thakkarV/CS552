@@ -1,5 +1,6 @@
 #include <sys/threads.h>
 #include <sys/stdlib.h>
+#include <sys/ufs.h>
 #include <stateful_cr.h>
 #include <kvideo.h>
 #include <kmalloc.h>
@@ -24,7 +25,7 @@
 #define TEST_SUCCESS 1
 #define TEST_FAILURE 0
 
-#define MAX_FILES 10
+#define MAX_FILES 16
 #define BLK_SZ 256					/* Block size */
 #define DIRECT 8					/* Direct pointers in location attribute */
 #define PTR_SZ 4					/* 32-bit [relative] addressing */
@@ -59,8 +60,15 @@ static char addr[PTRS_PB*PTRS_PB*BLK_SZ+1]; /* Scratchpad memory */
 // }
 
 
-int run_tests(void)
+int run_tests()
 {
+
+	/* init RAM DISK */
+	printf("ram disk init ... ");	
+	void * ramdisk_base_addr = kmalloc(UFS_DISK_SIZE);
+	init_rdisk(ramdisk_base_addr);
+	printf("done.\n");
+
 	int i, retval;
 	int fd;
 	int index_node_number;

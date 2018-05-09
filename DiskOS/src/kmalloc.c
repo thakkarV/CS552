@@ -10,7 +10,7 @@
 #define ALIGNTO(size, boundry) (size + boundry - 1) & ~(boundry - 1)
 #define BOUNDRY 16
 #define BLK_FRAGEMENT_THRESHOLD 32
-#define STORE_OFFSET 0xFFFFF
+#define STORE_OFFSET 0x800000
 
 /* bytes to be added for each malloc call for the bookeeping BLK_HEADER_SIZE */
 #define BLK_HEADER_SIZE sizeof(block_header_t)
