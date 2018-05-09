@@ -151,7 +151,7 @@ typedef struct ufs_superblock_t
 
 	inode_t        **inode_array;
 	uint8_t         *blk_bitmap;
-	ufs_datablock_t *root_blk;
+	ufs_dirblock_t  *root_blk;
 
 	// padding at the end to ensure size of 64 bytes
 	uint32_t padding[53];

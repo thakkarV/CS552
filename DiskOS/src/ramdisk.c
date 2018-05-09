@@ -12,7 +12,6 @@ static ufs_superblock_t *__superblk;
 static inode_t         **__inode_array;
 static uint8_t          *__blk_bitmap;
 static ufs_dirblock_t   *__root_blk;
-static kthread_mutex_t  *fs_header_lock;
 
 // lock for the globl pointers
 static kthread_mutex_t __fs_head_lock;
@@ -55,7 +54,7 @@ init_rdisk(void *fs_base_addr)
     __superblk->num_free_inodes = UFS_NUM_MAX_INODES - 1;
 
     /* 2: INIT INODE ARRAY */
-    __inode_array = (inode_t *) fs_base_addr + UFS_BLOCK_SIZE;
+    __inode_array = (inode_t **) fs_base_addr + UFS_BLOCK_SIZE;
 
     /* 3: INIT INODE BITMAP */
     __blk_bitmap = (uint8_t *) __inode_array +
@@ -68,9 +67,9 @@ init_rdisk(void *fs_base_addr)
     __inode_array[0]->type = DIR;
     __inode_array[0]->dirblock_ptr = __root_blk;
 
-    __superblk->inode_array = __inode_array;
-    __superblk->blk_bitmap  = __blk_bitmap;
-    __superblk->root_blk    = __root_blk;
+    __superblk->inode_array = (inode_t **) __inode_array;
+    __superblk->blk_bitmap  = (uint8_t *) __blk_bitmap;
+    __superblk->root_blk    = (ufs_dirblock_t *) __root_blk;
 
     kthread_mutex_init(&__fs_head_lock);
 }
@@ -760,7 +759,7 @@ rd_unlink(char * path)
 
         // deallocate the sigle blk pointer, weather from a double region or direct inode mapped
         if (single_blk_ptr)
-            dealloc_block(single_blk_ptr);
+            dealloc_block(*single_blk_ptr);
 
         if (direct_blk_idx == num_blks_in_file)
             break;

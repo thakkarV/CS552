@@ -4,7 +4,6 @@
 void cls (void);
 void putchar (int c);
 void printf (const char *format, ...);
-void itoa (char *buf, int base, int d);
 
 // FG colors
 #define FG_COLOR_RESET            "\033[7m"
