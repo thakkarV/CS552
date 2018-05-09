@@ -3,6 +3,8 @@
 #include <sys/threads.h>
 #include <sys/ufs.h>
 #include <sys/vfs.h>
+#include <kmalloc.h>
+
 #include <sched.h>
 
 // global fs checkpointers
@@ -64,7 +66,7 @@ init_rdisk(void *fs_base_addr)
     __root_blk = (ufs_dirblock_t *) __blk_bitmap +
         (UFS_BLOCK_SIZE * UFS_NUM_BITMAP_BLOCKS);
     __inode_array[0]->type = DIR;
-    __inode_array[0]->dirblock_ptr = &__root_blk;
+    __inode_array[0]->dirblock_ptr = __root_blk;
 
     __superblk->inode_array = __inode_array;
     __superblk->blk_bitmap  = __blk_bitmap;
@@ -87,7 +89,6 @@ rd_create(char * path)
     if (!path)
         return EBADPATH;
     
-    file_inode = __inode_array;
     parent_dir_inode = get_parent_dir_inode(path, __root_blk);
 
     // check if valid path
@@ -118,7 +119,7 @@ rd_create(char * path)
     file_inode = __inode_array[0];
     while (inode_counter < UFS_NUM_MAX_INODES)
     {
-        if (file_inode->type == FREE)
+        if (file_inode->type == EMPTY)
             break;
         
         inode_counter++;
@@ -159,7 +160,6 @@ rd_mkdir(char * path)
     if (!path)
         return EBADPATH;
     
-    dir_inode = __inode_array;
     parent_dir_inode = get_parent_dir_inode(path, __root_blk);
 
     // check if valid path
@@ -190,7 +190,7 @@ rd_mkdir(char * path)
     dir_inode = __inode_array[0];
     while (inode_counter < UFS_NUM_MAX_INODES)
     {
-        if (dir_inode->type == FREE)
+        if (dir_inode->type == EMPTY)
             break;
         
         inode_counter++;
@@ -213,7 +213,6 @@ rd_mkdir(char * path)
     while (*path != '/') path--;
     memcpy(entry->filename, path + 1, strlen(path));
     entry->inode_num = inode_counter;
-    
 
     return 0;
 }
@@ -331,8 +330,14 @@ rd_lseek(int fd, int offset, int whence)
 int
 rd_read(int fd, char * buf, int num_bytes)
 {
-	FILE * file_obj = __current_task->fd_table[fd];
-	inode_t * file_inode = file_obj->inode_ptr;
+    FILE * file_obj;
+    inode_t * file_inode;
+
+    if (fd < 0 || fd > NUM_MAX_FD)
+        return EBADF;
+    
+	file_obj = __current_task->fd_table[fd];
+	file_inode = file_obj->inode_ptr;
 	
     // check if valid fd
     if (!file_obj)
@@ -456,9 +461,15 @@ rd_read(int fd, char * buf, int num_bytes)
 int
 rd_write(int fd, char * buf, int num_bytes)
 {
-    FILE * file_obj = __current_task->fd_table[fd];
-	inode_t * file_inode = file_obj->inode_ptr;
-	
+    FILE * file_obj;
+    inode_t * file_inode;
+
+    if (fd < 0 || fd > NUM_MAX_FD)
+        return EBADF;
+    
+	file_obj = __current_task->fd_table[fd];
+	file_inode = file_obj->inode_ptr;
+
     // check if valid fd
     if (!file_obj)
 		return EBADF;
@@ -475,11 +486,8 @@ rd_write(int fd, char * buf, int num_bytes)
     if (file_obj->inode_ptr->type != REG)
         return ENOREG;
 
-    // get file struct
-    FILE * file_obj = __current_task->fd_table[fd];
-    inode_t * file_inode = file_obj->inode_ptr;
+    // Preprocess the pointers for the start
     int write_counter = 0;
-
     if (file_obj->seek_head > file_inode->size)
         __expand_file(file_inode, file_obj->seek_head - file_inode->size);
     
@@ -505,7 +513,7 @@ rd_write(int fd, char * buf, int num_bytes)
 
 		// set initial pointers
         if (!file_inode->direct_block_ptrs[blk_num])
-            file_inode->direct_block_ptrs[blk_num] = alloc_new_block();
+            file_inode->direct_block_ptrs[blk_num] = (ufs_datablock_t *) alloc_new_block();
 		blk_ptr = file_inode->direct_block_ptrs[file_obj->seek_head % UFS_BLOCK_SIZE];
 	}
 
@@ -519,12 +527,12 @@ rd_write(int fd, char * buf, int num_bytes)
 		// set initial pointers
         if (!single_blk_ptr)
         {
-            single_blk_ptr = alloc_new_block();
+            single_blk_ptr = (ufs_datablock_t **) alloc_new_block();
             file_inode->indirect_block_ptr = single_blk_ptr;
         }
 
         if (!single_blk_ptr[single_blk_idx])
-            single_blk_ptr[single_blk_idx] = alloc_new_block();
+            single_blk_ptr[single_blk_idx] = (ufs_datablock_t *) alloc_new_block();
 		blk_ptr = single_blk_ptr[single_blk_idx];
 	}
 
@@ -538,16 +546,16 @@ rd_write(int fd, char * buf, int num_bytes)
 		// set initial pointers
         if (!double_blk_ptr)
         {
-            double_blk_ptr = alloc_new_block();
+            double_blk_ptr = (ufs_datablock_t ***) alloc_new_block();
             file_inode->double_indirect_block_ptr = double_blk_ptr;
         }
 
         if (!double_blk_ptr[double_blk_idx])
-            double_blk_ptr[double_blk_idx] = alloc_new_block();
+            double_blk_ptr[double_blk_idx] = (ufs_datablock_t **) alloc_new_block();
         single_blk_ptr = double_blk_ptr[double_blk_idx];
 
         if (!single_blk_ptr[single_blk_idx])
-            single_blk_ptr[single_blk_idx] = alloc_new_block();
+            single_blk_ptr[single_blk_idx] = (ufs_datablock_t *) alloc_new_block();
 		blk_ptr = single_blk_ptr[single_blk_idx];
 	}
 
@@ -581,17 +589,17 @@ rd_write(int fd, char * buf, int num_bytes)
 			{
                 single_blk_idx++;
                 if (!single_blk_ptr)
-                    single_blk_ptr = alloc_new_block();
+                    single_blk_ptr = (ufs_datablock_t **) alloc_new_block();
 
                 if (!single_blk_ptr[single_blk_idx])
-                    single_blk_ptr[single_blk_idx] = alloc_new_block();
+                    single_blk_ptr[single_blk_idx] = (ufs_datablock_t *) alloc_new_block();
 				blk_ptr = single_blk_ptr[single_blk_idx];
 			}
             // otherwise reading form direct block pointers of inode
 			else
 			{
 				if (!direct_blk_ptr[blk_num])
-                    direct_blk_ptr[blk_num] = alloc_new_block();
+                    direct_blk_ptr[blk_num] = (ufs_datablock_t *) alloc_new_block();
 				blk_ptr = direct_blk_ptr[blk_num];
 			}
 		}
@@ -604,24 +612,24 @@ rd_write(int fd, char * buf, int num_bytes)
             double_blk_idx++;
         
         if (!double_blk_ptr)
-            double_blk_ptr = alloc_new_block();
+            double_blk_ptr = (ufs_datablock_t ***) alloc_new_block();
 		
         if (!double_blk_ptr[double_blk_idx])
-            double_blk_ptr[double_blk_idx] = alloc_new_block();
+            double_blk_ptr[double_blk_idx] = (ufs_datablock_t **) alloc_new_block();
         single_blk_ptr = double_blk_ptr[double_blk_idx];
 
         // allocate new data block within singly deffered block if necessary        
 		single_blk_idx = 0;
         if (!single_blk_ptr[single_blk_idx])
-            single_blk_ptr[single_blk_idx] = alloc_new_block();
+            single_blk_ptr[single_blk_idx] =  (ufs_datablock_t *)alloc_new_block();
 		blk_ptr = single_blk_ptr[single_blk_idx];
     }
 
 
     // update size of file, if necessary (if the last byte written was after the old seek head)
-    if (file_obj->size - file_obj->seek_head > num_bytes)
+    if (file_inode->size - file_obj->seek_head > num_bytes)
     {
-    	file_obj->size = file_obj->size - file_obj->seek_head + num_bytes;
+    	file_inode->size = file_inode->size - file_obj->seek_head + num_bytes;
     }
 
     // modify metadata accordingly and remove any trailing blocks that are not longer needed
@@ -741,7 +749,7 @@ get_file_inode(char * path, ufs_dirblock_t * dir_blk)
     {
         if (str_is_prefix(path, dir_blk->entries[i].filename))
         {
-            inode_ptr = __inode_array + dir_blk->entries[i].inode_num;
+            inode_ptr = __inode_array[dir_blk->entries[i].inode_num];
 
             // the found prefix could be an incomplete path to a dir block
             if (inode_ptr->type == DIR)

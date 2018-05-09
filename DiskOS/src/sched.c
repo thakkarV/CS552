@@ -15,7 +15,7 @@ static task_struct_t *__waitq_head;
 static task_struct_t *__doneq_head;
 
 // sched ops
-static void do_idle(void);
+static void * do_idle(void *);
 static task_struct_t *sched_select_next_rr(void);
 static void service_waitq(void);
 
@@ -107,6 +107,7 @@ init_sched(void)
 	__idle_task = kmalloc(sizeof(task_struct_t));
 	__idle_task->status = NEW;
 	__idle_task->callable = do_idle;
+	__idle_task->arg = NULL;
 	__idle_task->stack = kmalloc(0x100);
 	__idle_task->esp = (uint32_t) __idle_task->stack + 0x100 - 1;
 }
@@ -317,8 +318,8 @@ __sleep_on(unsigned long systicks)
 }
 
 
-static void
-do_idle(void)
+static void *
+do_idle(void * arg)
 {
 	while (true)
 		__asm__ volatile("nop":::"memory");

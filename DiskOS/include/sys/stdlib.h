@@ -12,6 +12,7 @@ bool strcmp(char *, char *);
 bool str_is_prefix(char *, char *);
 size_t strlen(char *);
 void strcpy(char *, char *);
+char * strtok(char *, char *);
 
 // PORT IO
 uint8_t inb(uint16_t port);

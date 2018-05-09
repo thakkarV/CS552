@@ -60,7 +60,7 @@
 
 typedef enum ufs_blocktype_t
 {
-	FREE = 0,
+	EMPTY = 0,
 	DIR = 1,
 	REG = 2
 } ufs_blocktype_t;
@@ -83,23 +83,31 @@ typedef struct inode_t
 	size_t size;
 	uint32_t attrib;
 
-	union
-	{
-		struct
-		{
-			ufs_dirblock_t *dirblock_ptr;
-			uint32_t dir_attrib[9]; // padding in reality
-		};
-		struct
-		{
-			ufs_datablock_t *direct_block_ptrs[8];
-			ufs_datablock_t **indirect_block_ptr;
-			ufs_datablock_t ***double_indirect_block_ptr;
-		};		
-	};
+	// union
+	// {
+	// 	struct
+	// 	{
+	// 		struct ufs_dirblock_t *dirblock_ptr;
+	// 		uint32_t dir_attrib[9]; // padding in reality
+	// 	};
+	// 	struct
+	// 	{
+	// 		struct ufs_datablock_t *direct_block_ptrs[8];
+	// 		struct ufs_datablock_t **indirect_block_ptr;
+	// 		struct ufs_datablock_t ***double_indirect_block_ptr;
+	// 	};		
+	// };
 	
+	// in reality these should be in the union as laid out above
+	// but temp fix is to have both at the same time
+	// FIXME: remove this hack later
+	struct ufs_dirblock_t  *dirblock_ptr;
+	struct ufs_datablock_t *direct_block_ptrs[8];
+	struct ufs_datablock_t **indirect_block_ptr;
+	struct ufs_datablock_t ***double_indirect_block_ptr;
+
 	// padding at the end to ensure size of 64 bytes
-	uint32_t padding[3];
+	uint32_t padding[2];
 } __attribute__((packed)) inode_t;
 
 
@@ -138,7 +146,7 @@ typedef struct ufs_superblock_t
 	uint32_t num_dirs;
 	uint32_t num_files;
 
-	inode_t         *inode_array;
+	inode_t        **inode_array;
 	uint8_t         *blk_bitmap;
 	ufs_datablock_t *root_blk;
 
