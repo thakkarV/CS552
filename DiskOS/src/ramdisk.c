@@ -301,7 +301,7 @@ rd_read(int fd, char * buf, int num_bytes)
 		single_blk_idx = 0;
 
 		// set initial pointers
-		blk_ptr = file_inode->direct_block_ptrs[file_obj->seek_head % UFS_BLOCK_SIZE];
+		blk_ptr = file_inode->direct_block_ptrs[blk_num];
 	}
 
 	// reading starting from singly differed region
@@ -319,8 +319,8 @@ rd_read(int fd, char * buf, int num_bytes)
 	else
 	{
 		// set initial indexes
-		double_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS) / UFS_NUM_PTRS_PER_BLK;
-		single_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS) % UFS_NUM_PTRS_PER_BLK;
+		double_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS - UFS_NUM_PTRS_PER_BLK) / UFS_NUM_PTRS_PER_BLK;
+		single_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS - UFS_NUM_PTRS_PER_BLK) % UFS_NUM_PTRS_PER_BLK;
 		
 		// set initial pointers
 		single_blk_ptr = double_blk_ptr[double_blk_idx];
@@ -341,29 +341,30 @@ rd_read(int fd, char * buf, int num_bytes)
 					break;
 			}
 
-			if (++read_counter == num_bytes)
+			if (read_counter == num_bytes)
 				break;
 
 			blk_offset = 0;
 			blk_num++;
 
-			// if reading from the deffered blocks (single or double) in the inode
-			if (blk_num > UFS_NUM_DIRECT_PTRS)
+			// if we're still reading from blocks direct pointer, blk_num is the index
+			if (blk_num < UFS_NUM_DIRECT_PTRS)
 			{
-                single_blk_idx++;
-				blk_ptr = single_blk_ptr[single_blk_idx];
+				blk_ptr = direct_blk_ptr[blk_num];      
 			}
-            // otherwise reading form direct block pointers of inode
 			else
 			{
-				blk_ptr = direct_blk_ptr[blk_num];                
-			}
+				// do not increase idx if blk_num==8
+				if (blk_num > UFS_NUM_DIRECT_PTRS)
+					single_blk_idx++;
+
+				blk_ptr = single_blk_ptr[single_blk_idx];
+			}               
 		}
 
-		if (++read_counter == num_bytes)
+		if (read_counter == num_bytes)
 			break;
 
-        // we do not incremenent the double block index the if this condition is met
         // since it will only be met when we first start reading from the doubly deffered region
 		if (blk_num > UFS_NUM_DIRECT_PTRS + UFS_NUM_PTRS_PER_BLK)
             double_blk_idx++;
@@ -419,6 +420,7 @@ rd_write(int fd, char * buf, int num_bytes)
 	ufs_datablock_t   *blk_ptr;
 	int double_blk_idx;
 	int single_blk_idx;
+	// fixme: if seek head is mire than size, write 0's from size to seek head
 	int blk_num    = file_obj->seek_head / UFS_BLOCK_SIZE;
 	int blk_offset = file_obj->seek_head % UFS_BLOCK_SIZE;
     int actual_num_bytes = file_obj->seek_head + num_bytes - file_inode->size;
@@ -432,8 +434,8 @@ rd_write(int fd, char * buf, int num_bytes)
 		single_blk_idx = 0;
 
 		// set initial pointers
-        if (!file_inode->direct_block_ptrs[file_obj->seek_head % UFS_BLOCK_SIZE])
-            file_inode->direct_block_ptrs[file_obj->seek_head % UFS_BLOCK_SIZE] = alloc_new_block();
+        if (!file_inode->direct_block_ptrs[blk_num])
+            file_inode->direct_block_ptrs[blk_num] = alloc_new_block();
 		blk_ptr = file_inode->direct_block_ptrs[file_obj->seek_head % UFS_BLOCK_SIZE];
 	}
 
@@ -460,8 +462,8 @@ rd_write(int fd, char * buf, int num_bytes)
 	else
 	{
 		// set initial indexes
-		double_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS) / UFS_NUM_PTRS_PER_BLK;
-		single_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS) % UFS_NUM_PTRS_PER_BLK;
+		double_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS  - UFS_NUM_PTRS_PER_BLK) / UFS_NUM_PTRS_PER_BLK;
+		single_blk_idx = (blk_num - UFS_NUM_DIRECT_PTRS  - UFS_NUM_PTRS_PER_BLK) % UFS_NUM_PTRS_PER_BLK;
 		
 		// set initial pointers
         if (!double_blk_ptr)
@@ -498,7 +500,7 @@ rd_write(int fd, char * buf, int num_bytes)
 					break;
 			}
 
-			if (++write_counter == actual_num_bytes)
+			if (write_counter == actual_num_bytes)
 				break;
 
 			blk_offset = 0;
@@ -524,7 +526,7 @@ rd_write(int fd, char * buf, int num_bytes)
 			}
 		}
 
-	    if (++write_counter == actual_num_bytes)
+	    if (write_counter == actual_num_bytes)
 			break;
 
         // if statement of the edge case of the single indirect ptr in inode
@@ -545,6 +547,12 @@ rd_write(int fd, char * buf, int num_bytes)
 		blk_ptr = single_blk_ptr[single_blk_idx];
     }
 
+
+    // update size of file, if necessary (if the last byte written was after the old seek head)
+    if (file_obj->size - file_obj->seek_head > num_bytes)
+    {
+    	file_obj->size = file_obj->size - file_obj->seek_head + num_bytes;
+    }
 
     // modify metadata accordingly and remove any trailing blocks that are not longer needed
     file_obj->seek_head += num_bytes;    
