@@ -36,13 +36,13 @@ memcpy(void * dest, void * source, size_t len)
 bool
 strcmp(char *str1, char *str2)
 {
-	while (str1 && str2)
+	while (*str1 && *str2)
 	{
-		if (str1++ != str2++)
+		if (*str1++ != *str2++)
 			return false;
 	}
 
-	if (!str1 && !str2) return true;
+	if (!*str1 && !*str2) return true;
 	else return false;
 }
 
@@ -50,13 +50,13 @@ strcmp(char *str1, char *str2)
 bool
 str_is_prefix(char * str, char * prefix)
 {
-	while (prefix && str)
+	while (*prefix && *str)
 	{
 		if (*prefix++ != *str++)
 			return false;
 	}
 
-	if (!prefix && str)
+	if (!*prefix && *str)
 		return true;
 	else
 		return false;
@@ -86,7 +86,7 @@ strtok(char * str, char * delim)
 {
 	size_t delim_len = strlen(delim);
 	int i;
-	while (str)
+	while (*str)
 	{
 		for (i = 0; i < delim_len; i++)
 		{
