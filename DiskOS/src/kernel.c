@@ -15,7 +15,7 @@
 
 #define TEST_RD
 #ifdef TEST_RD
-#include <test_rd.h>
+	void * run_tests(void *);	
 #endif
 
 
@@ -82,21 +82,27 @@ kmain(unsigned long magic, unsigned long addr)
 	print_banner();
 	
 	/* START STSCKFUL COROUTINES */
-#ifdef ENABLE_STATEFUL_CR
-	cls();
-	printf("registering stateful coroutines ... ");
-	stateful_cr_register_routines();
-	printf("done.\n");
+	#ifdef ENABLE_STATEFUL_CR
+		cls();
+		printf("registering stateful coroutines ... ");
+		stateful_cr_register_routines();
+		printf("done.\n");
 
-	/* START SCHED */
-	printf("starting preemptive scheduler ...\n");
-#endif
+		/* START SCHED */
+		printf("starting preemptive scheduler ...\n");
+	#endif
 
-	/* run rd tests */
-#ifdef TEST_RD
-	printf("starting tests...\n");
-	run_tests();	
-#endif
+		/* run rd tests */
+	#ifdef TEST_RD
+		/* init RAM DISK */
+		printf("ram disk init ... ");
+		void * ramdisk_base_addr = kmalloc(UFS_DISK_SIZE);
+		init_rdisk(ramdisk_base_addr);
+		printf("done.\n");
+
+		printf("starting tests...\n");
+		sched_register_thread(run_tests, NULL);
+	#endif
 
 	/* set interrupt flag and then loop here */
 	sti();

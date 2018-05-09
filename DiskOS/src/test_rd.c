@@ -60,15 +60,8 @@ static char addr[PTRS_PB*PTRS_PB*BLK_SZ+1]; /* Scratchpad memory */
 // }
 
 
-int run_tests()
+void * run_tests(void * arg)
 {
-
-	/* init RAM DISK */
-	printf("ram disk init ... ");	
-	void * ramdisk_base_addr = kmalloc(UFS_DISK_SIZE);
-	init_rdisk(ramdisk_base_addr);
-	printf("done.\n");
-
 	int i, retval;
 	int fd;
 	int index_node_number;
