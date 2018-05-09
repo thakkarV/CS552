@@ -27,7 +27,7 @@ static inode_t * get_parent_dir_inode(char *, ufs_dirblock_t *);
 static void do_write_preprocess(inode_t *, size_t, int);
 
 // low level file block manipulators
-static ufs_datablock_t * alloc_new_block(void);
+static ufs_datablock_t * alloc_block(void);
 static void __expand_file(inode_t *, size_t);
 static void __shrink_file(inode_t *, size_t);
 
@@ -488,8 +488,8 @@ rd_write(int fd, char * buf, int num_bytes)
 
     // Preprocess the pointers for the start
     int write_counter = 0;
-    if (file_obj->seek_head > file_inode->size)
-        __expand_file(file_inode, file_obj->seek_head - file_inode->size);
+    // if (file_obj->seek_head > file_inode->size)
+    //     __expand_file(file_inode, file_obj->seek_head - file_inode->size);
     
 	// first we set up the scanner read head blk pointers and indexes
 	ufs_datablock_t ***double_blk_ptr = file_inode->double_indirect_block_ptr;
@@ -513,7 +513,7 @@ rd_write(int fd, char * buf, int num_bytes)
 
 		// set initial pointers
         if (!file_inode->direct_block_ptrs[blk_num])
-            file_inode->direct_block_ptrs[blk_num] = (ufs_datablock_t *) alloc_new_block();
+            file_inode->direct_block_ptrs[blk_num] = (ufs_datablock_t *) alloc_block();
 		blk_ptr = file_inode->direct_block_ptrs[file_obj->seek_head % UFS_BLOCK_SIZE];
 	}
 
@@ -527,12 +527,12 @@ rd_write(int fd, char * buf, int num_bytes)
 		// set initial pointers
         if (!single_blk_ptr)
         {
-            single_blk_ptr = (ufs_datablock_t **) alloc_new_block();
+            single_blk_ptr = (ufs_datablock_t **) alloc_block();
             file_inode->indirect_block_ptr = single_blk_ptr;
         }
 
         if (!single_blk_ptr[single_blk_idx])
-            single_blk_ptr[single_blk_idx] = (ufs_datablock_t *) alloc_new_block();
+            single_blk_ptr[single_blk_idx] = (ufs_datablock_t *) alloc_block();
 		blk_ptr = single_blk_ptr[single_blk_idx];
 	}
 
@@ -546,16 +546,16 @@ rd_write(int fd, char * buf, int num_bytes)
 		// set initial pointers
         if (!double_blk_ptr)
         {
-            double_blk_ptr = (ufs_datablock_t ***) alloc_new_block();
+            double_blk_ptr = (ufs_datablock_t ***) alloc_block();
             file_inode->double_indirect_block_ptr = double_blk_ptr;
         }
 
         if (!double_blk_ptr[double_blk_idx])
-            double_blk_ptr[double_blk_idx] = (ufs_datablock_t **) alloc_new_block();
+            double_blk_ptr[double_blk_idx] = (ufs_datablock_t **) alloc_block();
         single_blk_ptr = double_blk_ptr[double_blk_idx];
 
         if (!single_blk_ptr[single_blk_idx])
-            single_blk_ptr[single_blk_idx] = (ufs_datablock_t *) alloc_new_block();
+            single_blk_ptr[single_blk_idx] = (ufs_datablock_t *) alloc_block();
 		blk_ptr = single_blk_ptr[single_blk_idx];
 	}
 
@@ -570,7 +570,7 @@ rd_write(int fd, char * buf, int num_bytes)
 			{
                 // we could be writing nulls in the seek head 'hole'
                 if (write_counter < file_obj->seek_head - file_inode->size)
-                    blk_ptr->data[blk_offset++] = 0;                    
+                    blk_ptr->data[blk_offset++] = 0;
                 else
                     blk_ptr->data[blk_offset++] = *buf++;
 
@@ -589,17 +589,17 @@ rd_write(int fd, char * buf, int num_bytes)
 			{
                 single_blk_idx++;
                 if (!single_blk_ptr)
-                    single_blk_ptr = (ufs_datablock_t **) alloc_new_block();
+                    single_blk_ptr = (ufs_datablock_t **) alloc_block();
 
                 if (!single_blk_ptr[single_blk_idx])
-                    single_blk_ptr[single_blk_idx] = (ufs_datablock_t *) alloc_new_block();
+                    single_blk_ptr[single_blk_idx] = (ufs_datablock_t *) alloc_block();
 				blk_ptr = single_blk_ptr[single_blk_idx];
 			}
             // otherwise reading form direct block pointers of inode
 			else
 			{
 				if (!direct_blk_ptr[blk_num])
-                    direct_blk_ptr[blk_num] = (ufs_datablock_t *) alloc_new_block();
+                    direct_blk_ptr[blk_num] = (ufs_datablock_t *) alloc_block();
 				blk_ptr = direct_blk_ptr[blk_num];
 			}
 		}
@@ -612,16 +612,16 @@ rd_write(int fd, char * buf, int num_bytes)
             double_blk_idx++;
         
         if (!double_blk_ptr)
-            double_blk_ptr = (ufs_datablock_t ***) alloc_new_block();
+            double_blk_ptr = (ufs_datablock_t ***) alloc_block();
 		
         if (!double_blk_ptr[double_blk_idx])
-            double_blk_ptr[double_blk_idx] = (ufs_datablock_t **) alloc_new_block();
+            double_blk_ptr[double_blk_idx] = (ufs_datablock_t **) alloc_block();
         single_blk_ptr = double_blk_ptr[double_blk_idx];
 
         // allocate new data block within singly deffered block if necessary        
 		single_blk_idx = 0;
         if (!single_blk_ptr[single_blk_idx])
-            single_blk_ptr[single_blk_idx] =  (ufs_datablock_t *)alloc_new_block();
+            single_blk_ptr[single_blk_idx] =  (ufs_datablock_t *)alloc_block();
 		blk_ptr = single_blk_ptr[single_blk_idx];
     }
 
@@ -634,8 +634,8 @@ rd_write(int fd, char * buf, int num_bytes)
 
     // modify metadata accordingly and remove any trailing blocks that are not longer needed
     file_obj->seek_head += num_bytes;    
-    if (file_obj->seek_head < file_inode->size)
-        __shrink_file(file_inode, file_inode->size - file_obj->seek_head);
+    // if (file_obj->seek_head < file_inode->size)
+    //     __shrink_file(file_inode, file_inode->size - file_obj->seek_head);
 
     kthread_mutex_lock(&__fs_head_lock);
         file_inode->size = file_obj->seek_head;
@@ -677,6 +677,125 @@ rd_readdir(int fd, char * address)
 }
 
 
+/* 
+ * deletes a file by unlinking all block pointers from the inode
+ * and then deletes the inode of the file itself
+ * @return 0 if successful. error codes otherwise
+**/
+int
+rd_unlink(char * path)
+{
+    int i;    
+    inode_t * file_inode;
+    inode_t * parent_dir_inode;
+
+    /* ERROR CHECKS */
+    // check if path is valid
+    if (!path)
+        return EBADPATH;
+    
+    file_inode = get_file_inode(path, __root_blk);
+    parent_dir_inode = get_parent_dir_inode(path, __root_blk);
+
+    if (!file_inode)
+        return EBADPATH;
+
+    // check if file is open
+    for (i = 0; i < NUM_MAX_FD; i++)
+    {
+        if (__current_task->fd_table[i] &&
+            __current_task->fd_table[i]->inode_ptr == file_inode)
+            return EINVAL;
+    }
+
+    // check if inode file is root block or if the dir in not empty
+    if (file_inode->type == DIR)
+    {
+        if (file_inode == __inode_array[0])
+            return EINVAL;
+        
+        for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
+            if (file_inode->dirblock_ptr->entries[i].filename)
+                return EINVAL;
+    }
+
+    /* UNLINK DATA */
+    // unlink unlink datablocks
+	// first we set up the scanner read head blk pointers and indexes
+	ufs_datablock_t ***double_blk_ptr = file_inode->double_indirect_block_ptr;
+	ufs_datablock_t  **single_blk_ptr = file_inode->indirect_block_ptr;
+	ufs_datablock_t  **direct_blk_ptr = file_inode->direct_block_ptrs;
+	ufs_datablock_t   *blk_ptr;
+	int double_blk_idx = 0;
+	int single_blk_idx = 0;
+	int direct_blk_idx = 0;
+    int num_blks_in_file = file_inode->size / UFS_BLOCK_SIZE;
+    // round up number of blocks
+    if (file_inode->size % UFS_BLOCK_SIZE)
+        num_blks_in_file++;
+
+	// start deallocation
+	goto start_unlink;
+	while (double_blk_idx < UFS_NUM_PTRS_PER_BLK)
+	{
+		while (single_blk_idx < UFS_NUM_PTRS_PER_BLK)
+		{
+			start_unlink:
+			if (direct_blk_idx < UFS_NUM_DIRECT_PTRS)
+			{
+                dealloc_block(direct_blk_ptr[direct_blk_idx]);
+			}
+			else
+			{
+				// do not increase idx if direct_blk_idx == 8
+				if (direct_blk_idx > UFS_NUM_DIRECT_PTRS)
+					single_blk_idx++;
+
+				dealloc_block(single_blk_ptr[single_blk_idx]);
+			}
+
+            if (++direct_blk_idx == num_blks_in_file)
+                break;
+		}
+
+        // deallocate the sigle blk pointer, weather from a double region or direct inode mapped
+        if (single_blk_ptr)
+            dealloc_block(single_blk_ptr);
+
+        if (direct_blk_idx == num_blks_in_file)
+            break;
+
+        // since it will only be met when we first start reading from the doubly deffered region
+		if (direct_blk_idx > UFS_NUM_DIRECT_PTRS + UFS_NUM_PTRS_PER_BLK)
+            double_blk_idx++;
+        
+		single_blk_ptr = double_blk_ptr[double_blk_idx];
+	}
+
+    // deallocate trailing double block pointer
+    if (double_blk_ptr)
+        dealloc_block(*double_blk_ptr);
+
+    /* UNLINK DIR AND INODE */    
+    // remove the dirent of this file from parent dirblock
+    for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
+    {
+        if ( parent_dir_inode->dirblock_ptr->entries[i].inode_num ==
+            ( (uint16_t) ((char *)file_inode - (char *)__inode_array ) / sizeof(inode_t) ) )
+        {
+            memset(&(parent_dir_inode->dirblock_ptr->entries[i]), 0, sizeof(ufs_dirent_t));
+            break;
+        }
+    }
+
+    /* FREE INODE */
+    kthread_mutex_lock(&__fs_head_lock);
+        memset(file_inode, 0, sizeof(inode_t));
+    kthread_mutex_unlock(&__fs_head_lock);
+    return 0;
+}
+
+
 //
 // HELPER SUBROUTINES
 //
@@ -711,7 +830,7 @@ do_write_preprocess(inode_t *inode, size_t seek_head, int num_bytes)
  * @return pointer to block if successful, NULL otherwise
 **/ 
 static ufs_datablock_t *
-alloc_new_block(void)
+alloc_block(void)
 {
     kthread_mutex_lock(&__fs_head_lock);
     
@@ -730,6 +849,19 @@ alloc_new_block(void)
     kthread_mutex_unlock(&__fs_head_lock);
     return NULL;
 }
+
+
+/* 
+ * unallocates a block from the fs
+**/ 
+static void
+dealloc_block(ufs_datablock_t * blk_ptr)
+{
+    kthread_mutex_lock(&__fs_head_lock);
+    
+    kthread_mutex_unlock(&__fs_head_lock);
+}
+
 
 
 /* 
@@ -776,11 +908,12 @@ get_parent_dir_inode(char * path, ufs_dirblock_t * dir_blk)
 {
     inode_t * inode_ptr;
     char splice_char;
+    size_t pathlen;
 	
 	if (!path)
 		return NULL;
 
-    size_t pathlen = strlen(path);
+    pathlen = strlen(path);
     // if path itself points to a dir, then its invalid,
     if (path[pathlen - 1] == '/')
         return NULL;

@@ -38,6 +38,9 @@
 
 #define UFS_DIR_DELIM "/"
 
+// max length of the name for any file (dir or reg) inclusive of the terminal null byte
+#define UFS_MAX_FILENAME_LEN 14
+
 /* LOGICAL LAYOUT OF UNIX FILESYSTEM - 256 byte block size
 	I) Superblock
 		blk number 0
@@ -114,7 +117,7 @@ typedef struct inode_t
 // FORMAT OF A SINGLE DIRECTORY ENTRY
 typedef struct ufs_dirent_t
 {
-	char filename[14];
+	char filename[UFS_MAX_FILENAME_LEN];
 	uint16_t inode_num;
 } __attribute__((packed)) ufs_dirent_t;
 
