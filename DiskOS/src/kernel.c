@@ -8,9 +8,14 @@
 #include <sys/sched.h>
 
 
-#define ENABLE_STATEFUL_CR
+// #define ENABLE_STATEFUL_CR
 #ifdef ENABLE_STATEFUL_CR
 	#include <stateful_cr.h>
+#endif
+
+#define TEST_RD
+#ifdef TEST_RD
+#include <test_rd.h>
 #endif
 
 
@@ -79,6 +84,7 @@ kmain(unsigned long magic, unsigned long addr)
 	init_rdisk(ramdisk_base_addr);
 	printf("done.\n");
 
+	cls();
 	print_banner();
 	
 	/* START STSCKFUL COROUTINES */
@@ -90,6 +96,12 @@ kmain(unsigned long magic, unsigned long addr)
 
 	/* START SCHED */
 	printf("starting preemptive scheduler ...\n");
+#endif
+
+	/* run rd tests */
+#ifdef TEST_RD
+	printf("starting tests...\n");
+	run_tests();	
 #endif
 
 	/* set interrupt flag and then loop here */
