@@ -149,7 +149,7 @@ typedef struct ufs_superblock_t
 	uint32_t num_dirs;
 	uint32_t num_files;
 
-	inode_t        **inode_array;
+	inode_t         *inode_array;
 	uint8_t         *blk_bitmap;
 	ufs_dirblock_t  *root_blk;
 

@@ -9,7 +9,7 @@
 
 // global fs checkpointers
 static ufs_superblock_t *__superblk;
-static inode_t         **__inode_array;
+static inode_t          *__inode_array;
 static uint8_t          *__blk_bitmap;
 static ufs_dirblock_t   *__root_blk;
 
@@ -64,10 +64,10 @@ init_rdisk(void *fs_base_addr)
     /* 4: INIT ROOT DIRECTORY BLOCK AND INODE */
     __root_blk = (ufs_dirblock_t *) __blk_bitmap +
         (UFS_BLOCK_SIZE * UFS_NUM_BITMAP_BLOCKS);
-    __inode_array[0]->type = DIR;
-    __inode_array[0]->dirblock_ptr = __root_blk;
+    __inode_array[0].type = DIR;
+    __inode_array[0].dirblock_ptr = __root_blk;
 
-    __superblk->inode_array = (inode_t **) __inode_array;
+    __superblk->inode_array = (inode_t *) __inode_array;
     __superblk->blk_bitmap  = (uint8_t *) __blk_bitmap;
     __superblk->root_blk    = (ufs_dirblock_t *) __root_blk;
 
@@ -99,7 +99,7 @@ rd_create(char * path)
     int i;
     for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
     {
-        if (parent_dir_inode->dirblock_ptr->entries[i].filename == NULL)
+        if (parent_dir_inode->dirblock_ptr->entries[i].filename[0] == NULL)
         {
             entry = parent_dir_inode->dirblock_ptr->entries + i;
             break;
@@ -115,7 +115,7 @@ rd_create(char * path)
 
     // search for the inode
     int inode_counter = 0;
-    file_inode = __inode_array[0];
+    file_inode = &__inode_array[0];
     while (inode_counter < UFS_NUM_MAX_INODES)
     {
         if (file_inode->type == EMPTY)
@@ -170,7 +170,7 @@ rd_mkdir(char * path)
     int i;
     for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
     {
-        if (parent_dir_inode->dirblock_ptr->entries[i].filename == NULL)
+        if (parent_dir_inode->dirblock_ptr->entries[i].filename[0] == NULL)
         {
             entry = parent_dir_inode->dirblock_ptr->entries + i;
             break;
@@ -186,7 +186,7 @@ rd_mkdir(char * path)
 
     // search for the inode
     int inode_counter = 0;
-    dir_inode = __inode_array[0];
+    dir_inode = &__inode_array[0];
     while (inode_counter < UFS_NUM_MAX_INODES)
     {
         if (dir_inode->type == EMPTY)
@@ -710,11 +710,11 @@ rd_unlink(char * path)
     // check if inode file is root block or if the dir in not empty
     if (file_inode->type == DIR)
     {
-        if (file_inode == __inode_array[0])
+        if (file_inode == &__inode_array[0])
             return EINVAL;
         
         for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
-            if (file_inode->dirblock_ptr->entries[i].filename)
+            if (file_inode->dirblock_ptr->entries[i].filename[0])
                 return EINVAL;
     }
 
@@ -849,7 +849,7 @@ static inode_t *
 get_file_inode(char * path, ufs_dirblock_t * dir_blk)
 {
     if (strcmp(path, UFS_DIR_DELIM))
-        return __inode_array[0];
+        return &__inode_array[0];
     
     inode_t * inode_ptr;
 	
@@ -861,7 +861,7 @@ get_file_inode(char * path, ufs_dirblock_t * dir_blk)
     {
         if (str_is_prefix(path, dir_blk->entries[i].filename))
         {
-            inode_ptr = __inode_array[dir_blk->entries[i].inode_num];
+            inode_ptr = &__inode_array[dir_blk->entries[i].inode_num];
 
             // the found prefix could be an incomplete path to a dir block
             if (inode_ptr->type == DIR)
