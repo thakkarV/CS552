@@ -45,6 +45,11 @@ strcmp(char *str1, char *str2)
 }
 
 
+/*
+ * @param str: input string to be matched
+ * @param prefix: input string that is to be matched as a prefix of @str
+ * @return true if the @prefix is a prefix of @str
+**/
 bool
 str_is_prefix(char * str, char * prefix)
 {
@@ -53,7 +58,9 @@ str_is_prefix(char * str, char * prefix)
 		if (*prefix++ != *str++)
 			return false;
 	}
-	return *prefix == *str;
+	
+	if (!*prefix) return true;
+	else return false;
 }
 
 
