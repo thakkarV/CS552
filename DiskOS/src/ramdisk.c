@@ -17,7 +17,7 @@ static ufs_dirblock_t   *__root_blk;
 static kthread_mutex_t __fs_head_lock;
 
 // bitmap ops
-static void set_blk_bitmap(int, inode_status_t);
+static void set_blk_bitmap(int, block_status_t);
 static bool get_blk_bitmap(int);
 
 // helpers
@@ -36,7 +36,7 @@ extern task_struct_t *__current_task;
 /* 
  * initialization routine for the ramdisk.
  * sets up a 2MB ramdisk starting at the input base address.
- * Caller responsible for allcation.
+ * @param fs_base_addr: base address of the ramdisk. (Caller allocated)
 **/
 void
 init_rdisk(void *fs_base_addr)
@@ -59,12 +59,12 @@ init_rdisk(void *fs_base_addr)
     /* 3: INIT INODE BITMAP */
     __blk_bitmap = (uint8_t *) __inode_array +
         (UFS_NUM_MAX_INODES * sizeof(inode_t));
-    set_blk_bitmap(0, OCCUPIED);
+    set_blk_bitmap(0, BLK_STATUS_OCCUPIED);
 
     /* 4: INIT ROOT DIRECTORY BLOCK AND INODE */
     __root_blk = (ufs_dirblock_t *) __blk_bitmap +
         (UFS_BLOCK_SIZE * UFS_NUM_BITMAP_BLOCKS);
-    __inode_array[0].type = DIR;
+    __inode_array[0].type = INODE_DIR;
     __inode_array[0].dirblock_ptr = __root_blk;
 
     __superblk->inode_array = (inode_t *) __inode_array;
@@ -84,6 +84,9 @@ rd_create(char * path)
 {
     inode_t *file_inode;
     inode_t *parent_dir_inode;
+    ufs_dirent_t * dirent;
+    int i;
+    int inode_counter;    
 
     if (!path)
         return EBADPATH;
@@ -95,30 +98,29 @@ rd_create(char * path)
         return EBADPATH;
 
     // check if parent dir has space left for a file
-    ufs_dirent_t * entry = NULL;
-    int i;
+    dirent = NULL;
     for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
     {
         if (parent_dir_inode->dirblock_ptr->entries[i].filename[0] == NULL)
         {
-            entry = parent_dir_inode->dirblock_ptr->entries + i;
+            dirent = &parent_dir_inode->dirblock_ptr->entries [i];
             break;
         }
     }
 
     // dir is full, cannot create anymore files
-    if (!entry)
+    if (!dirent)
         return EBOUNDS;
     
     // add new file's inode to the inode array
     kthread_mutex_lock(&__fs_head_lock);
 
     // search for the inode
-    int inode_counter = 0;
+    inode_counter = 0;
     file_inode = &__inode_array[0];
     while (inode_counter < UFS_NUM_MAX_INODES)
     {
-        if (file_inode->type == EMPTY)
+        if (file_inode->type == INODE_EMPTY)
             break;
         
         inode_counter++;
@@ -132,15 +134,16 @@ rd_create(char * path)
     }
 
     // set inode metadata
-    file_inode->type = REG;
+    file_inode->type = INODE_REG;
     file_inode->size = 0;
     kthread_mutex_unlock(&__fs_head_lock);
 
     // set dirent data
+    // copy file namy by isolating it from the delimiter
     path += strlen(path);
-    while (*path != '/') path--;
-    memcpy(entry->filename, path + 1, strlen(path));
-    entry->inode_num = inode_counter;
+    while (*path != UFS_DIR_DELIM_CHAR) path--; path++;
+    memcpy(dirent->filename, path, strlen(path));
+    dirent->inode_num = inode_counter;
 
     return 0;
 }
@@ -155,6 +158,9 @@ rd_mkdir(char * path)
 {
     inode_t *dir_inode;
     inode_t *parent_dir_inode;
+    ufs_dirent_t * dirent;
+    int i;
+    int inode_counter;
 
     if (!path)
         return EBADPATH;
@@ -166,30 +172,29 @@ rd_mkdir(char * path)
         return EBADPATH;
 
     // check if parent dir has space left for a file
-    ufs_dirent_t * entry = NULL;
-    int i;
+    dirent = NULL;
     for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
     {
         if (parent_dir_inode->dirblock_ptr->entries[i].filename[0] == NULL)
         {
-            entry = parent_dir_inode->dirblock_ptr->entries + i;
+            dirent = parent_dir_inode->dirblock_ptr->entries + i;
             break;
         }
     }
 
     // dir is full, cannot create anymore files
-    if (!entry)
+    if (!dirent)
         return EBOUNDS;
     
     // add new file's inode to the inode array
     kthread_mutex_lock(&__fs_head_lock);
 
     // search for the inode
-    int inode_counter = 0;
+    inode_counter = 0;
     dir_inode = &__inode_array[0];
     while (inode_counter < UFS_NUM_MAX_INODES)
     {
-        if (dir_inode->type == EMPTY)
+        if (dir_inode->type == INODE_EMPTY)
             break;
         
         inode_counter++;
@@ -203,17 +208,18 @@ rd_mkdir(char * path)
     }
 
     // set inode metadata
-    dir_inode->type = DIR;
+    dir_inode->type = INODE_DIR;
     dir_inode->size = 0;
     kthread_mutex_unlock(&__fs_head_lock);
 
-    dir_inode->dirblock_ptr = alloc_block();
+    dir_inode->dirblock_ptr = (ufs_dirblock_t *) alloc_block();
 
     // set dirent data
+    // copy file namy by isolating it from the delimiter
     path += strlen(path);
-    while (*path != '/') path--;
-    memcpy(entry->filename, path + 1, strlen(path));
-    entry->inode_num = inode_counter;
+    while (*path != UFS_DIR_DELIM_CHAR) path--; path++;
+    memcpy(dirent->filename, path, strlen(path));
+    dirent->inode_num = inode_counter;
 
     return 0;
 }
@@ -299,7 +305,7 @@ rd_lseek(int fd, int offset, int whence)
         return EBADF;
 
     // cannot seek if not a regular file
-    if (file_obj->inode_ptr->type != REG)
+    if (file_obj->inode_ptr->type != INODE_REG)
         return ENOREG;
     
     switch (whence)
@@ -364,7 +370,7 @@ rd_read(int fd, char * buf, int num_bytes)
 		return EBOUNDS;
 
     // not a regular readable file
-    if (file_obj->inode_ptr->type != REG)
+    if (file_obj->inode_ptr->type != INODE_REG)
         return ENOREG;
 
     int read_counter = 0;
@@ -446,7 +452,7 @@ rd_read(int fd, char * buf, int num_bytes)
 					single_blk_idx++;
 
 				blk_ptr = single_blk_ptr[single_blk_idx];
-			}               
+			}
 		}
 
 		if (read_counter == num_bytes)
@@ -495,7 +501,7 @@ rd_write(int fd, char * buf, int num_bytes)
 		return EBOUNDS;
 
     // not a regular readable file
-    if (file_obj->inode_ptr->type != REG)
+    if (file_obj->inode_ptr->type != INODE_REG)
         return ENOREG;
 
     // Preprocess the pointers for the start
@@ -657,34 +663,53 @@ rd_write(int fd, char * buf, int num_bytes)
 
 
 /* 
- * copes a dirent to the calling process for the dir opened at the input fd
+ * copies a dirent to the calling process for the dir opened at the input fd
  * keeps track of the last read dir with the FILE->dir_pos
 **/
 int
-rd_readdir(int fd, char * address)
+rd_readdir(int fd, char * buf)
 {
+    ufs_dirblock_t *dir_ptr;
+    FILE *file_obj;
+
     if (fd < 0 || fd > NUM_MAX_FD)
         return EBADF;
     
-    FILE *file_obj = __current_task->fd_table[fd];
+    file_obj = __current_task->fd_table[fd];
     if (!file_obj)
         return EBADF;
     
     // fd does not point to a dir
-    if (file_obj->inode_ptr->type != DIR)
+    if (file_obj->inode_ptr->type != INODE_DIR)
         return ENODIR;
     
-    ufs_dirblock_t *dir_ptr = (ufs_dirblock_t *) file_obj->inode_ptr->dirblock_ptr;
-    memcpy(address, (void *) &dir_ptr->entries[file_obj->dir_pos++], sizeof(ufs_dirent_t));
+    dir_ptr = file_obj->inode_ptr->dirblock_ptr;
 
-    // last entry in this dir
+    // we want to ignore empty entires
+    while (dir_ptr->entries[file_obj->dir_pos].filename == NULL &&
+        file_obj->dir_pos < UFS_MAX_FILE_IN_DIR)
+        file_obj->dir_pos++;
+
     if (file_obj->dir_pos == UFS_MAX_FILE_IN_DIR)
     {
         file_obj->dir_pos = 0;
-        return 1;        
+        return 1;
     }
-    // not the last entry in this dir
+    
+    memcpy(buf, (void *) &dir_ptr->entries[file_obj->dir_pos++], sizeof(ufs_dirent_t));
 
+    while (dir_ptr->entries[file_obj->dir_pos].filename == NULL &&
+        file_obj->dir_pos < UFS_MAX_FILE_IN_DIR)
+        file_obj->dir_pos++;
+    
+    // last dirent in this dir
+    if (file_obj->dir_pos == UFS_MAX_FILE_IN_DIR)
+    {
+        file_obj->dir_pos = 0;
+        return 1;
+    }
+
+    // not the last dirent in this dir
     return 0;
 }
 
@@ -721,7 +746,7 @@ rd_unlink(char * path)
     }
 
     // check if inode file is root block or if the dir in not empty
-    if (file_inode->type == DIR)
+    if (file_inode->type == INODE_DIR)
     {
         if (file_inode == &__inode_array[0])
             return EINVAL;
@@ -792,7 +817,7 @@ rd_unlink(char * path)
             dealloc_block(*double_blk_ptr);
     }
 
-    /* UNLINK DIR AND INODE */    
+    /* UNLINK INODE_DIR AND INODE */    
     // remove the dirent of this file from parent dirblock
     for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
     {
@@ -804,7 +829,7 @@ rd_unlink(char * path)
         }
     }
 
-    /* FREE INODE */
+    /* BLK_STATUS_FREE INODE */
     kthread_mutex_lock(&__fs_head_lock);
         memset(file_inode, 0, sizeof(inode_t));
     kthread_mutex_unlock(&__fs_head_lock);
@@ -824,15 +849,15 @@ rd_unlink(char * path)
 static ufs_datablock_t *
 alloc_block(void)
 {
+    int i;    
     kthread_mutex_lock(&__fs_head_lock);
     
     // scan the bitmap from start to finish looking for a block that is free
-    int i;
     for (i = 0; i < 8 * UFS_NUM_BITMAP_BLOCKS * UFS_BLOCK_SIZE; i++)
     {
         if (!get_blk_bitmap(i))
         {
-            set_blk_bitmap(i, OCCUPIED);
+            set_blk_bitmap(i, BLK_STATUS_OCCUPIED);
             kthread_mutex_unlock(&__fs_head_lock);
             return (ufs_datablock_t *) __root_blk + i;
         }
@@ -852,7 +877,7 @@ dealloc_block(ufs_datablock_t * blk_ptr)
     int blk_num;
     kthread_mutex_lock(&__fs_head_lock);
         blk_num = ( (char *)blk_ptr - (char *)__root_blk ) / sizeof(UFS_BLOCK_SIZE);
-        set_blk_bitmap(blk_num, FREE);
+        set_blk_bitmap(blk_num, BLK_STATUS_FREE);
     kthread_mutex_unlock(&__fs_head_lock);
 }
 
@@ -865,44 +890,46 @@ dealloc_block(ufs_datablock_t * blk_ptr)
 static inode_t *
 get_file_inode(char * path, ufs_dirblock_t * dir_blk)
 {
-    if (strcmp(path, UFS_DIR_DELIM))
-        return &__inode_array[0];
-    
     inode_t * inode_ptr;
-	
-	if (!path)
+    int i;
+
+    if (!path)
 		return NULL;
     
-    if (*path == '/')
+    // if the input path is "/", return root block inode
+    if (strcmp(path, UFS_DIR_DELIM_STR))
+        return &__inode_array[0];
+    
+    if (*path == UFS_DIR_DELIM_CHAR)
         path++;
 
-    int i;
     for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++)
     {
         if (str_is_prefix(path, dir_blk->entries[i].filename))
         {
+            path = strtok(path, UFS_DIR_DELIM_STR);
+            // TODO: the prefix match still is not enough for a full match,
+            // two paths could hold the same prefix at different depths in the file system
+            // we have only found the file we are looking for if the path no longer has 
+            // any path delimitors left
+            
             inode_ptr = &__inode_array[dir_blk->entries[i].inode_num];
-            return inode_ptr;
 
             // the found prefix could be an incomplete path to a dir block
-            if (inode_ptr->type == DIR)
-            {
-                path = strtok(path, UFS_DIR_DELIM);
+            if (inode_ptr->type == INODE_DIR)
                 return get_file_inode(path, inode_ptr->dirblock_ptr);
-            }
-            
             // or the file itself
-            else return inode_ptr;
+            else
+                return inode_ptr;
         }
     }
-
     return NULL;
 }
 
 
 /* 
  * get the inode of the parent directory of the provided path
- * @return pointer of the inode to the DIR file if found, NULL otherwise
+ * @return pointer of the inode to the INODE_DIR file if found, NULL otherwise
 **/
 static inode_t *
 get_parent_dir_inode(char * path, ufs_dirblock_t * dir_blk)
@@ -914,21 +941,29 @@ get_parent_dir_inode(char * path, ufs_dirblock_t * dir_blk)
 	if (!path)
 		return NULL;
 
-    pathlen = strlen(path);
-    // if path itself points to a dir, then its invalid,
-    if (path[pathlen - 1] == '/')
+    // every path must start at root
+    if (path[0] != UFS_DIR_DELIM_CHAR)
         return NULL;
     
-    while (path[pathlen - 1] != '/') pathlen--;
+    // user can either input path as "root/dir_to_find/" or "/root/dir_to_find"
+    pathlen = strlen(path);
+    if (path[pathlen - 1] == UFS_DIR_DELIM_CHAR) pathlen--;
 
-    if (path[pathlen - 1] == '/' && pathlen > 1)
+    // now seperate the lowest level name from its parent path
+    while (path[pathlen - 1] != UFS_DIR_DELIM_CHAR) pathlen--;
+
+    // but the UFS_DIR_DELIM_CHAR could point to the "/" or some other directory dir
+    // this changes where we insert the splicing null
+    if (path[pathlen - 1] == UFS_DIR_DELIM_CHAR && pathlen > 1)
         pathlen--;
     
+    // splice that seperator out and feed the parent path to the get file inode function
     splice_char = path[pathlen];
     path[pathlen] = NULL;
 
     inode_ptr = get_file_inode(path, dir_blk);
 
+    // restore path and return inode
     path[pathlen] = splice_char;
     return inode_ptr;
 }
@@ -938,18 +973,20 @@ get_parent_dir_inode(char * path, ufs_dirblock_t * dir_blk)
  * setter: bitmap helper that sets a the bit of the block index to the input mark
 **/
 static void
-set_blk_bitmap(int blk_index, inode_status_t mark)
+set_blk_bitmap(int blk_index, block_status_t mark)
 {
+    uint8_t val, pos;
+
     if (blk_index < 0 ||
         blk_index > (UFS_NUM_BITMAP_BLOCKS * UFS_BLOCK_SIZE) / sizeof(uint8_t))
         return;
     
-    uint8_t val = __blk_bitmap[blk_index / (sizeof(uint8_t) * 8)];
-    uint8_t pos = blk_index % (sizeof(uint8_t) * 8);
+    val = __blk_bitmap[blk_index / (sizeof(uint8_t) * 8)];
+    pos = blk_index % (sizeof(uint8_t) * 8);
 
-    if (mark == FREE)
+    if (mark == BLK_STATUS_FREE)
         val &= ~(1 << pos);
-    else // mark OCCUPIED
+    else // mark BLK_STATUS_OCCUPIED
         val |= (1 << pos);
 
     __blk_bitmap[blk_index / (sizeof(uint8_t) * 8)] = val;
@@ -962,11 +999,13 @@ set_blk_bitmap(int blk_index, inode_status_t mark)
 static bool
 get_blk_bitmap(int blk_index)
 {
+    uint8_t val, pos;
+    
     if (blk_index < 0 || blk_index > UFS_NUM_MAX_INODES)
         return false;
     
-    uint8_t val = __blk_bitmap[blk_index / (sizeof(uint8_t) * 8)];
-    uint8_t pos = blk_index % (sizeof(uint8_t) * 8);
+    val = __blk_bitmap[blk_index / (sizeof(uint8_t) * 8)];
+    pos = blk_index % (sizeof(uint8_t) * 8);
 
     return ((val >> pos) & 1);
 }

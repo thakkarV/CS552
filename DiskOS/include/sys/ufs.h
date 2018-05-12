@@ -39,7 +39,8 @@
 // TODO: max file size
 #define UFS_MAX_FILESIZE 0x104800UL
 
-#define UFS_DIR_DELIM "/"
+#define UFS_DIR_DELIM_STR "/"
+#define UFS_DIR_DELIM_CHAR '/'
 
 // max length of the name for any file (dir or reg) inclusive of the terminal null byte
 #define UFS_MAX_FILENAME_LEN 14
@@ -64,18 +65,18 @@
 			--> inode number is a 16 bit int
 */
 
-typedef enum ufs_blocktype_t
-{
-	EMPTY = 0,
-	DIR = 1,
-	REG = 2
-} ufs_blocktype_t;
-
 typedef enum inode_status_t
 {
-    OCCUPIED = true,
-    FREE = false
+	INODE_EMPTY = 0,
+	INODE_DIR = 1,
+	INODE_REG = 2
 } inode_status_t;
+
+typedef enum block_status_t
+{
+    BLK_STATUS_FREE = 0,
+    BLK_STATUS_OCCUPIED = 1
+} block_status_t;
 
 // SIZEOF(inode) = 64 BYTES
 typedef struct inode_t
@@ -85,7 +86,7 @@ typedef struct inode_t
 	 *	| Type | Size | 8 Direct BlkPtr | 1 Indirect BlkPtr | 1 Double Indirect BlkPtr |
 	 *	+------+------+-+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+--+
 	**/
-	ufs_blocktype_t type;
+	inode_status_t type;
 	size_t size;
 	uint32_t attrib;
 
