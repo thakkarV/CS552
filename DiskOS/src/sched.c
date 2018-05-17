@@ -1,5 +1,6 @@
 #include <sys/sched.h>
 #include <sys/types.h>
+#include <sys/stdlib.h>
 #include <kmalloc.h>
 
 static volatile uint32_t __thread_count;
@@ -23,82 +24,136 @@ static void service_waitq(void);
 static void splice_inq(task_struct_t **, task_struct_t *);
 static void splice_outq(task_struct_t **, task_struct_t *);
 
+#define THREAD_DUMMY_CONTEXT_START
+
 /* default 8kB for each thread */
-#define THREAD_STACK_SIZE 8196
+#define THREAD_STACK_SIZE 0x2000
 #define MAX_THREADCOUNT 0x10
 
-#define SAVE_CONTEXT(current) \
-__asm__ volatile(         \
-	"pushf\n\t"           \
-	"push %%eax\n\t"      \
-	"push %%ebx\n\t"      \
-	"push %%ecx\n\t"      \
-	"push %%edx\n\t"      \
-	"push %%esi\n\t"      \
-	"push %%edi\n\t"      \
-	"push %%ebp\n\t"      \
-	"push %%ss\n\t"       \
-	"push %%ds\n\t"       \
-	"push %%fs\n\t"       \
-	"push %%gs\n\t"       \
-	"push %%es\n\t"       \
-	"movl %%esp, %0"      \
-	: "=r"(current->esp)  \
-	:                     \
-	: "memory")
+/* Fake Context Generator
+ ! HARD TO UNDERSTAND
+ * Sets up a fake context for a new thread to be started
+ * 1) save the ebx since it will be used as scratch register to setup dummy
+ * 2) swap out esp to swtich to the new stack
+ * 3) push arguemnt, finalizer func and thread func
+ * 4) push base pointer for this new stack using ebx as scratch
+ * 5.0) push two 4 byte zeros. 
+ * 5.1) second zero for ebx pop inserted by gcc
+ * 5.2) first zero for dummy ebp for the sched() epilogue
+ * 6) push 0x200 -> flags register (IF - interrupt enable)
+ * 7) push seven zeros for all 32 bit registers
+ * 8) push segment registers
+ * 9) swap back esp to the stack of thread registrar
+ * A) pop ebp that was used as a scratch register
+**/
+#define SETUP_NEW_THREAD(new, finalizer)\
+	__asm__ volatile                    \
+	(                                   \
+		"pushl %%ebx\n\t"               \
+		"xchgl %%esp, %[esp]\n\t"       \
+		"pushl %[arg]\n\t"              \
+		"pushl %[finlizer]\n\t"         \
+		"pushl %[func]\n\t"             \
+		"movl  %%esp, %%ebx\n\t"        \
+		"addl  $0x4, %%ebx\n\t"         \
+		"pushl %%ebx\n\t"               \
+		"pushl $0\n\t"                  \
+		"pushl $0\n\t"                  \
+		"pushl $0x200\n\t"              \
+		"pushl $0\n\t"                  \
+		"pushl $0\n\t"                  \
+		"pushl $0\n\t"                  \
+		"pushl $0\n\t"                  \
+		"pushl $0\n\t"                  \
+		"pushl $0\n\t"                  \
+		"pushl $0\n\t"                  \
+		"push  %%ss\n\t"                \
+		"push  %%ds\n\t"                \
+		"push  %%es\n\t"                \
+		"push  %%fs\n\t"                \
+		"push  %%gs\n\t"                \
+		"xchgl %%esp, %[esp]\n\t"       \
+		"popl  %%ebx\n\t"               \
+		:                               \
+		: [arg]      "m"(new->arg),     \
+		  [esp]      "m"(new->esp),     \
+		  [finlizer] "r"(finalizer),    \
+		  [func]     "m"(new->callable) \
+		: "memory"                      \
+	)
 
-#define DISPATCH(next) \
-__asm__ volatile(        \
-	"movl %0, %%esp\n\t" \
-	"pop %%es\n\t"       \
-	"pop %%gs\n\t"       \
-	"pop %%fs\n\t"       \
-	"pop %%ds\n\t"       \
-	"pop %%ss\n\t"       \
-	"pop %%ebp\n\t"      \
-	"pop %%edi\n\t"      \
-	"pop %%esi\n\t"      \
-	"pop %%edx\n\t"      \
-	"pop %%ecx\n\t"      \
-	"pop %%ebx\n\t"      \
-	"pop %%eax\n\t"      \
-	"popf\n\t"           \
-	:                    \
-	: "r"(next->esp) \
-	: "memory")
+/* Context Save
+ * saves the running context onto the current stack
+ * Writes the new %esp in the TCB 
+**/
+#define SAVE_CONTEXT(current)         \
+	__asm__ volatile                  \
+	(                                 \
+		"pushf\n\t"                   \
+		"push %%eax\n\t"              \
+		"push %%ebx\n\t"              \
+		"push %%ecx\n\t"              \
+		"push %%edx\n\t"              \
+		"push %%esi\n\t"              \
+		"push %%edi\n\t"              \
+		"push %%ebp\n\t"              \
+		"push %%ss\n\t"               \
+		"push %%ds\n\t"               \
+		"push %%es\n\t"               \
+		"push %%fs\n\t"               \
+		"push %%gs\n\t"               \
+		"movl %%esp, %[esp]"          \
+		: [esp] "=r"(current->esp)    \
+		:                             \
+		: "memory"                    \
+	)
 
-#define START_NEW_THREAD_NOARG(func, esp, exit_routine) \
-	__asm__ volatile(                                   \
-		"movl %1, %%esp\n\t"                            \
-		"pushl %2\n\t"                                  \
-		"pushl %0\n\t"                                  \
-		"sti\n\t"                                       \
-		"ret\n\t"                                       \
-		:                                               \
-		: "rm"(func), "rm"(esp), "rm"(exit_routine)     \
-		: "memory")
+
+#define DISPATCH(next)                \
+	__asm__ volatile                  \
+	(                                 \
+		"movl %[esp], %%esp\n\t"      \
+		"pop %%gs\n\t"                \
+		"pop %%fs\n\t"                \
+		"pop %%es\n\t"                \
+		"pop %%ds\n\t"                \
+		"pop %%ss\n\t"                \
+		"popl %%ebp\n\t"              \
+		"popl %%edi\n\t"              \
+		"popl %%esi\n\t"              \
+		"popl %%edx\n\t"              \
+		"popl %%ecx\n\t"              \
+		"popl %%ebx\n\t"              \
+		"popl %%eax\n\t"              \
+		"popf\n\t"                    \
+		:                             \
+		: [esp] "r"(next->esp)        \
+		: "memory"                    \
+	)
 
 /** IA-32 CALLING CONVENTION
  * Caller : push old EBP, move ESP to EBP, push all args, call
  * Callee : index args relative to ebp, save retval in EAX, leave, ret
 **/
 #define START_NEW_THREAD(current, exit_routine) \
-	__asm__ volatile(                                       \
-		"movl %1, %%esp\n\t"                                \
-		"pushl %2\n\t"                                      \
-		"movl %%esp, %%ebp\n\t"                             \
-		"pushl %3\n\t"                                      \
-		"sti\n\t"                                           \
-		"call %4\n\t"                                       \
-		"movl %%eax, %0\n\t"                                \
-		"movl %%ebp, %%esp\n\t"                             \
-		"ret\n\t"                                           \
-		: "=r"(current->retval)                             \
-		: "rm"(current->esp),                               \
-		  "rm"(exit_routine),                               \
-		  "rm"(current->arg),                               \
-		  "rm"(current->callable)                           \
-		: "memory")
+	__asm__ volatile                            \
+	(                                           \
+		"movl %[esp], %%esp\n\t"                \
+		"pushl %[fializer]\n\t"                 \
+		"movl %%esp, %%ebp\n\t"                 \
+		"pushl %[arg]\n\t"                      \
+		"sti\n\t"                               \
+		"call %[func]\n\t"                      \
+		"movl %%eax, %[retval]\n\t"             \
+		"movl %%ebp, %%esp\n\t"                 \
+		"ret\n\t"                               \
+		: [retval]   "=r"(current->retval)      \
+		: [esp]      "rm"(current->esp),        \
+		  [fializer] "rm"(exit_routine),        \
+		  [arg]      "rm"(current->arg),        \
+		  [func]     "rm"(current->callable)    \
+		: "memory"                              \
+	)
 
 
 void
@@ -110,6 +165,10 @@ init_sched(void)
 	__idle_task->arg = NULL;
 	__idle_task->stack = kmalloc(0x100);
 	__idle_task->esp = (uint32_t) __idle_task->stack + 0x100 - 1;
+
+	#ifdef THREAD_DUMMY_CONTEXT_START
+		SETUP_NEW_THREAD(__idle_task, sched_finalize_thread);
+	#endif
 }
 
 
@@ -132,7 +191,10 @@ sched_register_thread(void * (*callable) (void *), void * arg)
 	ts->callable = callable;
 	ts->arg = arg;
 	ts->stack = kmalloc(THREAD_STACK_SIZE);
-	ts->esp = ts->stack + THREAD_STACK_SIZE - 1;
+	ts->esp = (uint32_t) ts->stack + THREAD_STACK_SIZE - 1;
+	#ifdef THREAD_DUMMY_CONTEXT_START
+		SETUP_NEW_THREAD(ts, sched_finalize_thread);
+	#endif
 
 	/* init fd table to nulls */
 	memset(ts->fd_table, 0, NUM_MAX_FD * sizeof(FILE*));
@@ -217,6 +279,12 @@ schedule(void)
 		__current_task = sched_select_next_rr();
 
 	/* PART 3: switch threads */
+	#ifdef THREAD_DUMMY_CONTEXT_START
+		__current_task->status = RUNNING;
+		DISPATCH(__current_task);
+	#endif
+
+	#ifndef THREAD_DUMMY_CONTEXT_START
 	if (__current_task->status == NEW)
 	{
 		/* nimble handinling required if the task has never run before */
@@ -232,25 +300,26 @@ schedule(void)
 		/* task switching is just infinite recurison over all the running threads */
 		DISPATCH(__current_task);
 	}
+	#endif
 }
 
 
 void
 do_timer(void)
 {
-	task_struct_t *waitq_head = __waitq_head;
+	task_struct_t *waitq_itr = __waitq_head;
 	if (__waitq_head)
 	{
 		do
 		{
-			++waitq_head->utime;
-			waitq_head = waitq_head->next;
-		} while (waitq_head != __waitq_head);
+			++waitq_itr->utime;
+			waitq_itr = waitq_itr->next;
+		} while (waitq_itr != __waitq_head);
 	}
 
 	jiffies++;
-	// if (++__current_task->utime < 2)
-	// 	return;
+	if (++__current_task->utime < _SCHED_TIMESLICE_TICKS_)
+		return;
 
 	__current_task->utime = 0;
 	schedule();
@@ -270,6 +339,7 @@ service_waitq(void)
 		{
 			tmp = waitq->next;
 			waitq->status = READY;
+			waitq->sleep_time = 0;
 			splice_outq(&__waitq_head, waitq);
 			splice_inq(&__runq_head, waitq);
 			waitq = tmp;
@@ -301,7 +371,8 @@ __sleep_on(unsigned long systicks)
 	splice_outq(&__runq_head, curr_cpy);
 	splice_inq(&__waitq_head, curr_cpy);
 
-	/* TODO: make this better unified into the scheduler if possible
+	// TODO: make this better unified into the scheduler if possible
+	/* 
 	 * this is somewhat hacky
 	 * ideally save context should only be called by the scheduler
 	 * but since we are setting the current task to blocked
@@ -313,7 +384,8 @@ __sleep_on(unsigned long systicks)
 
 	// block
 	__asm__ volatile("sti":::"memory");
-	schedule();
+	while (curr_cpy->sleep_time != 0);
+	// schedule();
 	
 	// when resumed, reset time counters
 	__current_task->utime = 0;
@@ -325,7 +397,11 @@ static void *
 do_idle(void * arg)
 {
 	while (true)
-		__asm__ volatile("nop":::"memory");
+		__asm__ volatile
+			("nop":::"memory");
+
+	// should never get here
+	return NULL;
 }
 
 
