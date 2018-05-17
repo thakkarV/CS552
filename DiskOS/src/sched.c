@@ -24,8 +24,6 @@ static void service_waitq(void);
 static void splice_inq(task_struct_t **, task_struct_t *);
 static void splice_outq(task_struct_t **, task_struct_t *);
 
-#define THREAD_DUMMY_CONTEXT_START
-
 /* default 8kB for each thread */
 #define THREAD_STACK_SIZE 0x2000
 #define MAX_THREADCOUNT 0x10
@@ -147,9 +145,7 @@ init_sched(void)
 	__idle_task->stack = kmalloc(0x100);
 	__idle_task->esp = (uint32_t) __idle_task->stack + 0x100 - 1;
 
-	#ifdef THREAD_DUMMY_CONTEXT_START
-		SETUP_NEW_THREAD(__idle_task, sched_finalize_thread);
-	#endif
+	SETUP_NEW_THREAD(__idle_task, sched_finalize_thread);
 }
 
 
@@ -173,9 +169,7 @@ sched_register_thread(void * (*callable) (void *), void * arg)
 	ts->arg = arg;
 	ts->stack = kmalloc(THREAD_STACK_SIZE);
 	ts->esp = (uint32_t) ts->stack + THREAD_STACK_SIZE - 1;
-	#ifdef THREAD_DUMMY_CONTEXT_START
-		SETUP_NEW_THREAD(ts, sched_finalize_thread);
-	#endif
+	SETUP_NEW_THREAD(ts, sched_finalize_thread);
 
 	/* init fd table to nulls */
 	memset(ts->fd_table, 0, NUM_MAX_FD * sizeof(FILE*));

@@ -15,11 +15,12 @@
 
 // #define RUN_TEST
 #ifdef RUN_TEST
-	void * run_tests(void *);	
+	void * run_tests(void *);
 #endif
 
+#define EASTEREGG
 
-/* Check if the bit BIT in FLAGS is set. */
+/* Check if the bit BIT in FLAGS is set */
 #define CHECK_FLAG(flags,bit) ((flags) & (1 << (bit)))
 
 /* Check if MAGIC is valid and print the Multiboot information structure
@@ -46,6 +47,7 @@ kmain(unsigned long magic, unsigned long addr)
 	multiboot_flagscheck(mbi);
 
 	/* init KERNEL MALLOC */
+	cls();
 	printf(COLOR_RESET "Multiboot flags check done.\n");
 
 
@@ -78,10 +80,16 @@ kmain(unsigned long magic, unsigned long addr)
 	init_sched();
 	printf("done.\n");
 
-	cls();
-	print_banner();
-	
-	/* START STSCKFUL COROUTINES */
+	sched_register_thread(init, NULL);
+	sti();
+	noploop();
+}
+
+
+void *
+init(void * arg)
+{
+	/* start threads */
 	#ifdef ENABLE_STATEFUL_CR
 		cls();
 		printf("registering stateful coroutines ... ");
@@ -95,6 +103,7 @@ kmain(unsigned long magic, unsigned long addr)
 		/* run rd tests */
 	#ifdef RUN_TEST
 		/* init RAM DISK */
+		cls();		
 		printf("ram disk init ... ");
 		void * ramdisk_base_addr = kmalloc(UFS_DISK_SIZE);
 		init_rdisk(ramdisk_base_addr);
@@ -105,9 +114,13 @@ kmain(unsigned long magic, unsigned long addr)
 		run_tests(NULL);
 	#endif
 
-	/* set interrupt flag and then loop here */
-	sti();
-	noploop();
+	// this is where a waitpid would go for all running threads
+	#ifdef EASTEREGG
+		msleep(5000);
+		cls();
+		printf("\n\n\n\n\n\n\n");
+		sched_register_thread(print_banner, NULL);
+	#endif
 }
 
 
@@ -212,11 +225,11 @@ print_banner(void)
 {	
 	printf(FG_COLOR_BLACK);
 	printf(BG_COLOR_WHITE"                                                                               \n");
-	printf(BG_COLOR_DARK_GREEN "    \334\334\334\334\333\333\333\334\334\334\334   \334\333\333\333\333\333\333\333\333\333\337  \334\334\334\334\333\333\333\334\334\334\334   \334\333\333\333\333\333\333\333\333\333\337 \334\333\333\333\333\333\333\334    \334\333\333\333\333\333\333\333  \n");
-	printf(BG_COLOR_LIGHT_GREEN"  \334\333\333\337\337\337\333\333\333\337\337\337\333\333\334 \333\333\333    \333\333\333 \334\333\333\337\337\337\333\333\333\337\337\337\333\333\334 \333\333\333    \333\333\333 \333\333\333    \333\333\333  \333\333\333   \333\333\333  \n");
-	printf(BG_COLOR_YELLOW     "  \333\333\333   \333\333\333   \333\333\333 \333\333\333    \333\337  \333\333\333   \333\333\333   \333\333\333 \333\333\333    \333\337  \333\333\333    \333\333\333  \333\333\333    \333\337  \n");
-	printf(BG_COLOR_LIGHT_RED  "  \333\333\333   \333\333\333   \333\333\333\334\333\333\333\334\334\334     \333\333\333   \333\333\333   \333\333\333\334\333\333\333\334\334\334     \333\333\333    \333\333\333  \333\333\333        \n");
-	printf(BG_COLOR_DARK_RED   "  \333\333\333   \333\333\333   \333\333\333\337\333\333\333\337\337\337     \333\333\333   \333\333\333   \333\333\333\337\333\333\333\337\337\337     \333\333\333    \333\333\333 \333\333\333\333\333\333\333\333\333\333  \n");
+	printf(BG_COLOR_DARK_RED   "    \334\334\334\334\333\333\333\334\334\334\334   \334\333\333\333\333\333\333\333\333\333\337  \334\334\334\334\333\333\333\334\334\334\334   \334\333\333\333\333\333\333\333\333\333\337 \334\333\333\333\333\333\333\334    \334\333\333\333\333\333\333\333  \n");
+	printf(BG_COLOR_LIGHT_RED  "  \334\333\333\337\337\337\333\333\333\337\337\337\333\333\334 \333\333\333    \333\333\333 \334\333\333\337\337\337\333\333\333\337\337\337\333\333\334 \333\333\333    \333\333\333 \333\333\333    \333\333\333  \333\333\333   \333\333\333  \n");
+	printf(BG_COLOR_DARK_GREEN "  \333\333\333   \333\333\333   \333\333\333 \333\333\333    \333\337  \333\333\333   \333\333\333   \333\333\333 \333\333\333    \333\337  \333\333\333    \333\333\333  \333\333\333    \333\337  \n");
+	printf(BG_COLOR_LIGHT_GREEN"  \333\333\333   \333\333\333   \333\333\333\334\333\333\333\334\334\334     \333\333\333   \333\333\333   \333\333\333\334\333\333\333\334\334\334     \333\333\333    \333\333\333  \333\333\333        \n");
+	printf(BG_COLOR_YELLOW     "  \333\333\333   \333\333\333   \333\333\333\337\333\333\333\337\337\337     \333\333\333   \333\333\333   \333\333\333\337\333\333\333\337\337\337     \333\333\333    \333\333\333 \333\333\333\333\333\333\333\333\333\333  \n");
 	printf(BG_COLOR_DARK_CYAN  "  \333\333\333   \333\333\333   \333\333\333 \333\333\333    \333\334  \333\333\333   \333\333\333   \333\333\333 \333\333\333    \333\334  \333\333\333    \333\333\333         \333\333  \n");
 	printf(BG_COLOR_LIGHT_BLUE "  \333\333\333   \333\333\333   \333\333\333 \333\333\333    \333\333\333 \333\333\333   \333\333\333   \333\333\333 \333\333\333    \333\333\333 \333\333\333    \333\333\333   \334\333    \333\333  \n");
 	printf(BG_COLOR_DARK_BLUE  "   \337\333   \333\333\333   \333\337  \333\333\333\333\333\333\333\333\333\333  \337\333   \333\333\333   \333\337  \333\333\333\333\333\333\333\333\333\333  \337\333\333\333\333\333\333\337  \334\333\333\333\333\333\333\333\333\337  \n");
@@ -224,9 +237,10 @@ print_banner(void)
 	printf(COLOR_RESET);	
 }
 
+
 void
 noploop(void)
 {
 	while(true)
-		__asm__ volatile("nop" : :);
+		__asm__ volatile("nop":::"memory");
 }

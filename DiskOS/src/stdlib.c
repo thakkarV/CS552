@@ -68,7 +68,7 @@ size_t
 strlen(char * str)
 {
 	size_t size = 0;
-	while(*str++) size++;
+	while (*str++) size++;
 	return size;
 }
 
@@ -77,7 +77,7 @@ void
 strcpy(char * source, char * dest)
 {
 	char c;
-	while (c = *source++) *dest++ = c;
+	while ((c = *source++)) *dest++ = c;
 	*dest = NULL;
 }
 
