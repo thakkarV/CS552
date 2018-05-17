@@ -30,7 +30,7 @@ static void splice_outq(task_struct_t **, task_struct_t *);
 #define THREAD_STACK_SIZE 0x2000
 #define MAX_THREADCOUNT 0x10
 
-/* Fake Context Generator
+/* Context: Fake Generator
  ! HARD TO UNDERSTAND
  * Sets up a fake context for a new thread to be started
  * 1) save the ebx since it will be used as scratch register to setup dummy
@@ -82,7 +82,8 @@ static void splice_outq(task_struct_t **, task_struct_t *);
 		: "memory"                      \
 	)
 
-/* Context Save
+
+/* Context: Save
  * saves the running context onto the current stack
  * Writes the new %esp in the TCB 
 **/
@@ -109,6 +110,10 @@ static void splice_outq(task_struct_t **, task_struct_t *);
 	)
 
 
+/* Context: Resume
+ * resumes a thread from a context pointed to by the esp of the task
+ * context that was previously saved by SAVE_CONTEXT
+**/
 #define DISPATCH(next)                \
 	__asm__ volatile                  \
 	(                                 \
@@ -129,30 +134,6 @@ static void splice_outq(task_struct_t **, task_struct_t *);
 		:                             \
 		: [esp] "r"(next->esp)        \
 		: "memory"                    \
-	)
-
-/** IA-32 CALLING CONVENTION
- * Caller : push old EBP, move ESP to EBP, push all args, call
- * Callee : index args relative to ebp, save retval in EAX, leave, ret
-**/
-#define START_NEW_THREAD(current, exit_routine) \
-	__asm__ volatile                            \
-	(                                           \
-		"movl %[esp], %%esp\n\t"                \
-		"pushl %[fializer]\n\t"                 \
-		"movl %%esp, %%ebp\n\t"                 \
-		"pushl %[arg]\n\t"                      \
-		"sti\n\t"                               \
-		"call %[func]\n\t"                      \
-		"movl %%eax, %[retval]\n\t"             \
-		"movl %%ebp, %%esp\n\t"                 \
-		"ret\n\t"                               \
-		: [retval]   "=r"(current->retval)      \
-		: [esp]      "rm"(current->esp),        \
-		  [fializer] "rm"(exit_routine),        \
-		  [arg]      "rm"(current->arg),        \
-		  [func]     "rm"(current->callable)    \
-		: "memory"                              \
 	)
 
 
@@ -262,11 +243,11 @@ void
 schedule(void)
 {
 	/* PART 0: Set current to ready, and save its machine context */
-	if (__current_task->status == RUNNING)
-	{
-		__current_task->status = READY;
+	if (__current_task->status != NEW)
 		SAVE_CONTEXT(__current_task);
-	}
+	
+	if (__current_task->status == RUNNING)	
+		__current_task->status = READY;
 
 	/* FURTHER CODE MUST NOT MANIPULATE STACK IN NET EFFECT */
 
@@ -279,28 +260,9 @@ schedule(void)
 		__current_task = sched_select_next_rr();
 
 	/* PART 3: switch threads */
-	#ifdef THREAD_DUMMY_CONTEXT_START
-		__current_task->status = RUNNING;
-		DISPATCH(__current_task);
-	#endif
-
-	#ifndef THREAD_DUMMY_CONTEXT_START
-	if (__current_task->status == NEW)
-	{
-		/* nimble handinling required if the task has never run before */
-		__current_task->status = RUNNING;
-		START_NEW_THREAD(
-			__current_task,
-			sched_finalize_thread
-		);
-	}
-	else
-	{
-		__current_task->status = RUNNING;
-		/* task switching is just infinite recurison over all the running threads */
-		DISPATCH(__current_task);
-	}
-	#endif
+	/* task switching is just infinite recurison over all the running threads */	
+	__current_task->status = RUNNING;
+	DISPATCH(__current_task);
 }
 
 
@@ -360,7 +322,6 @@ __sleep_on(unsigned long systicks)
 	__asm__ volatile("cli":::"memory");
 
 	task_struct_t *curr_cpy = __current_task;
-	__current_task = __current_task->prev;
 
 	// set metadata
 	curr_cpy->status = BLOCKED;
@@ -371,21 +332,9 @@ __sleep_on(unsigned long systicks)
 	splice_outq(&__runq_head, curr_cpy);
 	splice_inq(&__waitq_head, curr_cpy);
 
-	// TODO: make this better unified into the scheduler if possible
-	/* 
-	 * this is somewhat hacky
-	 * ideally save context should only be called by the scheduler
-	 * but since we are setting the current task to blocked
-	 * and then changing the pointer "__current_task" we have to do it here
-	 * otherwise we will not be able to set the context for this thread
-	 * and all hell will break loose when we try to `resume it
-	**/
-	SAVE_CONTEXT(curr_cpy);
-
-	// block
+	// wait for block from incoming interrupt
 	__asm__ volatile("sti":::"memory");
 	while (curr_cpy->sleep_time != 0);
-	// schedule();
 	
 	// when resumed, reset time counters
 	__current_task->utime = 0;
