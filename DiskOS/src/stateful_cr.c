@@ -27,18 +27,18 @@ stateful_cr_thread1(void * arg)
 
 	while (1)
 	{
-		// msleep(500);
+		msleep(250);
 		/* execute instructions in this thread */
 		// kthread_mutex_lock(&lock);
-		choosing[0] = 1;
-		number[0] = max(number[0], number[1], number[2]) + 1;
-		choosing[0] = 0;
+		// choosing[0] = 1;
+		// number[0] = max(number[0], number[1], number[2]) + 1;
+		// choosing[0] = 0;
 
-		for (k = 0; k < NUM_THREADS; ++k)
-		{
-			while (choosing[k]);
-			while ( (number[k]!=0) && ( (number[k]<number[0]) || (number[k]==number[0] && k < 0) ) );
-		}
+		// for (k = 0; k < NUM_THREADS; ++k)
+		// {
+		// 	while (choosing[k]);
+		// 	while ( (number[k]!=0) && ( (number[k]<number[0]) || (number[k]==number[0] && k < 0) ) );
+		// }
 
 		for (i = 0; i < 4; i++)
 		{
@@ -46,7 +46,7 @@ stateful_cr_thread1(void * arg)
 		}
 		printf ("\n");
 		// kthread_mutex_unlock(&lock);
-		number[0] = 0;
+		// number[0] = 0;
 
 		/* check if done with this thread */
 		if (++j == 3)
@@ -71,17 +71,17 @@ stateful_cr_thread2(void * arg)
 
 	while (1)
 	{
-		// msleep(1000);
+		msleep(500);
 		/* execute instructions in this thread */
 		// kthread_mutex_lock(&lock);
-		choosing[1] = 1;
-		number[1] = max(number[0], number[1], number[2]) + 1;
-		choosing[1] = 0;
-		for (k = 0; k < NUM_THREADS; ++k)
-		{
-			while (choosing[k]);
-			while ( (number[k]!=0) && ( (number[k]<number[1]) || (number[k]==number[1] && k < 1) ) );
-		}
+		// choosing[1] = 1;
+		// number[1] = max(number[0], number[1], number[2]) + 1;
+		// choosing[1] = 0;
+		// for (k = 0; k < NUM_THREADS; ++k)
+		// {
+		// 	while (choosing[k]);
+		// 	while ( (number[k]!=0) && ( (number[k]<number[1]) || (number[k]==number[1] && k < 1) ) );
+		// }
 
 		for (i = 0; i < 5; i++)
 		{
@@ -89,7 +89,7 @@ stateful_cr_thread2(void * arg)
 		}
 		printf ("\n");
 		// kthread_mutex_unlock(&lock);
-		number[1] = 0;
+		// number[1] = 0;
 
 		/* check if done with this thread */
 		if (++j == 5)
@@ -113,17 +113,17 @@ stateful_cr_thread3(void * arg)
 
 	while (1)
 	{
-		// msleep(3000);
+		msleep(1500);
 		// kthread_mutex_lock(&lock);
 		/* execute instructions in this thread */
-		choosing[2] = 1;
-		number[2] = max(number[0], number[1], number[2]) + 1;
-		choosing[2] = 0;
-		for (k = 0; k < NUM_THREADS; ++k)
-		{
-			while (choosing[k]);
-			while ( (number[k]!=0) && ( (number[k]<number[2]) || (number[k]==number[2] && k < 2) ) );
-		}
+		// choosing[2] = 1;
+		// number[2] = max(number[0], number[1], number[2]) + 1;
+		// choosing[2] = 0;
+		// for (k = 0; k < NUM_THREADS; ++k)
+		// {
+		// 	while (choosing[k]);
+		// 	while ( (number[k]!=0) && ( (number[k]<number[2]) || (number[k]==number[2] && k < 2) ) );
+		// }
 
 		for (i = 0; i < 4; i++)
 		{
@@ -131,7 +131,7 @@ stateful_cr_thread3(void * arg)
 		}
 		printf ("\n");
 		// kthread_mutex_unlock(&lock);
-		number[2] = 0;
+		// number[2] = 0;
 		
 		/* check if done with this thread */
 		if (++j == 2)
@@ -147,12 +147,12 @@ void
 stateful_cr_register_routines(void)
 {
 	/* initialize to false */
-	int i = 0;
-	for (int i = 0; i < NUM_THREADS; ++i)
-	{
-		choosing[i] = 0;
-		number[i] = 0;
-	}
+	// int i = 0;
+	// for (int i = 0; i < NUM_THREADS; ++i)
+	// {
+	// 	choosing[i] = 0;
+	// 	number[i] = 0;
+	// }
 
 	// kthread_mutex_init(&lock);
 
