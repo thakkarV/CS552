@@ -3,6 +3,12 @@
 #include <sys/stdlib.h>
 #include <kmalloc.h>
 
+
+// #define THREAD_DUMMY_CONTEXT_START
+/* default 8kB for each thread */
+#define THREAD_STACK_SIZE 0x2000
+#define MAX_THREADCOUNT 0x10
+
 static volatile uint32_t __thread_count;
 static volatile uint32_t __tid_counter;
 
@@ -24,9 +30,6 @@ static void service_waitq(void);
 static void splice_inq(task_struct_t **, task_struct_t *);
 static void splice_outq(task_struct_t **, task_struct_t *);
 
-/* default 8kB for each thread */
-#define THREAD_STACK_SIZE 0x2000
-#define MAX_THREADCOUNT 0x10
 
 /* Context: Fake Generator
  ! HARD TO UNDERSTAND
@@ -79,6 +82,24 @@ static void splice_outq(task_struct_t **, task_struct_t *);
 		  [func]     "m"(new->callable) \
 		: "memory"                      \
 	)
+
+ #define START_NEW_THREAD(current, exit_routine) \
+ 	__asm__ volatile(                            \
+ 		"movl %1, %%esp\n\t"                     \
+ 		"pushl %2\n\t"                           \
+ 		"movl %%esp, %%ebp\n\t"                  \
+ 		"pushl %3\n\t"                           \
+ 		"sti\n\t"                                \
+ 		"call %4\n\t"                            \
+ 		"movl %%eax, %0\n\t"                     \
+ 		"movl %%ebp, %%esp\n\t"                  \
+ 		"ret\n\t"                                \
+ 		: "=r"(current->retval)                  \
+ 		: "rm"(current->esp),                    \
+ 		  "rm"(exit_routine),                    \
+ 		  "rm"(current->arg),                    \
+ 		  "rm"(current->callable)                \
+ 		: "memory")
 
 
 /* Context: Save
@@ -145,7 +166,9 @@ init_sched(void)
 	__idle_task->stack = kmalloc(0x100);
 	__idle_task->esp = (uint32_t) __idle_task->stack + 0x100 - 1;
 
-	SETUP_NEW_THREAD(__idle_task, sched_finalize_thread);
+	#ifdef THREAD_DUMMY_CONTEXT_START
+		SETUP_NEW_THREAD(__idle_task, sched_finalize_thread);
+	#endif
 }
 
 
@@ -255,8 +278,29 @@ schedule(void)
 
 	/* PART 3: switch threads */
 	/* task switching is just infinite recurison over all the running threads */	
-	__current_task->status = RUNNING;
-	DISPATCH(__current_task);
+	#ifdef THREAD_DUMMY_CONTEXT_START
+		__current_task->status = RUNNING;
+		DISPATCH(__current_task);
+	#endif
+
+	// if we are not setting up a fake context for the thread, we need to return to it
+	#ifndef THREAD_DUMMY_CONTEXT_START
+ 	if (__current_task->status == NEW)
+ 	{
+ 		/* nimble handinling required if the task has never run before */
+ 		__current_task->status = RUNNING;
+ 		START_NEW_THREAD(
+ 			__current_task,
+ 			sched_finalize_thread
+ 		);
+ 	}
+ 	else
+ 	{
+ 		__current_task->status = RUNNING;
+ 		/* task switching is just infinite recurison over all the running threads */
+ 		DISPATCH(__current_task);
+ 	}
+	#endif
 }
 
 
