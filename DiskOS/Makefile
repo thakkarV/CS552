@@ -1,5 +1,8 @@
 CC = gcc
-CFLAGS = -I./include -m32 -march=i386 -fno-builtin -fno-stack-protector -fno-strict-aliasing -fno-delete-null-pointer-checks -nostdinc -g -Wall -std=c99
+CFLAGS = -I./include -m32 -march=i386 -fno-builtin \
+		 -fno-stack-protector -fno-strict-aliasing \
+		 -fno-delete-null-pointer-checks -nostdinc \
+		 -g -Wall -std=c99
 CPPFLAGS = -Wa,--32 -MMD
 
 # define project directory structure
@@ -10,7 +13,7 @@ OBJDIR    = obj
 BINDIR    = bin
 LDFILE    = kernel.ld
 
-TARGET    = fifos
+TARGET    = MemeOS
 MNT_POINT = /mnt/C
 
 
@@ -43,10 +46,10 @@ clean:
 	-rm -f $(OBJS) $(TARGET) *~
 
 rbin:
-	qemu-system-i386 -kernel $(BINDIR)/$(TARGET) 
+	qemu-system-i386 -kernel $(BINDIR)/$(TARGET)
 
 rdisk:
-	qemu-system-i386 ./fifos.img
+	qemu-system-i386 ./MemeOS.img
 
 remake: clean all
 
