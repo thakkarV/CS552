@@ -17,7 +17,7 @@ kthread_create(void * (* callable) (void *), void * arg)
 void
 kthread_mutex_init(volatile kthread_mutex_t *mutex)
 {
-	// 1 = unloced, 0 = locked
+	// 1 = unlocked, 0 = locked
 	mutex->flag = 1;
 }
 
@@ -32,31 +32,32 @@ kthread_mutex_destroy(volatile kthread_mutex_t *mutex)
 void
 kthread_mutex_lock(volatile kthread_mutex_t *mutex)
 {
-	// TODO: make actual mutexes work rather than this hack
-	// __asm__ volatile ("cli" ::: "memory");
-	// while (!__sync_bool_cmpxchg(mutex, 1, 0));
+	while (!__sync_bool_cmpxchg(mutex, 1, 0))
+	{
 		// schedule();
+	}
 }
 
 
 void
 kthread_mutex_unlock(volatile kthread_mutex_t *mutex)
 {
-	// mutex->flag = 1;
-	// __asm__ volatile ("sti" ::: "memory");
+	mutex->flag = 1;
 }
 
 
+// Atomically compare the current value of the mutex to @param old
+// and set to @param new if equal, returning @ otherwise do not set
+// and return 0.
 static bool
 __sync_bool_cmpxchg(volatile kthread_mutex_t *mutex, int old, int new)
 {
 	__asm__ volatile
 	(
-		"movl %[old], %%eax\n\t"
-		"lock cmpxchgl %[new], %[flag]\n\t"
-		"sete %%al\n\t"
-		: 
-		: [new] "d" (new), [old] "a" (old), [flag] "m" (mutex->flag)
+		"LOCK cmpxchg %[source], %[dest]\n\t"
+		"setz %%al\n\t"
+		:
+		: [source] "d" (new), [accum] "a" (old), [dest] "m" (mutex->flag)
 		: "memory"
 	);
 

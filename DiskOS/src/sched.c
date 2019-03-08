@@ -38,7 +38,7 @@ static void splice_outq(task_struct_t **, task_struct_t *);
  * 2) swap out esp to swtich to the new stack
  * 3) push arguemnt, finalizer func and thread func
  * 4) push base pointer for this new stack using ebx as scratch
- * 5.0) push two 4 byte zeros. 
+ * 5.0) push two 4 byte zeros.
  * 5.1) second zero for ebx pop inserted by gcc
  * 5.2) first zero for dummy ebp for the sched() epilogue
  * 6) push 0x200 -> flags register (IF - interrupt enable)
@@ -104,7 +104,7 @@ static void splice_outq(task_struct_t **, task_struct_t *);
 
 /* Context: Save
  * saves the running context onto the current stack
- * Writes the new %esp in the TCB 
+ * Writes the new %esp in the TCB
 **/
 #define SAVE_CONTEXT(current)         \
 	__asm__ volatile                  \
@@ -200,7 +200,7 @@ sched_register_thread(void * (*callable) (void *), void * arg)
 	/* add task to run queue and init current task if this is the first */
 	if (!__current_task)
 		__current_task = ts;
-	
+
 	splice_inq(&__runq_head, ts);
 	__thread_count++;
 	return ts->tid;
@@ -262,8 +262,8 @@ schedule(void)
 	/* PART 0: Set current to ready, and save its machine context */
 	if (__current_task->status != NEW)
 		SAVE_CONTEXT(__current_task);
-	
-	if (__current_task->status == RUNNING)	
+
+	if (__current_task->status == RUNNING)
 		__current_task->status = READY;
 
 	/* FURTHER CODE MUST NOT MANIPULATE STACK IN NET EFFECT */
@@ -277,7 +277,7 @@ schedule(void)
 		__current_task = sched_select_next_rr();
 
 	/* PART 3: switch threads */
-	/* task switching is just infinite recurison over all the running threads */	
+	/* task switching is just infinite recurison over all the running threads */
 	#ifdef THREAD_DUMMY_CONTEXT_START
 		__current_task->status = RUNNING;
 		DISPATCH(__current_task);
@@ -373,7 +373,7 @@ __sleep_on(unsigned long systicks)
 	// wait for block from incoming interrupt
 	__asm__ volatile("sti":::"memory");
 	while (curr_cpy->sleep_time != 0);
-	
+
 	// when resumed, reset time counters
 	__current_task->utime = 0;
 	__current_task->sleep_time = 0;
