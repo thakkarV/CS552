@@ -20,7 +20,7 @@ typedef unsigned size_t;
 #define _SIZE_T 1
 #endif
 
-typedef signed char bool;
+typedef signed int bool;
 
 typedef unsigned long uint;
 typedef signed long sint;
