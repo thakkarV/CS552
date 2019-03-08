@@ -57,5 +57,13 @@ rrb: clean all rbin
 
 rrd: clean all install rdisk
 
+# this is the same as rrb
+# but allows attaching gdb through tcp port 9000
+# -s can be used as a shorthand for -gdb tcp::1234 instead
+# -S flag halts the execution until gdb run command is given
+# -d {cpu,exec,in_asm,cpu_reset,int} is used for dumping registers
+# at certain hardware events
+# after this, the symbols must still be loaded with the file command
 debug: clean all
-	qemu-system-i386 -kernel $(BINDIR)/$(TARGET) -d cpu,exec,in_asm,cpu_reset,int -s -S
+	qemu-system-i386 -kernel $(BINDIR)/$(TARGET) \
+		-gdb tcp::9000 -S
