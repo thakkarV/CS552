@@ -34,6 +34,7 @@ kthread_mutex_lock(volatile kthread_mutex_t *mutex)
 {
 	while (!__sync_bool_cmpxchg(mutex, 1, 0))
 	{
+		__asm__ volatile("pause");
 		// schedule();
 	}
 }
