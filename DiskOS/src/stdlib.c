@@ -58,7 +58,7 @@ str_is_prefix(char * str, char * prefix)
 		if (*prefix++ != *str++)
 			return false;
 	}
-	
+
 	if (!*prefix) return true;
 	else return false;
 }
@@ -111,7 +111,7 @@ sprintf (char * dest, const char *format,...)
 	arg++;
 	while ((c = *format++) != 0)
 	{
-		
+
 		if (c != '%')
 		{
 			*dest++ = c;
@@ -154,7 +154,7 @@ sprintf (char * dest, const char *format,...)
 					for (p2 = p; *p2; p2++);
 					for (; p2 < p + pad; p2++)
 						*dest++ = pad0 ? '0' : ' ';
-			
+
 					while (*p)
 						*dest++ = *p++;
 				} break;

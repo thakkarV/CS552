@@ -1,31 +1,26 @@
-#include <sys/threads.h>
+#include <sys/mutex.h>
+#include <sys/kthread.h>
+#include <sys/types.h>
 #include <stateful_cr.h>
 #include <kvideo.h>
 #include <kmalloc.h>
+#include <sysutils.h>
 
 // todo: move all this stuff ot the apporoporate header
 #define NUM_THREADS 3
 
 static kthread_mutex_t lock;
 
-// bakery algorithm
-static int number[NUM_THREADS];
-static bool choosing[NUM_THREADS];
-
-// function declarations
-static int max(int, int, int);
-
 
 void *
 stateful_cr_thread1(void * arg)
 {
-	// printf("<1> Arg = 0x%x\n", arg);
+	printf("<1> Arg = 0x%x\n", arg);
 	int i;
 	int j = 0;
-	int k;
 	int counter = 0;
-		kthread_mutex_lock(&lock);
 
+	kthread_mutex_lock(&lock);
 	while (1)
 	{
 		msleep(250);
@@ -41,23 +36,22 @@ stateful_cr_thread1(void * arg)
 	}
 
 	printf ("Done <1>!\n");
-		kthread_mutex_unlock(&lock);
-	return 0xBEEF;
+	kthread_mutex_unlock(&lock);
+
+	return (void *)0xBEEF;
 }
 
 
 void *
 stateful_cr_thread2(void * arg)
 {
-	// printf("<2> Arg = 0x%x\n", arg);
+	printf("<2> Arg = 0x%x\n", arg);
 
 	int i;
 	int j = 0;
-	int k;
 	int counter = 0;
-	uint32_t dummy;
 
-		kthread_mutex_lock(&lock);
+	kthread_mutex_lock(&lock);
 	while (1)
 	{
 		msleep(500);
@@ -73,22 +67,22 @@ stateful_cr_thread2(void * arg)
 	}
 
 	printf("Done <2>!\n");
-		kthread_mutex_unlock(&lock);
-	return 0xDEAD;
+	kthread_mutex_unlock(&lock);
+
+	return (void *)0xDEAD;
 }
 
 
 void *
 stateful_cr_thread3(void * arg)
 {
-	// printf("<3> Arg = 0x%x\n", arg);
+	printf("<3> Arg = 0x%x\n", arg);
 
 	int i;
 	int j = 0;
-	int k;
 	int counter = 0;
 
-		kthread_mutex_lock(&lock);
+	kthread_mutex_lock(&lock);
 	while (1)
 	{
 		msleep(1500);
@@ -105,8 +99,8 @@ stateful_cr_thread3(void * arg)
 	}
 
 	printf("Done <3>!\n");
-		kthread_mutex_unlock(&lock);
-	return 0xD00D;
+	kthread_mutex_unlock(&lock);
+	return (void *)0xD00D;
 }
 
 
@@ -116,20 +110,20 @@ stateful_cr_register_routines(void)
 	kthread_mutex_init(&lock);
 
 	/* create threads and register with scheduler */
-	tid_t thread1_id = kthread_create(stateful_cr_thread1, 0xDEAD);
+	tid_t thread1_id = kthread_create(stateful_cr_thread1, (void *)0xDEAD);
 	if (thread1_id == -1)
 		printf("\n    Could not create thread 1\n");
 	else
 		printf("\n    Thread 1 created with tid = %d\n", thread1_id);
 
 
-	tid_t thread2_id = kthread_create(stateful_cr_thread2, 0xBEEF);
+	tid_t thread2_id = kthread_create(stateful_cr_thread2, (void *)0xBEEF);
 	if (thread2_id == -1)
 		printf("    Could not create thread 2\n");
 	else
 		printf("    Thread 2 created with tid = %d\n", thread2_id);
 
-	tid_t thread3_id = kthread_create(stateful_cr_thread3, 0xF00F);
+	tid_t thread3_id = kthread_create(stateful_cr_thread3, (void *)0xF00F);
 	if (thread3_id == -1)
 		printf("    Could not create thread 3\n");
 	else

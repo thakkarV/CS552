@@ -3,17 +3,18 @@
 
 #include <sys/types.h>
 #include <sys/timer.h>
-#include <sys/threads.h>
 #include <sys/vfs.h>
-
-static long volatile jiffies;
 
 // time slice before preemption
 #define SCHED_TIMESLICE_MS 10
+
 // timeslice in ms converted to system ticks
 // ((SCHED_TIMESLICE_MS / 1000) / (1 / PIT_INT_FRQ))
-#define _SCHED_TIMESLICE_TICKS_ 5
-
+#if ((SCHED_TIMESLICE_MS * PIT_INT_FRQ) / 1000) < 1
+	#define SCHED_TIMESLICE_TICKS 1
+#else // ((SCHED_TIMESLICE_MS * PIT_INT_FRQ) / 1000) >= 1
+	#define SCHED_TIMESLICE_TICKS ((SCHED_TIMESLICE_MS * PIT_INT_FRQ) / 1000)
+#endif
 
 typedef enum TASK_STATUS
 {

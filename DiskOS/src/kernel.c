@@ -6,7 +6,7 @@
 #include <interrupt.h>
 #include <ramdisk.h>
 #include <sys/sched.h>
-
+#include <sysutils.h>
 
 #define ENABLE_STATEFUL_CR
 #ifdef ENABLE_STATEFUL_CR
@@ -32,7 +32,7 @@ kmain(unsigned long magic, unsigned long addr)
 
 	/* Clear the screen. */
 	cls();
-	
+
 	/* Am I booted by a Multiboot-compliant boot loader? */
 	if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
 	{
@@ -103,7 +103,7 @@ init(void * arg)
 		/* run rd tests */
 	#ifdef RUN_TEST
 		/* init RAM DISK */
-		cls();		
+		cls();
 		printf("ram disk init ... ");
 		void * ramdisk_base_addr = kmalloc(UFS_DISK_SIZE);
 		init_rdisk(ramdisk_base_addr);
@@ -116,11 +116,14 @@ init(void * arg)
 
 	// this is where a waitpid would go for all running threads
 	#ifdef EASTEREGG
-		msleep(5000);
+		msleep(9000);
 		cls();
 		printf("\n\n\n\n\n\n\n");
-		sched_register_thread(print_banner, NULL);
+		print_banner();
 	#endif
+
+	// should never get here
+	return NULL;
 }
 
 
@@ -152,7 +155,7 @@ multiboot_flagscheck(multiboot_info_t * mbi)
 
 		printf ("mods_count = %d, mods_addr = 0x%x\n",
 			(int) mbi->mods_count, (int) mbi->mods_addr);
-		
+
 		for (i = 0, mod = (multiboot_module_t *) mbi->mods_addr;
 			i < mbi->mods_count;
 			i++, mod++)
@@ -201,7 +204,7 @@ multiboot_flagscheck(multiboot_info_t * mbi)
 
 		printf ("mmap_addr = 0x%x, mmap_length = 0x%x\n",
 			(unsigned) mbi->mmap_addr, (unsigned) mbi->mmap_length);
-		
+
 		for (mmap = (multiboot_memory_map_t *) mbi->mmap_addr;
 			(unsigned long) mmap < mbi->mmap_addr + mbi->mmap_length;
 			mmap = (multiboot_memory_map_t *) ((unsigned long) mmap
@@ -222,7 +225,7 @@ multiboot_flagscheck(multiboot_info_t * mbi)
 
 void
 print_banner(void)
-{	
+{
 	printf(FG_COLOR_BLACK);
 	printf(BG_COLOR_WHITE"                                                                               \n");
 	printf(BG_COLOR_DARK_RED   "    \334\334\334\334\333\333\333\334\334\334\334   \334\333\333\333\333\333\333\333\333\333\337  \334\334\334\334\333\333\333\334\334\334\334   \334\333\333\333\333\333\333\333\333\333\337 \334\333\333\333\333\333\333\334    \334\333\333\333\333\333\333\333  \n");
@@ -234,7 +237,7 @@ print_banner(void)
 	printf(BG_COLOR_LIGHT_BLUE "  \333\333\333   \333\333\333   \333\333\333 \333\333\333    \333\333\333 \333\333\333   \333\333\333   \333\333\333 \333\333\333    \333\333\333 \333\333\333    \333\333\333   \334\333    \333\333  \n");
 	printf(BG_COLOR_DARK_BLUE  "   \337\333   \333\333\333   \333\337  \333\333\333\333\333\333\333\333\333\333  \337\333   \333\333\333   \333\337  \333\333\333\333\333\333\333\333\333\333  \337\333\333\333\333\333\333\337  \334\333\333\333\333\333\333\333\333\337  \n");
 	printf(BG_COLOR_WHITE"                                                                               \n");
-	printf(COLOR_RESET);	
+	printf(COLOR_RESET);
 }
 
 

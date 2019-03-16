@@ -17,7 +17,7 @@ endoh()
     // read video memory one by one
 	for (; 0 < (x = getc(stdin));)
     {
-		w = x > 10 ? 32 < x ? 4[*r++ = w, r] = w + 1, *r = r[5] = x == 35, r += 9 : 0, w - I : (x = w + 2);;        
+		w = x > 10 ? 32 < x ? 4[*r++ = w, r] = w + 1, *r = r[5] = x == 35, r += 9 : 0, w - I : (x = w + 2);;
     }
 
 	for (;; puts(output_str), output_str = calc_buffer + 4) {
@@ -53,7 +53,7 @@ endoh()
 
 		msleep(12321);
 	}
-    
+
     return 0;
 }
 */

@@ -1,22 +1,27 @@
+#include <sys/mutex.h>
 #include <sys/sched.h>
-#include <sys/types.h>
 #include <sys/stdlib.h>
+#include <sys/types.h>
 #include <kmalloc.h>
-
 
 // #define THREAD_DUMMY_CONTEXT_START
 /* default 8kB for each thread */
 #define THREAD_STACK_SIZE 0x2000
 #define MAX_THREADCOUNT 0x10
 
+// global sched state lock accross all cores
+static volatile kthread_mutex_t __global_sched_lock;
+
+// thread counters
 static volatile uint32_t __thread_count;
 static volatile uint32_t __tid_counter;
+static volatile uint64_t jiffies;
 
 // sched tasks
 static task_struct_t *__idle_task;
 task_struct_t *__current_task;
 
-// Sched queues
+// sched queues
 static task_struct_t *__runq_head;
 static task_struct_t *__waitq_head;
 static task_struct_t *__doneq_head;
@@ -90,7 +95,7 @@ static void splice_outq(task_struct_t **, task_struct_t *);
  		"movl %%esp, %%ebp\n\t"                  \
  		"pushl %3\n\t"                           \
  		"sti\n\t"                                \
- 		"call %4\n\t"                            \
+ 		"call *%4\n\t"                           \
  		"movl %%eax, %0\n\t"                     \
  		"movl %%ebp, %%esp\n\t"                  \
  		"ret\n\t"                                \
@@ -166,6 +171,8 @@ init_sched(void)
 	__idle_task->stack = kmalloc(0x100);
 	__idle_task->esp = (uint32_t) __idle_task->stack + 0x100 - 1;
 
+	kthread_mutex_init(&__global_sched_lock);
+
 	#ifdef THREAD_DUMMY_CONTEXT_START
 		SETUP_NEW_THREAD(__idle_task, sched_finalize_thread);
 	#endif
@@ -210,25 +217,26 @@ sched_register_thread(void * (*callable) (void *), void * arg)
 void
 sched_finalize_thread(void)
 {
-	// __asm__ volatile("pushf":::"memory");
-	__asm__ volatile("cli":::"memory");
+	kthread_mutex_lock(&__global_sched_lock);
+
 	task_struct_t * curr_cpy = __current_task;
 	__current_task = __current_task->prev;
 
 	kfree(curr_cpy->stack);
 	curr_cpy->status = EXITED;
 
-	// remove from runq and add to waitq
+	// remove from runq and add to doneq
 	splice_outq(&__runq_head, curr_cpy);
 	splice_inq(&__doneq_head, curr_cpy);
 
 	// __current_task->retval = retval;
 	__thread_count--;
-	__asm__ volatile("sti":::"memory");
+
+	kthread_mutex_unlock(&__global_sched_lock);
 
 	// this schedule will run in the freeing thread's stack space
-	// but this is not an issue since this exit routine will not be interrupted
-	// and the stack will be marked free and therefore reaped
+	// but this is not an issue since this thread is not marked DONE
+	// and will never resume execution.
 	schedule();
 }
 
@@ -278,13 +286,13 @@ schedule(void)
 
 	/* PART 3: switch threads */
 	/* task switching is just infinite recurison over all the running threads */
-	#ifdef THREAD_DUMMY_CONTEXT_START
-		__current_task->status = RUNNING;
-		DISPATCH(__current_task);
-	#endif
+#ifdef THREAD_DUMMY_CONTEXT_START
+	__current_task->status = RUNNING;
+	DISPATCH(__current_task);
 
-	// if we are not setting up a fake context for the thread, we need to return to it
-	#ifndef THREAD_DUMMY_CONTEXT_START
+#else // !THREAD_DUMMY_CONTEXT_START
+	// if we have not already setup a fake context for a new thread,
+	// we need to do so now before returning to it
  	if (__current_task->status == NEW)
  	{
  		/* nimble handinling required if the task has never run before */
@@ -300,7 +308,7 @@ schedule(void)
  		/* task switching is just infinite recurison over all the running threads */
  		DISPATCH(__current_task);
  	}
-	#endif
+#endif
 }
 
 
@@ -318,7 +326,7 @@ do_timer(void)
 	}
 
 	jiffies++;
-	if (++__current_task->utime < _SCHED_TIMESLICE_TICKS_)
+	if (++__current_task->utime < SCHED_TIMESLICE_TICKS)
 		return;
 
 	__current_task->utime = 0;
@@ -357,11 +365,10 @@ service_waitq(void)
 void
 __sleep_on(unsigned long systicks)
 {
-	__asm__ volatile("cli":::"memory");
-
-	task_struct_t *curr_cpy = __current_task;
+	kthread_mutex_lock(&__global_sched_lock);
 
 	// set metadata
+	task_struct_t *curr_cpy = __current_task;
 	curr_cpy->status = BLOCKED;
 	curr_cpy->utime = 0;
 	curr_cpy->sleep_time = systicks;
@@ -370,9 +377,13 @@ __sleep_on(unsigned long systicks)
 	splice_outq(&__runq_head, curr_cpy);
 	splice_inq(&__waitq_head, curr_cpy);
 
+	kthread_mutex_unlock(&__global_sched_lock);
+
 	// wait for block from incoming interrupt
-	__asm__ volatile("sti":::"memory");
-	while (curr_cpy->sleep_time != 0);
+	while (curr_cpy->sleep_time != 0)
+	{
+		__asm__ volatile ("pause");
+	}
 
 	// when resumed, reset time counters
 	__current_task->utime = 0;
@@ -385,7 +396,7 @@ do_idle(void * arg)
 {
 	while (true)
 		__asm__ volatile
-			("nop":::"memory");
+			("pause":::"memory");
 
 	// should never get here
 	return NULL;

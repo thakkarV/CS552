@@ -60,7 +60,7 @@ init_idt(void)
 	set_trap_gate( 14, &isr_page_fault);
 	set_trap_gate( 15, &isr_reserved);
 	set_trap_gate( 16, &isr_x87_fpu_except);
- 
+
 	/* ISR 15 and 17-32 : hardware reserved */
 	for (i = 17; i < 32; i++)
 		set_trap_gate(i, &isr_reserved);
@@ -152,7 +152,7 @@ do_debug(unsigned long esp, long error_code)
 }
 
 
-void 
+void
 do_nmi(unsigned long esp, long error_code)
 {
 	die("NMI", esp, error_code);
@@ -207,7 +207,7 @@ do_coprocessor_segment_overrun(unsigned long esp, long error_code)
 }
 
 
-void 
+void
 do_invalid_tss(unsigned long esp, long error_code)
 {
 	die("Invalid TSS", esp, error_code);

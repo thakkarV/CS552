@@ -52,7 +52,7 @@ init_kmalloc(multiboot_info_t * mbi)
 			mmap_region_size = (size_t) (mmap->len & 0xffffffff);
 			if (mmap_region_size >= store_size)
 			{
-				store_addr = (void *) (mmap->addr & 0xffffffff);
+				store_addr = (void *) (uint32_t) (mmap->addr & 0xffffffff);
 				store_size = mmap_region_size;
 			}
 		}
@@ -60,7 +60,7 @@ init_kmalloc(multiboot_info_t * mbi)
 
 	/* save free store metadata */
 	// this offset business is a totoal hack
-	// without this the malloc will start allocating memory 
+	// without this the malloc will start allocating memory
 	// where the kernel code is loaded into by the boot loader
 	// need to make this more general than just a hardcoded
 	// two meg offset. should work for a long time though. ugh...
@@ -90,7 +90,7 @@ kmalloc(size_t size)
 
 	/* POLICY: First Fit Allocation
 	 *
-	 *  while current is a valid pointer 
+	 *  while current is a valid pointer
 	 * 				AND
 	 * current block's size is not enough
 	 * 				AND
@@ -150,7 +150,7 @@ krealloc(void * source, size_t new_size)
 
 	void * region = kmalloc(new_size);
 
-	/* 
+	/*
 	 * only copy data from the old section and not of the new lenght
 	 * this is for security reasons, so that we dont just read the whole memory to the user
 	 * then again this is not a level seperated kernel so lol@me
@@ -250,7 +250,7 @@ __splice_block_in(block_header_t * current, size_t alloc_size)
 		{
 			new->next = NULL;
 		}
-		
+
 		// new size is old - what we have to allocate - new's block header size
 		new->size = current->size - alloc_size - BLK_HEADER_SIZE;
 		new->is_free = true;
@@ -259,11 +259,12 @@ __splice_block_in(block_header_t * current, size_t alloc_size)
 		current->next = new;
 		current->size = alloc_size;
 	}
-	
+
 	return current;
 }
 
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 static void
 __debug_print_store(void)
 {
@@ -276,3 +277,4 @@ __debug_print_store(void)
 	} while((current = current->next));
 	printf("NULL\n");
 }
+#pragma GCC diagnostic pop

@@ -1,4 +1,4 @@
-#include <sys/threads.h>
+#include <sys/kthread.h>
 #include <sys/stdlib.h>
 #include <sys/ufs.h>
 #include <stateful_cr.h>
@@ -11,19 +11,22 @@
 #define USE_RAMDISK
 
 /* uncomment to run test */
-// #define TEST1
-// #define TEST2
-// #define TEST3
+#define TEST1
+#define TEST2
+#define TEST3
 #define TEST4
-// #define TEST5
+#define TEST5
+
+static void *rd_test_thread0(void *);
+static void *rd_test_thread1(void *);
 
 /* uncomment to test single and double indirect pointers */
 #define TEST_SINGLE_INDIRECT
 #define TEST_DOUBLE_INDIRECT
 
 /* test retval error codes */
-#define TEST_SUCCESS 1
-#define TEST_FAILURE 0
+#define TEST_SUCCESS (void *)1
+#define TEST_FAILURE (void *)0
 
 #define MAX_FILES 16
 #define BLK_SZ 256					/* Block size */
@@ -49,7 +52,7 @@ static char addr[PTRS_PB*PTRS_PB*BLK_SZ+1]; /* Scratchpad memory */
 // int main()
 // {
 // 	int status;
-	
+
 // 	status = run_tests();
 // 	if (status != TEST_SUCCESS)
 // 		printf("rd tests failed\n");
@@ -64,7 +67,6 @@ void * run_tests(void * arg)
 {
 	int i, retval;
 	int fd;
-	int index_node_number;
 
 	/* Some arbitrary data for our files */
 	memset (data1, '1', sizeof (data1));
@@ -90,14 +92,14 @@ void * run_tests(void * arg)
 		}
 
 		memset (pathname, 0, 80);
-	}   
+	}
 
 	/* Delete all the files created */
-	c = '0';	
+	c = '0';
 	for (i = 0; i < MAX_FILES; i++)
-	{ 
+	{
 		sprintf (pathname, PATH_PREFIX "/file");
-		pathname[5] = c++;		
+		pathname[5] = c++;
 		retval = rd_unlink (pathname);
 
 		if (retval < 0) {
@@ -178,7 +180,7 @@ void * run_tests(void * arg)
 #endif // TEST_SINGLE_INDIRECT
 
 	printf("test2 ok\n");
-	
+
 #endif // TEST2
 
 #ifdef TEST3
@@ -313,9 +315,9 @@ void * run_tests(void * arg)
 		}
 
 		// index_node_number = atoi(&addr[14]);
-		index_node_number = (&addr[14]);
-		printf ("Contents at addr: [%s,%s]\n", addr, index_node_number);
-	
+		void *index_node_number = (void *)(addr + 14);
+		printf ("Contents at addr: [%s,%x]\n", addr, index_node_number);
+
 	}
 
 #endif // USE_RAMDISK
@@ -325,13 +327,13 @@ void * run_tests(void * arg)
 #ifdef TEST5
 
 	/* Create two threads and run rd create on both */
-	tid_t thread0_id = kthread_create(thread0, NULL);
+	tid_t thread0_id = kthread_create(rd_test_thread0, NULL);
 	if (thread0_id == -1)
 		printf("    Could not create thread 0\n");
 	else
 		printf("    Thread 0 created with tid = %d\n", thread0_id);
 
-	tid_t thread1_id = kthread_create(thread1, NULL);
+	tid_t thread1_id = kthread_create(rd_test_thread1, NULL);
 	if (thread1_id == -1)
 		printf("\n    Could not create thread 1\n");
 	else
@@ -343,19 +345,19 @@ void * run_tests(void * arg)
 }
 
 
-static void * thread0(void * arg)
+static void * rd_test_thread0(void * arg)
 {
 	int i, retval;
 
 	/* Generate 300 regular files */
-	for (i = 0; i < 300; i++) { 
+	for (i = 0; i < 300; i++) {
 		// TODO: replace sprinft
 		sprintf (pathname, PATH_PREFIX "/file_t0_%d", i);
 
 		retval = rd_create (pathname);
 
 		if (retval < 0) {
-			printf("(thread0) create: File creation error! status: %d\n", 
+			printf("(thread0) create: File creation error! status: %d\n",
 			retval);
 			return TEST_FAILURE; // exit(EXIT_FAILURE);
 		}
@@ -363,22 +365,22 @@ static void * thread0(void * arg)
 		memset (pathname, 0, 80);
 	}
 
-	return;
+	return NULL;
 }
 
 
-static void * thread1(void * arg)
+static void * rd_test_thread1(void * arg)
 {
 	int i, retval;
 
 	/* Generate 300 regular files */
-	for (i = 0; i < 300; i++) { 
+	for (i = 0; i < 300; i++) {
 		sprintf (pathname, PATH_PREFIX "/file_t1_%d", i);
 
 		retval = rd_create (pathname);
 
 		if (retval < 0) {
-			printf("(thread1) create: File creation error! status: %d\n", 
+			printf("(thread1) create: File creation error! status: %d\n",
 			retval);
 			return TEST_FAILURE; // exit(EXIT_FAILURE);
 		}
@@ -386,14 +388,14 @@ static void * thread1(void * arg)
 		memset (pathname, 0, 80);
 	}
 
-	return;
+	return NULL;
 }
 
 
 /**
- * 
+ *
  * HELPER FUNCTIONS
- * 
+ *
  */
 
 

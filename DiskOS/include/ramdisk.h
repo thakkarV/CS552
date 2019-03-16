@@ -11,7 +11,7 @@
 #define ENOREG    -8 // fd does not point to a regular file
 #define EINVAL    -9 // otherwise invalid input or behavior
 
-typedef enum WHENCE
+enum WHENCE
 {
     SEEK_SET,
     SEEK_CUR,
