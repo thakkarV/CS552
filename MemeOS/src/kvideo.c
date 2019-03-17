@@ -23,6 +23,7 @@ static void __terminal_change_attrib(int code);
 
 
 /* COLOR MAP */
+// clang-format off
 #define DBLACK    0x0
 #define DBLUE     0x1
 #define DGREEN    0x2
@@ -39,15 +40,14 @@ static void __terminal_change_attrib(int code);
 #define LPINK     0xD
 #define YELLOW    0xE
 #define WHITE     0xF
-
+// clang-format on
 
 /* Clear the screen and initialize VIDEO, XPOS and YPOS. */
-void
-cls (void)
+void cls(void)
 {
 	int i;
 
-	video = (unsigned char *) VIDEO;
+	video = (unsigned char *)VIDEO;
 
 	for (i = 0; i < COLUMNS * LINES * 2; i++)
 		*(video + i) = 0;
@@ -57,14 +57,11 @@ cls (void)
 }
 
 /* Put the character C on the screen. */
-void
-putchar (int c)
+void putchar(int c)
 {
-	if (c == '\n' || c == '\r')
-	{
-		newline:
-		while (xpos < COLUMNS)
-		{
+	if (c == '\n' || c == '\r') {
+	newline:
+		while (xpos < COLUMNS) {
 			*(video + (xpos + ypos * COLUMNS) * 2) = ' ' & 0xFF;
 			xpos++;
 		}
@@ -73,11 +70,11 @@ putchar (int c)
 		ypos++;
 		if (ypos >= LINES)
 			ypos = 0;
-		
+
 		return;
 	}
 
-	*(video + (xpos + ypos * COLUMNS) * 2) = c & 0xFF;
+	*(video + (xpos + ypos * COLUMNS) * 2)	 = c & 0xFF;
 	*(video + (xpos + ypos * COLUMNS) * 2 + 1) = ATTRIBUTE;
 
 	xpos++;
@@ -87,84 +84,69 @@ putchar (int c)
 
 /* Format a string and print it on the screen, just like the libc
 function printf. */
-void
-printf (const char *format, ...)
+void printf(const char *format, ...)
 {
-	char **arg = (char **) &format;
+	char **arg = (char **)&format;
 	int c;
 	char buf[20];
 
 	arg++;
 
-	while ((c = *format++) != 0)
-	{
-		if (c == '\033')
-		{
-			if ((c = *format++) == '[')
-			{
+	while ((c = *format++) != 0) {
+		if (c == '\033') {
+			if ((c = *format++) == '[') {
 				int code;
-				while (c != 'm')
-				{
+				while (c != 'm') {
 					code = 0;
-					c = *format++;
-					while ((c != ';') && (c != 'm'))
-					{
+					c	= *format++;
+					while ((c != ';') && (c != 'm')) {
 						code = (code << 3) + (code << 1) + (c - '0');
-						c = *format++;
+						c	= *format++;
 					}
 					__terminal_change_attrib(code);
 				}
 			}
-		}
-		else if (c != '%')
-		{
-			putchar (c);
-		}
-		else
-		{
+		} else if (c != '%') {
+			putchar(c);
+		} else {
 			char *p, *p2;
 			int pad0 = 0, pad = 0;
 
 			c = *format++;
-			if (c == '0')
-			{
+			if (c == '0') {
 				pad0 = 1;
-				c = *format++;
+				c	= *format++;
 			}
 
-			if (c >= '0' && c <= '9')
-			{
+			if (c >= '0' && c <= '9') {
 				pad = c - '0';
-				c = *format++;
+				c   = *format++;
 			}
 
-			switch (c)
-			{
+			switch (c) {
 				case 'd':
 				case 'u':
-				case 'x':
-				{
-					itoa (buf, c, *((int *) arg++));
+				case 'x': {
+					itoa(buf, c, *((int *)arg++));
 					p = buf;
 					goto string;
 				} break;
-				case 's':
-				{
+				case 's': {
 					p = *arg++;
-					if (! p)
+					if (!p)
 						p = "(null)";
 
-					string:
-					for (p2 = p; *p2; p2++);
+				string:
+					for (p2 = p; *p2; p2++)
+						;
 					for (; p2 < p + pad; p2++)
-						putchar (pad0 ? '0' : ' ');
-			
+						putchar(pad0 ? '0' : ' ');
+
 					while (*p)
-						putchar (*p++);
+						putchar(*p++);
 				} break;
-				default:
-				{
-					putchar (*((int *) arg++));
+				default: {
+					putchar(*((int *)arg++));
 				} break;
 			}
 		}
@@ -172,37 +154,28 @@ printf (const char *format, ...)
 }
 
 
-void
-__terminal_change_attrib(int code)
+void __terminal_change_attrib(int code)
 {
-	static const char COLOR_LUT[16] = 
-	{
-		DBLACK, DRED,  DGREEN, ORANGE,
-		DBLUE,  DPINK, DCYAN,  LGREY,
-		DGREY,  LRED,  LGREEN, YELLOW,
-		LBLUE,  LPINK, LCYAN,  WHITE
-	};
+	static const char COLOR_LUT[16]
+		= { DBLACK, DRED, DGREEN, ORANGE, DBLUE, DPINK, DCYAN, LGREY, DGREY,
+			  LRED, LGREEN, YELLOW, LBLUE, LPINK, LCYAN, WHITE };
 
 	/* background is the top 4 MSBs, foreground is the bottom 4 LSBs */
 
 	// FG COLOR DARK
-	if (code >= 30 && code <= 37)
-	{
+	if (code >= 30 && code <= 37) {
 		ATTRIBUTE = (ATTRIBUTE & 0xF0) + COLOR_LUT[code - 30];
 	}
 	// BG COLOR DARK
-	else if (code >= 40 && code <= 47)
-	{
+	else if (code >= 40 && code <= 47) {
 		ATTRIBUTE = (ATTRIBUTE & 0x0F) + (COLOR_LUT[code - 40] << 4);
 	}
 	// FG COLOR LIGHT
-	else if (code >= 90 && code <= 97)
-	{
+	else if (code >= 90 && code <= 97) {
 		ATTRIBUTE = (ATTRIBUTE & 0xF0) + COLOR_LUT[code - 82];
 	}
 	// BG COLOR LIGHT
-	else if (code >= 100 && code <= 107)
-	{
+	else if (code >= 100 && code <= 107) {
 		ATTRIBUTE = (ATTRIBUTE & 0x0F) + (COLOR_LUT[code - 92] << 4);
 	}
 }

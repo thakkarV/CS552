@@ -4,10 +4,10 @@
 #include <sys/types.h>
 
 /* set interrupt flag */
-#define sti() __asm__ ("sti":::"memory") 
+#define sti() __asm__("sti" ::: "memory")
 
 /* clear interrupt flag */
-#define cli() __asm__ ("cli":::"memory") 
+#define cli() __asm__("cli" ::: "memory")
 
 void init_pic(void);
 void init_idt(void);

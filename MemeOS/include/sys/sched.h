@@ -1,8 +1,8 @@
 #ifndef SYS_SCHED
 #define SYS_SCHED
 
-#include <sys/types.h>
 #include <sys/timer.h>
+#include <sys/types.h>
 #include <sys/vfs.h>
 
 // time slice before preemption
@@ -11,13 +11,12 @@
 // timeslice in ms converted to system ticks
 // ((SCHED_TIMESLICE_MS / 1000) / (1 / PIT_INT_FRQ))
 #if ((SCHED_TIMESLICE_MS * PIT_INT_FRQ) / 1000) < 1
-	#define SCHED_TIMESLICE_TICKS 1
+#define SCHED_TIMESLICE_TICKS 1
 #else // ((SCHED_TIMESLICE_MS * PIT_INT_FRQ) / 1000) >= 1
-	#define SCHED_TIMESLICE_TICKS ((SCHED_TIMESLICE_MS * PIT_INT_FRQ) / 1000)
+#define SCHED_TIMESLICE_TICKS ((SCHED_TIMESLICE_MS * PIT_INT_FRQ) / 1000)
 #endif
 
-typedef enum TASK_STATUS
-{
+typedef enum TASK_STATUS {
 	NEW = 0,
 	READY,
 	RUNNING,
@@ -25,16 +24,15 @@ typedef enum TASK_STATUS
 	EXITED
 } TASK_STATUS;
 
-typedef struct task_struct_t
-{
+typedef struct task_struct_t {
 	/* CONTEXT */
 	uint32_t esp;
 
 	/* DATA */
-	void * stack;
-	void * (*callable)(void *);
-	void * arg;
-	void * retval;
+	void *stack;
+	void *(*callable)(void *);
+	void *arg;
+	void *retval;
 
 	/* METADATA */
 	tid_t tid;
@@ -44,7 +42,7 @@ typedef struct task_struct_t
 	TASK_STATUS status;
 
 	/* FILESYSTEM */
-    FILE * fd_table[NUM_MAX_FD];
+	FILE *fd_table[NUM_MAX_FD];
 
 	/* SCHED Q PTR */
 	struct task_struct_t *prev;
@@ -53,7 +51,7 @@ typedef struct task_struct_t
 
 
 void schedule(void);
-tid_t sched_register_thread(void * (*) (void *), void *);
+tid_t sched_register_thread(void *(*)(void *), void *);
 void sched_finalize_thread(void);
 void init_sched(void);
 void __sleep_on(uint32_t milliseconds);

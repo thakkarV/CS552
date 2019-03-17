@@ -4,7 +4,7 @@
  * Based on the GNU C Library elf.h.
  *
  */
-
+// clang-format off
 #ifndef _ELF_H_
 #define _ELF_H_
 
@@ -2058,3 +2058,4 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_CRIS_NUM		20
 
 #endif
+// clang-format on

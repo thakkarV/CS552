@@ -1,8 +1,7 @@
-#include <sys/timer.h>
 #include <sched.h>
+#include <sys/timer.h>
 
-void
-msleep(unsigned long milliseconds)
+void msleep(unsigned long milliseconds)
 {
 	// first we convert the milliseconds
 	// to the closest possible period of the system timer frequency

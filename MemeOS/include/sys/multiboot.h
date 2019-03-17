@@ -19,7 +19,7 @@
 *  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 *  IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-
+// clang-format off
 #ifndef MULTIBOOT_HEADER
 #define MULTIBOOT_HEADER 1
 
@@ -227,7 +227,7 @@ struct multiboot_color
 	multiboot_uint8_t green;
 	multiboot_uint8_t blue;
 };
- 
+
 struct multiboot_mmap_entry
 {
 	multiboot_uint32_t size;
@@ -255,7 +255,7 @@ struct multiboot_mod_list
 	multiboot_uint32_t pad;
 };
 typedef struct multiboot_mod_list multiboot_module_t;
- 
+
 /* APM BIOS info. */
 struct multiboot_apm_info
 {
@@ -273,3 +273,4 @@ struct multiboot_apm_info
 #endif /* ! ASM_FILE */
 
 #endif /* ! MULTIBOOT_HEADER */
+// clang-format on

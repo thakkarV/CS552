@@ -3,8 +3,7 @@
 
 #include <sys/vfs.h>
 
-typedef enum TASK_STATUS
-{
+typedef enum TASK_STATUS {
 	NEW = 0,
 	READY,
 	RUNNING,
@@ -12,16 +11,15 @@ typedef enum TASK_STATUS
 	EXITED
 } TASK_STATUS;
 
-typedef struct task_struct_t
-{
+typedef struct task_struct_t {
 	/* CONTEXT */
 	uint32_t esp;
 
 	/* DATA */
-	void * stack;
-	void * (*callable)(void *);
-	void * arg;
-	void * retval;
+	void *stack;
+	void *(*callable)(void *);
+	void *arg;
+	void *retval;
 
 	/* METADATA */
 	tid_t tid;
@@ -31,7 +29,7 @@ typedef struct task_struct_t
 	TASK_STATUS status;
 
 	/* FILESYSTEM */
-    FILE * fd_table[NUM_MAX_FD];
+	FILE *fd_table[NUM_MAX_FD];
 
 	/* SCHED Q PTR */
 	struct task_struct_t *prev;

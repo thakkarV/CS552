@@ -1,10 +1,11 @@
 #ifndef KVIDEO
-#define	KVIDEO
+#define KVIDEO
 
-void cls (void);
-void putchar (int c);
-void printf (const char *format, ...);
+void cls(void);
+void putchar(int c);
+void printf(const char *format, ...);
 
+// clang-format off
 // FG colors
 #define FG_COLOR_RESET            "\033[7m"
 
@@ -48,5 +49,6 @@ void printf (const char *format, ...);
 
 // BG colors
 #define COLOR_RESET               "\033[40;97m"
+// clang-format on
 
 #endif // KVIDEO

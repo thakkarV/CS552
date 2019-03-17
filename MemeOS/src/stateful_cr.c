@@ -1,9 +1,9 @@
-#include <sys/mutex.h>
-#include <sys/kthread.h>
-#include <sys/types.h>
-#include <stateful_cr.h>
-#include <kvideo.h>
 #include <kmalloc.h>
+#include <kvideo.h>
+#include <stateful_cr.h>
+#include <sys/kthread.h>
+#include <sys/mutex.h>
+#include <sys/types.h>
 #include <sysutils.h>
 
 // todo: move all this stuff ot the apporoporate header
@@ -12,55 +12,49 @@
 static kthread_mutex_t lock;
 
 
-void *
-stateful_cr_thread1(void * arg)
+void *stateful_cr_thread1(void *arg)
 {
 	printf("<1> Arg = 0x%x\n", arg);
 	int i;
-	int j = 0;
+	int j		= 0;
 	int counter = 0;
 
 	kthread_mutex_lock(&lock);
-	while (1)
-	{
+	while (1) {
 		msleep(250);
 
-		for (i = 0; i < 4; i++)
-		{
-			printf (" <1>:%d ", counter++);
+		for (i = 0; i < 4; i++) {
+			printf(" <1>:%d ", counter++);
 		}
-		printf ("\n");
+		printf("\n");
 
 		if (++j == 3)
 			break;
 	}
 
-	printf ("Done <1>!\n");
+	printf("Done <1>!\n");
 	kthread_mutex_unlock(&lock);
 
 	return (void *)0xBEEF;
 }
 
 
-void *
-stateful_cr_thread2(void * arg)
+void *stateful_cr_thread2(void *arg)
 {
 	printf("<2> Arg = 0x%x\n", arg);
 
 	int i;
-	int j = 0;
+	int j		= 0;
 	int counter = 0;
 
 	kthread_mutex_lock(&lock);
-	while (1)
-	{
+	while (1) {
 		msleep(500);
 
-		for (i = 0; i < 5; i++)
-		{
-			printf (" <2>:%d ", counter++);
+		for (i = 0; i < 5; i++) {
+			printf(" <2>:%d ", counter++);
 		}
-		printf ("\n");
+		printf("\n");
 
 		if (++j == 5)
 			break;
@@ -73,25 +67,22 @@ stateful_cr_thread2(void * arg)
 }
 
 
-void *
-stateful_cr_thread3(void * arg)
+void *stateful_cr_thread3(void *arg)
 {
 	printf("<3> Arg = 0x%x\n", arg);
 
 	int i;
-	int j = 0;
+	int j		= 0;
 	int counter = 0;
 
 	kthread_mutex_lock(&lock);
-	while (1)
-	{
+	while (1) {
 		msleep(1500);
 
-		for (i = 0; i < 4; i++)
-		{
-			printf (" <3>:%d ", counter++);
+		for (i = 0; i < 4; i++) {
+			printf(" <3>:%d ", counter++);
 		}
-		printf ("\n");
+		printf("\n");
 
 		/* check if done with this thread */
 		if (++j == 2)
@@ -104,8 +95,7 @@ stateful_cr_thread3(void * arg)
 }
 
 
-void
-stateful_cr_register_routines(void)
+void stateful_cr_register_routines(void)
 {
 	kthread_mutex_init(&lock);
 
