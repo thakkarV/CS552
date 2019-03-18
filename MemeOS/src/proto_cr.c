@@ -1,7 +1,7 @@
-#include <proto_cr.h>
-
 #include <kmalloc.h>
 #include <kvideo.h>
+#include <proto_cr.h>
+#include <sys/types.h>
 
 #define crBegin                                                                \
 	static int state = 0;                                                      \
