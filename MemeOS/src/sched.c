@@ -35,7 +35,7 @@ static void service_waitq(void);
 static void splice_inq(task_struct_t **, task_struct_t *);
 static void splice_outq(task_struct_t **, task_struct_t *);
 
-
+// clang-format off
 /* Context: Fake Generator
  ! HARD TO UNDERSTAND
  * Sets up a fake context for a new thread to be started
@@ -53,50 +53,56 @@ static void splice_outq(task_struct_t **, task_struct_t *);
  * A) pop ebp that was used as a scratch register
 **/
 #define SETUP_NEW_THREAD(new, finalizer)                                       \
-	__asm__ volatile("pushl %%ebx\n\t"                                         \
-					 "xchgl %%esp, %[esp]\n\t"                                 \
-					 "pushl %[arg]\n\t"                                        \
-					 "pushl %[finlizer]\n\t"                                   \
-					 "pushl %[func]\n\t"                                       \
-					 "movl  %%esp, %%ebx\n\t"                                  \
-					 "addl  $0x4, %%ebx\n\t"                                   \
-					 "pushl %%ebx\n\t"                                         \
-					 "pushl $0\n\t"                                            \
-					 "pushl $0\n\t"                                            \
-					 "pushl $0x200\n\t"                                        \
-					 "pushl $0\n\t"                                            \
-					 "pushl $0\n\t"                                            \
-					 "pushl $0\n\t"                                            \
-					 "pushl $0\n\t"                                            \
-					 "pushl $0\n\t"                                            \
-					 "pushl $0\n\t"                                            \
-					 "pushl $0\n\t"                                            \
-					 "push  %%ss\n\t"                                          \
-					 "push  %%ds\n\t"                                          \
-					 "push  %%es\n\t"                                          \
-					 "push  %%fs\n\t"                                          \
-					 "push  %%gs\n\t"                                          \
-					 "xchgl %%esp, %[esp]\n\t"                                 \
-					 "popl  %%ebx\n\t"                                         \
-					 :                                                         \
-					 : [arg] "m"(new->arg), [esp] "m"(new->esp),               \
-					 [finlizer] "r"(finalizer), [func] "m"(new->callable)      \
-					 : "memory")
+	__asm__ volatile(                                                          \
+		"pushl %%ebx\n\t"                                                      \
+		"xchgl %%esp, %[esp]\n\t"                                              \
+		"pushl %[arg]\n\t"                                                     \
+		"pushl %[finlizer]\n\t"                                                \
+		"pushl %[func]\n\t"                                                    \
+		"movl  %%esp, %%ebx\n\t"                                               \
+		"addl  $0x4, %%ebx\n\t"                                                \
+		"pushl %%ebx\n\t"                                                      \
+		"pushl $0\n\t"                                                         \
+		"pushl $0\n\t"                                                         \
+		"pushl $0x200\n\t"                                                     \
+		"pushl $0\n\t"                                                         \
+		"pushl $0\n\t"                                                         \
+		"pushl $0\n\t"                                                         \
+		"pushl $0\n\t"                                                         \
+		"pushl $0\n\t"                                                         \
+		"pushl $0\n\t"                                                         \
+		"pushl $0\n\t"                                                         \
+		"push  %%ss\n\t"                                                       \
+		"push  %%ds\n\t"                                                       \
+		"push  %%es\n\t"                                                       \
+		"push  %%fs\n\t"                                                       \
+		"push  %%gs\n\t"                                                       \
+		"xchgl %%esp, %[esp]\n\t"                                              \
+		"popl  %%ebx\n\t"                                                      \
+		:                                                                      \
+		: [arg] "m"(new->arg),                                                 \
+		  [esp] "m"(new->esp),                                                 \
+		  [finlizer] "r"(finalizer),                                           \
+		  [func] "m"(new->callable)                                            \
+		: "memory")
 
 #define START_NEW_THREAD(current, exit_routine)                                \
-	__asm__ volatile("movl %1, %%esp\n\t"                                      \
-					 "pushl %2\n\t"                                            \
-					 "movl %%esp, %%ebp\n\t"                                   \
-					 "pushl %3\n\t"                                            \
-					 "sti\n\t"                                                 \
-					 "call *%4\n\t"                                            \
-					 "movl %%eax, %0\n\t"                                      \
-					 "movl %%ebp, %%esp\n\t"                                   \
-					 "ret\n\t"                                                 \
-					 : "=r"(current->retval)                                   \
-					 : "rm"(current->esp), "rm"(exit_routine),                 \
-					 "rm"(current->arg), "rm"(current->callable)               \
-					 : "memory")
+	__asm__ volatile(                                                          \
+		"movl %1, %%esp\n\t"                                                   \
+		"pushl %2\n\t"                                                         \
+		"movl %%esp, %%ebp\n\t"                                                \
+		"pushl %3\n\t"                                                         \
+		"sti\n\t"                                                              \
+		"call *%4\n\t"                                                         \
+		"movl %%eax, %0\n\t"                                                   \
+		"movl %%ebp, %%esp\n\t"                                                \
+		"ret\n\t"                                                              \
+		: "=r"(current->retval)                                                \
+		: "rm"(current->esp),                                                  \
+		  "rm"(exit_routine),                                                  \
+		  "rm"(current->arg),                                                  \
+		  "rm"(current->callable)                                              \
+		: "memory")
 
 
 /* Context: Save
@@ -104,23 +110,24 @@ static void splice_outq(task_struct_t **, task_struct_t *);
  * Writes the new %esp in the TCB
  **/
 #define SAVE_CONTEXT(current)                                                  \
-	__asm__ volatile("pushf\n\t"                                               \
-					 "push %%eax\n\t"                                          \
-					 "push %%ebx\n\t"                                          \
-					 "push %%ecx\n\t"                                          \
-					 "push %%edx\n\t"                                          \
-					 "push %%esi\n\t"                                          \
-					 "push %%edi\n\t"                                          \
-					 "push %%ebp\n\t"                                          \
-					 "push %%ss\n\t"                                           \
-					 "push %%ds\n\t"                                           \
-					 "push %%es\n\t"                                           \
-					 "push %%fs\n\t"                                           \
-					 "push %%gs\n\t"                                           \
-					 "movl %%esp, %[esp]"                                      \
-					 : [esp] "=r"(current->esp)                                \
-					 :                                                         \
-					 : "memory")
+	__asm__ volatile(                                                          \
+		"pushf\n\t"                                                            \
+		"push %%eax\n\t"                                                       \
+		"push %%ebx\n\t"                                                       \
+		"push %%ecx\n\t"                                                       \
+		"push %%edx\n\t"                                                       \
+		"push %%esi\n\t"                                                       \
+		"push %%edi\n\t"                                                       \
+		"push %%ebp\n\t"                                                       \
+		"push %%ss\n\t"                                                        \
+		"push %%ds\n\t"                                                        \
+		"push %%es\n\t"                                                        \
+		"push %%fs\n\t"                                                        \
+		"push %%gs\n\t"                                                        \
+		"movl %%esp, %[esp]"                                                   \
+		: [esp] "=r"(current->esp)                                             \
+		:                                                                      \
+		: "memory")
 
 
 /* Context: Resume
@@ -128,24 +135,25 @@ static void splice_outq(task_struct_t **, task_struct_t *);
  * context that was previously saved by SAVE_CONTEXT
  **/
 #define DISPATCH(next)                                                         \
-	__asm__ volatile("movl %[esp], %%esp\n\t"                                  \
-					 "pop %%gs\n\t"                                            \
-					 "pop %%fs\n\t"                                            \
-					 "pop %%es\n\t"                                            \
-					 "pop %%ds\n\t"                                            \
-					 "pop %%ss\n\t"                                            \
-					 "popl %%ebp\n\t"                                          \
-					 "popl %%edi\n\t"                                          \
-					 "popl %%esi\n\t"                                          \
-					 "popl %%edx\n\t"                                          \
-					 "popl %%ecx\n\t"                                          \
-					 "popl %%ebx\n\t"                                          \
-					 "popl %%eax\n\t"                                          \
-					 "popf\n\t"                                                \
-					 :                                                         \
-					 : [esp] "r"(next->esp)                                    \
-					 : "memory")
-
+	__asm__ volatile(                                                          \
+		"movl %[esp], %%esp\n\t"                                               \
+		"pop %%gs\n\t"                                                         \
+		"pop %%fs\n\t"                                                         \
+		"pop %%es\n\t"                                                         \
+		"pop %%ds\n\t"                                                         \
+		"pop %%ss\n\t"                                                         \
+		"popl %%ebp\n\t"                                                       \
+		"popl %%edi\n\t"                                                       \
+		"popl %%esi\n\t"                                                       \
+		"popl %%edx\n\t"                                                       \
+		"popl %%ecx\n\t"                                                       \
+		"popl %%ebx\n\t"                                                       \
+		"popl %%eax\n\t"                                                       \
+		"popf\n\t"                                                             \
+		:                                                                      \
+		: [esp] "r"(next->esp)                                                 \
+		: "memory")
+// clang-format on
 
 void init_sched(void)
 {
