@@ -1,9 +1,12 @@
 CC = gcc
+# no-pie disables position independent code, here we use it to
+# get rid of the pc thunk calls
 CFLAGS = -I./include -m32 -march=i386 -fno-builtin \
 		 -fno-stack-protector -fno-strict-aliasing \
 		 -fno-delete-null-pointer-checks -nostdinc \
-		 -g -Wall -std=c99
+		 -fno-pie -g -Wall -std=c99
 CPPFLAGS = -Wa,--32 -MMD
+CMDMACROS =
 
 # define project directory structure
 SRCDIR    = src
@@ -32,10 +35,10 @@ $(BINDIR)/$(TARGET): $(OBJS)
 	$(LD) -m elf_i386 -T $(LDFILE) -o $@ $^
 
 $(OBJDIR)/%.c.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(CMDMACROS) -c -o $@ $<
 
 $(OBJDIR)/%.S.o: $(ASMDIR)/%.S
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(CMDMACROS) $(CPPFLAGS) -c -o $@ $<
 
 
 install: $(BINDIR)/$(TARGET)
