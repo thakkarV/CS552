@@ -225,10 +225,13 @@ void sched_finalize_thread(void)
 
 	kthread_mutex_unlock(&__global_sched_lock);
 
-	// this schedule will run in the freeing thread's stack space
-	// but this is not an issue since this thread is not marked DONE
-	// and will never resume execution.
-	schedule();
+	// TODO: ideally we would call schedule here, but that crashes, so we spin
+	// // this schedule will run in the freeing thread's stack space
+	// // but this is not an issue since this thread is not marked DONE
+	// // and will never resume execution.
+	// schedule();
+	while (1)
+		;
 }
 
 
