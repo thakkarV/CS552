@@ -1,4 +1,5 @@
 #include <kmalloc.h>
+#include <kvideo.h>
 #include <sys/mutex.h>
 #include <sys/sched.h>
 #include <sys/stdlib.h>
@@ -191,7 +192,10 @@ tid_t sched_register_thread(void *(*callable)(void *), void *arg)
 	ts->arg		 = arg;
 	ts->stack	= kmalloc(THREAD_STACK_SIZE);
 	ts->esp		 = (uint32_t)ts->stack + THREAD_STACK_SIZE - 1;
+
+#ifdef THREAD_DUMMY_CONTEXT_START
 	SETUP_NEW_THREAD(ts, sched_finalize_thread);
+#endif
 
 	/* init fd table to nulls */
 	memset(ts->fd_table, 0, NUM_MAX_FD * sizeof(FILE *));
@@ -224,13 +228,10 @@ void sched_finalize_thread(void)
 
 	kthread_mutex_unlock(&__global_sched_lock);
 
-	// TODO: ideally we would call schedule here, but that crashes, so we spin
-	// // this schedule will run in the freeing thread's stack space
-	// // but this is not an issue since this thread is not marked DONE
-	// // and will never resume execution.
-	// schedule();
-	while (1)
-		;
+	// this schedule will run in the freeing thread's stack space
+	// but this is not an issue since this thread is not marked DONE
+	// and will never resume execution.
+	schedule();
 }
 
 
