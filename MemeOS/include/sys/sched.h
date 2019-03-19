@@ -52,7 +52,7 @@ typedef struct task_struct_t {
 
 void schedule(void);
 tid_t sched_register_thread(void *(*)(void *), void *);
-void sched_finalize_thread(void);
+void sched_finalize_thread(void *);
 void init_sched(void);
 void __sleep_on(uint32_t milliseconds);
 

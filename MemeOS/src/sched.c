@@ -1,5 +1,7 @@
 #include <kmalloc.h>
+#ifdef DEBUG
 #include <kvideo.h>
+#endif
 #include <sys/mutex.h>
 #include <sys/sched.h>
 #include <sys/stdlib.h>
@@ -89,20 +91,21 @@ static void splice_outq(task_struct_t **, task_struct_t *);
 
 #define START_NEW_THREAD(current, exit_routine)                                \
 	__asm__ volatile(                                                          \
-		"movl %1, %%esp\n\t"                                                   \
-		"pushl %2\n\t"                                                         \
+		"movl %[thread_stack], %%esp\n\t"                                      \
 		"movl %%esp, %%ebp\n\t"                                                \
-		"pushl %3\n\t"                                                         \
+		"pushl $0\n\t"                                                         \
+		"pushl %[finalizer]\n\t"                                               \
+		"pushl %[thread_arg]\n\t"                                              \
 		"sti\n\t"                                                              \
-		"call *%4\n\t"                                                         \
-		"movl %%eax, %0\n\t"                                                   \
-		"movl %%ebp, %%esp\n\t"                                                \
+		"call *%[thread_func]\n\t"                                             \
+		"movl %%eax, 12(%%esp)\n\t"                                            \
+		"popl %%eax\n\t"                                                       \
 		"ret\n\t"                                                              \
-		: "=r"(current->retval)                                                \
-		: "rm"(current->esp),                                                  \
-		  "rm"(exit_routine),                                                  \
-		  "rm"(current->arg),                                                  \
-		  "rm"(current->callable)                                              \
+		:                                                                      \
+		: [thread_stack] "rm" (current->esp),                                  \
+		  [finalizer]    "rm" (exit_routine),                                  \
+		  [thread_arg]   "rm" (current->arg),                                  \
+		  [thread_func]  "rm" (current->callable)                              \
 		: "memory")
 
 
@@ -210,22 +213,23 @@ tid_t sched_register_thread(void *(*callable)(void *), void *arg)
 }
 
 
-void sched_finalize_thread(void)
+void sched_finalize_thread(void *retval)
 {
 	kthread_mutex_lock(&__global_sched_lock);
 
 	task_struct_t *curr_cpy = __current_task;
-
 	kfree(curr_cpy->stack);
 	curr_cpy->status = EXITED;
+	curr_cpy->retval = retval;
 
 	// remove from runq and add to doneq
 	splice_outq(&__runq_head, curr_cpy);
 	splice_inq(&__doneq_head, curr_cpy);
-
-	// __current_task->retval = retval;
 	__thread_count--;
 
+#ifdef DEBUG
+	printf("Returned value 0x%x\n", retval);
+#endif
 	kthread_mutex_unlock(&__global_sched_lock);
 
 	// this schedule will run in the freeing thread's stack space
