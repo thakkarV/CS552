@@ -3,8 +3,8 @@
 #include <sys/stdlib.h>
 #include <sys/types.h>
 
-static struct IDTR idtr;
-static struct IDTDesc IDT[ISR_COUNT];
+static volatile struct IDTR idtr;
+static volatile struct IDTDesc IDT[ISR_COUNT];
 
 extern void do_timer(void);
 
@@ -34,11 +34,15 @@ void init_idt(void)
 {
 	short i	= 0;
 	idtr.limit = (sizeof(struct IDTDesc) * ISR_COUNT) - 1;
-	idtr.base  = &IDT[0];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+	idtr.base = &IDT[0];
+#pragma GCC diagnostic pop
 
-	// TODO: is it ok to not have default isrs
-	// clear IDT and ensure all zeros
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-array-qualifiers"
 	memset(&IDT, 0x0, sizeof(struct IDTDesc) * ISR_COUNT);
+#pragma GCC diagnostic pop
 
 	set_trap_gate(0, &isr_divide_error);
 	set_trap_gate(1, &isr_debug);

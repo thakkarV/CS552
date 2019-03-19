@@ -6,8 +6,8 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreturn-type"
-static bool __sync_bool_cmpxchg(
-	volatile kthread_mutex_t *mutex, int old, int new)
+static bool __attribute__((noinline))
+__sync_bool_cmpxchg(volatile kthread_mutex_t *mutex, int old, int new)
 {
 	__asm__ volatile(
 		"LOCK cmpxchg %[source], %[dest]\n\t"
