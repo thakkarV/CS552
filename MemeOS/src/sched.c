@@ -211,7 +211,6 @@ void sched_finalize_thread(void)
 	kthread_mutex_lock(&__global_sched_lock);
 
 	task_struct_t *curr_cpy = __current_task;
-	__current_task			= __current_task->prev;
 
 	kfree(curr_cpy->stack);
 	curr_cpy->status = EXITED;
