@@ -13,7 +13,7 @@ __sync_bool_cmpxchg(volatile kthread_mutex_t *mutex, int old, int new)
 		"LOCK cmpxchg %[source], %[dest]\n\t"
 		"setz %%al\n\t"
 		:
-		: [source] "d"(new), [accum] "a"(old), [dest] "m"(mutex->flag)
+		: [ source ] "d"(new), [ accum ] "a"(old), [ dest ] "m"(mutex->flag)
 		: "memory");
 }
 #pragma GCC diagnostic pop

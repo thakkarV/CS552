@@ -61,14 +61,14 @@ void init_kmalloc(multiboot_info_t *mbi)
 	// need to make this more general than just a hardcoded
 	// two meg offset. should work for a long time though. ugh...
 	__mem_store_base = store_addr + STORE_OFFSET;
-	__mem_store_end  = (void *)(((char *)store_addr) + store_size);
+	__mem_store_end	 = (void *)(((char *)store_addr) + store_size);
 	__mem_store_size = store_size - STORE_OFFSET;
 
 	/* make initial single entry for the free store */
 	__store_global_head			 = (block_header_t *)__mem_store_base;
-	__store_global_head->prev	= NULL;
-	__store_global_head->next	= NULL;
-	__store_global_head->size	= __mem_store_size - BLK_HEADER_SIZE;
+	__store_global_head->prev	 = NULL;
+	__store_global_head->next	 = NULL;
+	__store_global_head->size	 = __mem_store_size - BLK_HEADER_SIZE;
 	__store_global_head->is_free = true;
 }
 
@@ -235,7 +235,7 @@ static block_header_t *__splice_block_in(
 		}
 
 		// new size is old - what we have to allocate - new's block header size
-		new->size	= current->size - alloc_size - BLK_HEADER_SIZE;
+		new->size	 = current->size - alloc_size - BLK_HEADER_SIZE;
 		new->is_free = true;
 
 		// now shrink the current one and point next to new

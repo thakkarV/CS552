@@ -162,10 +162,10 @@ static void splice_outq(task_struct_t **, task_struct_t *);
 void init_sched(void)
 {
 	__idle_task			  = kmalloc(sizeof(task_struct_t));
-	__idle_task->status   = NEW;
+	__idle_task->status	  = NEW;
 	__idle_task->callable = do_idle;
 	__idle_task->arg	  = NULL;
-	__idle_task->stack	= kmalloc(0x100);
+	__idle_task->stack	  = kmalloc(0x100);
 	__idle_task->esp	  = (uint32_t)__idle_task->stack + 0x100 - 1;
 
 	kthread_mutex_init(&__global_sched_lock);
@@ -186,14 +186,14 @@ tid_t sched_register_thread(void *(*callable)(void *), void *arg)
 
 	/* init task metadata */
 	ts->tid		 = __tid_counter++;
-	ts->status   = NEW;
+	ts->status	 = NEW;
 	ts->priority = 0;
-	ts->utime	= 0;
+	ts->utime	 = 0;
 
 	/* Setup thread environment */
 	ts->callable = callable;
 	ts->arg		 = arg;
-	ts->stack	= kmalloc(THREAD_STACK_SIZE);
+	ts->stack	 = kmalloc(THREAD_STACK_SIZE);
 	ts->esp		 = (uint32_t)ts->stack + THREAD_STACK_SIZE - 1;
 
 #ifdef THREAD_DUMMY_CONTEXT_START
@@ -333,7 +333,7 @@ static void service_waitq(void)
 	do {
 		if (waitq->utime >= waitq->sleep_time) {
 			tmp				  = waitq->next;
-			waitq->status	 = READY;
+			waitq->status	  = READY;
 			waitq->sleep_time = 0;
 			splice_outq(&__waitq_head, waitq);
 			splice_inq(&__runq_head, waitq);
@@ -369,7 +369,7 @@ void __sleep_on(unsigned long systicks)
 	}
 
 	// when resumed, reset time counters
-	__current_task->utime	  = 0;
+	__current_task->utime	   = 0;
 	__current_task->sleep_time = 0;
 }
 

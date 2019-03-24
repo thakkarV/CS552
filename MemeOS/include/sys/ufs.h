@@ -71,8 +71,8 @@
 
 typedef enum inode_status_t {
 	INODE_EMPTY = 0,
-	INODE_DIR   = 1,
-	INODE_REG   = 2
+	INODE_DIR	= 1,
+	INODE_REG	= 2
 } inode_status_t;
 
 typedef enum block_status_t {

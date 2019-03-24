@@ -74,7 +74,7 @@ void putchar(int c)
 		return;
 	}
 
-	*(video + (xpos + ypos * COLUMNS) * 2)	 = c & 0xFF;
+	*(video + (xpos + ypos * COLUMNS) * 2)	   = c & 0xFF;
 	*(video + (xpos + ypos * COLUMNS) * 2 + 1) = ATTRIBUTE;
 
 	xpos++;
@@ -98,10 +98,10 @@ void printf(const char *format, ...)
 				int code;
 				while (c != 'm') {
 					code = 0;
-					c	= *format++;
+					c	 = *format++;
 					while ((c != ';') && (c != 'm')) {
 						code = (code << 3) + (code << 1) + (c - '0');
-						c	= *format++;
+						c	 = *format++;
 					}
 					__terminal_change_attrib(code);
 				}
@@ -115,12 +115,12 @@ void printf(const char *format, ...)
 			c = *format++;
 			if (c == '0') {
 				pad0 = 1;
-				c	= *format++;
+				c	 = *format++;
 			}
 
 			if (c >= '0' && c <= '9') {
 				pad = c - '0';
-				c   = *format++;
+				c	= *format++;
 			}
 
 			switch (c) {

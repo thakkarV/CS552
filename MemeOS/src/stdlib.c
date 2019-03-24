@@ -111,12 +111,12 @@ void sprintf(char *dest, const char *format, ...)
 			c = *format++;
 			if (c == '0') {
 				pad0 = 1;
-				c	= *format++;
+				c	 = *format++;
 			}
 
 			if (c >= '0' && c <= '9') {
 				pad = c - '0';
-				c   = *format++;
+				c	= *format++;
 			}
 
 			switch (c) {
