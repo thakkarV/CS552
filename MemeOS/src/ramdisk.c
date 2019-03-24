@@ -67,7 +67,7 @@ void init_rdisk(void *fs_base_addr)
 	__inode_array[0].dirblock_ptr = __root_blk;
 
 	__superblk->inode_array = (inode_t *)__inode_array;
-	__superblk->blk_bitmap  = (uint8_t *)__blk_bitmap;
+	__superblk->blk_bitmap	= (uint8_t *)__blk_bitmap;
 	__superblk->root_blk	= (ufs_dirblock_t *)__root_blk;
 
 	kthread_mutex_init(&__fs_head_lock);
@@ -113,7 +113,7 @@ int rd_create(char *path)
 
 	// search for the inode
 	inode_counter = 0;
-	file_inode	= &__inode_array[0];
+	file_inode	  = &__inode_array[0];
 	while (inode_counter < UFS_NUM_MAX_INODES) {
 		if (file_inode->type == INODE_EMPTY)
 			break;
@@ -185,7 +185,7 @@ int rd_mkdir(char *path)
 
 	// search for the inode
 	inode_counter = 0;
-	dir_inode	 = &__inode_array[0];
+	dir_inode	  = &__inode_array[0];
 	while (inode_counter < UFS_NUM_MAX_INODES) {
 		if (dir_inode->type == INODE_EMPTY)
 			break;
@@ -364,7 +364,7 @@ int rd_read(int fd, char *buf, int num_bytes)
 	ufs_datablock_t *blk_ptr;
 	int double_blk_idx;
 	int single_blk_idx;
-	int blk_num	= file_obj->seek_head / UFS_BLOCK_SIZE;
+	int blk_num	   = file_obj->seek_head / UFS_BLOCK_SIZE;
 	int blk_offset = file_obj->seek_head % UFS_BLOCK_SIZE;
 
 	// SETUP PONITERS AND INDEXES FOR READING
@@ -731,9 +731,9 @@ int rd_unlink(char *path)
 	ufs_datablock_t **single_blk_ptr  = file_inode->indirect_block_ptr;
 	ufs_datablock_t **direct_blk_ptr  = file_inode->direct_block_ptrs;
 	// ufs_datablock_t   *blk_ptr;
-	int double_blk_idx   = 0;
-	int single_blk_idx   = 0;
-	int direct_blk_idx   = 0;
+	int double_blk_idx	 = 0;
+	int single_blk_idx	 = 0;
+	int direct_blk_idx	 = 0;
 	int num_blks_in_file = file_inode->size / UFS_BLOCK_SIZE;
 	// round up number of blocks
 	if (file_inode->size % UFS_BLOCK_SIZE)
@@ -786,7 +786,7 @@ int rd_unlink(char *path)
 	for (i = 0; i < UFS_MAX_FILE_IN_DIR; i++) {
 		if (parent_dir_inode->dirblock_ptr->entries[i].inode_num
 			== ((uint16_t)((char *)file_inode - (char *)__inode_array)
-				   / sizeof(inode_t))) {
+				/ sizeof(inode_t))) {
 			memset(&(parent_dir_inode->dirblock_ptr->entries[i]), 0,
 				sizeof(ufs_dirent_t));
 			break;
@@ -916,7 +916,7 @@ static inode_t *get_parent_dir_inode(char *path, ufs_dirblock_t *dir_blk)
 
 	// splice that seperator out and feed the parent path to the get file inode
 	// function
-	splice_char   = path[pathlen];
+	splice_char	  = path[pathlen];
 	path[pathlen] = NULL;
 
 	inode_ptr = get_file_inode(path, dir_blk);

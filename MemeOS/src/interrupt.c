@@ -32,7 +32,7 @@ void init_pic(void)
 
 void init_idt(void)
 {
-	short i	= 0;
+	short i	   = 0;
 	idtr.limit = (sizeof(struct IDTDesc) * ISR_COUNT) - 1;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
